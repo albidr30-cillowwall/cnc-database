@@ -116,6 +116,26 @@ const isSyncing = ref(false)
 
 export function useCncStore() {
   const { supabase, isConfigured } = useSupabase()
+  const userCookie = useCookie<UserProfile | null>('cnc_session_user', {
+    maxAge: 60 * 60 * 24 * 7,
+    path: '/',
+    sameSite: 'lax'
+  })
+
+  // Restore session immediately on both SSR server and browser client
+  if (!currentUser.value) {
+    if (userCookie.value) {
+      currentUser.value = userCookie.value
+    } else if (import.meta.client) {
+      const saved = localStorage.getItem('cnc_session_user')
+      if (saved) {
+        try {
+          currentUser.value = JSON.parse(saved)
+          userCookie.value = currentUser.value
+        } catch {}
+      }
+    }
+  }
 
   // Helper calculate plate weight
   function calculateWeight(p: number, l: number, t: number, mat: string): number {
@@ -326,12 +346,14 @@ export function useCncStore() {
     }
 
     currentUser.value = user
+    userCookie.value = user
     saveToLocalStorage()
     return { success: true }
   }
 
   function logout() {
     currentUser.value = null
+    userCookie.value = null
     saveToLocalStorage()
   }
 

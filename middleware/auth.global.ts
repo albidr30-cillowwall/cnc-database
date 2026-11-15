@@ -1,20 +1,44 @@
-import { defineNuxtRouteMiddleware, navigateTo } from '#app'
-import { useCncStore } from '~/composables/useCncStore'
+import { defineNuxtRouteMiddleware, navigateTo, useCookie } from '#app'
+import { useCncStore, type UserProfile } from '~/composables/useCncStore'
 
 export default defineNuxtRouteMiddleware((to) => {
-  // Always allow login page
+  const { currentUser } = useCncStore()
+  const userCookie = useCookie<UserProfile | null>('cnc_session_user')
+
+  // Resolve active user from reactive ref, cookie, or localStorage fallback
+  let activeUser = currentUser.value || userCookie.value
+
+  if (!activeUser && import.meta.client) {
+    const saved = localStorage.getItem('cnc_session_user')
+    if (saved) {
+      try {
+        activeUser = JSON.parse(saved)
+      } catch {}
+    }
+  }
+
+  // Keep state and cookie in sync
+  if (activeUser && !currentUser.value) {
+    currentUser.value = activeUser
+  }
+  if (activeUser && !userCookie.value) {
+    userCookie.value = activeUser
+  }
+
+  // If user is already logged in and navigates to /login, redirect to their home page
   if (to.path === '/login') {
+    if (activeUser) {
+      return navigateTo(activeUser.role === 'user' ? '/orders' : '/dashboard')
+    }
     return
   }
 
-  const { currentUser } = useCncStore()
-
   // If not logged in, redirect to login
-  if (!currentUser.value) {
+  if (!activeUser) {
     return navigateTo('/login')
   }
 
-  const role = currentUser.value.role
+  const role = activeUser.role
 
   // Role User restrictions (Only 3 pages allowed)
   if (role === 'user') {
@@ -31,4 +55,3 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo('/dashboard?denied=1')
   }
 })
-

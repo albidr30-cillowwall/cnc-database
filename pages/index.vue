@@ -11,16 +11,17 @@ import { useRouter } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
 
 const router = useRouter()
-const { currentUser, isInitialized } = useCncStore()
+const { currentUser } = useCncStore()
+const userCookie = useCookie<any>('cnc_session_user')
 
 onMounted(() => {
-  if (!currentUser.value) {
+  const active = currentUser.value || userCookie.value
+  if (!active) {
     router.replace('/login')
-  } else if (currentUser.value.role === 'user') {
-    router.replace('/orders/create')
+  } else if (active.role === 'user') {
+    router.replace('/orders')
   } else {
     router.replace('/dashboard')
   }
 })
 </script>
-

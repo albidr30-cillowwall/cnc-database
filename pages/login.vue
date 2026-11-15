@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
 import { useTheme } from '~/composables/useTheme'
@@ -114,6 +114,12 @@ definePageMeta({
 const router = useRouter()
 const { login, currentUser } = useCncStore()
 const { isDark, toggleTheme } = useTheme()
+
+onMounted(() => {
+  if (currentUser.value) {
+    router.replace(currentUser.value.role === 'user' ? '/orders' : '/dashboard')
+  }
+})
 
 const identity = ref('mandor@gmail.com')
 const password = ref('123')
