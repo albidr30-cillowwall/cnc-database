@@ -200,22 +200,6 @@
               <i class="fa-solid fa-paperclip"></i> Terpilih: {{ fileName }}
             </p>
           </div>
-          <div>
-            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Deadline Pekerjaan</label>
-            <input 
-              v-model="form.deadline_pekerjaan" 
-              type="date" 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600"
-            >
-          </div>
-          <div>
-            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Waktu Pengambilan Khusus</label>
-            <input 
-              v-model="form.waktu_custom" 
-              type="datetime-local" 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600"
-            >
-          </div>
           <div class="sm:col-span-2">
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Catatan Pekerjaan</label>
             <textarea 
