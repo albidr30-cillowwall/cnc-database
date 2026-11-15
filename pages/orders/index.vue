@@ -30,8 +30,6 @@
       >
         <option value="">Semua Jenis Pekerjaan</option>
         <option>Pemotongan Plat Baru</option>
-        <option>Pemotongan Plat Remnant / Sisa</option>
-        <option>Repair / Perbaikan</option>
         <option>Pembuatan Part Baru</option>
         <option>Cutting Nesting / Gambar Kerja</option>
         <option value="Lainnya">Lainnya</option>
