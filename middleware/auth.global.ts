@@ -1,31 +1,27 @@
 import { defineNuxtRouteMiddleware, navigateTo, useCookie } from '#app'
 import { useCncStore, type UserProfile } from '~/composables/useCncStore'
+import { useSecurity } from '~/composables/useSecurity'
 
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const { currentUser } = useCncStore()
-  const userCookie = useCookie<UserProfile | null>('cnc_session_user')
+  const { verifySessionToken } = useSecurity()
+  const sessionToken = useCookie<string | null>('cnc_session_token')
 
-  // Resolve active user from reactive ref, cookie, or localStorage fallback
-  let activeUser = currentUser.value || userCookie.value
+  // Cryptographically verify session token (HMAC-SHA256 signature check)
+  let activeUser: UserProfile | null = currentUser.value
 
-  if (!activeUser && import.meta.client) {
-    const saved = localStorage.getItem('cnc_session_user')
-    if (saved) {
-      try {
-        activeUser = JSON.parse(saved)
-      } catch {}
+  if (!activeUser && sessionToken.value) {
+    activeUser = await verifySessionToken(sessionToken.value)
+    if (activeUser) {
+      currentUser.value = activeUser
+    } else {
+      // Invalid, expired, or tampered token! Wipe token immediately
+      sessionToken.value = null
+      currentUser.value = null
     }
   }
 
-  // Keep state and cookie in sync
-  if (activeUser && !currentUser.value) {
-    currentUser.value = activeUser
-  }
-  if (activeUser && !userCookie.value) {
-    userCookie.value = activeUser
-  }
-
-  // If user is already logged in and navigates to /login, redirect to their home page
+  // If user is already authenticated and visits /login -> redirect to appropriate role home
   if (to.path === '/login') {
     if (activeUser) {
       return navigateTo(activeUser.role === 'user' ? '/orders' : '/dashboard')
@@ -33,25 +29,37 @@ export default defineNuxtRouteMiddleware((to) => {
     return
   }
 
-  // If not logged in, redirect to login
+  // If not authenticated -> redirect to login
   if (!activeUser) {
     return navigateTo('/login')
   }
 
   const role = activeUser.role
 
-  // Role User restrictions (Only 3 pages allowed)
+  // STRICT RBAC (Role-Based Access Control)
+  // 1. Role USER: Strictly limited to orders and pickup verification
   if (role === 'user') {
-    const userAllowedPaths = ['/orders/create', '/orders', '/pickup-verify']
-    const isAllowed = userAllowedPaths.some(p => to.path === p || to.path.startsWith(p + '/'))
-
+    const userAllowed = ['/orders', '/orders/create', '/pickup-verify']
+    const isAllowed = userAllowed.some(p => to.path === p || to.path.startsWith(p + '/'))
     if (!isAllowed) {
       return navigateTo('/orders?denied=1')
     }
+    return
   }
 
-  // Role Mandor restrictions (Cannot access Admin user management)
-  if (role === 'mandor' && to.path.startsWith('/admin')) {
-    return navigateTo('/dashboard?denied=1')
+  // 2. Role OPERATOR / MANDOR: Operational access, strictly forbidden from Admin user management
+  if (role === 'operator' || role === 'mandor') {
+    if (to.path.startsWith('/admin')) {
+      return navigateTo('/dashboard?denied=1')
+    }
+    return
   }
+
+  // 3. Role ADMIN: Allowed full access
+  if (role === 'admin') {
+    return
+  }
+
+  // Unknown role: Forbid access and kick to login
+  return navigateTo('/login')
 })

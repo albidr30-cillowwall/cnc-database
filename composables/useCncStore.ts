@@ -1,12 +1,13 @@
 import { ref, computed } from 'vue'
 import { useSupabase } from './useSupabase'
+import { useSecurity, type SafeUser } from './useSecurity'
 
 export interface UserProfile {
   id: string
   name: string
   username: string
   email: string
-  role: 'admin' | 'mandor' | 'user'
+  role: 'admin' | 'operator' | 'mandor' | 'user'
   department?: string
   password_hash?: string
   created_at?: string
@@ -101,12 +102,22 @@ export interface YardPickup {
 // Global Shared State
 const defaultUsers: UserProfile[] = [
   { id: '1', name: 'Administrator CNC', username: 'admin', email: 'admin@gmail.com', role: 'admin', department: 'IT & Material Control', password_hash: '123' },
-  { id: '2', name: 'Mandor & Operator CNC', username: 'mandor', email: 'mandor@gmail.com', role: 'mandor', department: 'Produksi CNC', password_hash: '123' },
-  { id: '3', name: 'User (Pemesan / Viewer)', username: 'user', email: 'user@gmail.com', role: 'user', department: 'Hull Construction', password_hash: '123' }
+  { id: '2', name: 'Workshop Operator CNC', username: 'operator', email: 'operator@gmail.com', role: 'operator', department: 'Produksi CNC', password_hash: '123' },
+  { id: '3', name: 'User (Pemesan Plat)', username: 'user', email: 'user@gmail.com', role: 'user', department: 'Hull Construction', password_hash: '123' }
 ]
 
 export function useCncStore() {
   const { supabase, isConfigured } = useSupabase()
+  const {
+    hashPassword,
+    verifyPassword,
+    createSessionToken,
+    verifySessionToken,
+    getRateLimitStatus,
+    recordFailedLogin,
+    resetRateLimit,
+    sanitizeInput
+  } = useSecurity()
 
   // Nuxt 3 request-isolated state (SSR-safe, prevents cross-request session leakage)
   const currentUser = useState<UserProfile | null>('cnc_current_user', () => null)
@@ -118,27 +129,26 @@ export function useCncStore() {
   const isInitialized = useState<boolean>('cnc_initialized', () => false)
   const isSyncing = useState<boolean>('cnc_syncing', () => false)
 
-  const userCookie = useCookie<UserProfile | null>('cnc_session_user', {
+  // Cryptographically signed session token (HMAC-SHA256, anti-spoofing)
+  const sessionToken = useCookie<string | null>('cnc_session_token', {
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
-    sameSite: 'lax'
+    sameSite: 'strict'
   })
 
-  // Restore session immediately only from current request's cookie or client localStorage
-  if (!currentUser.value) {
-    if (userCookie.value) {
-      currentUser.value = userCookie.value
-    } else if (import.meta.client) {
-      const saved = localStorage.getItem('cnc_session_user')
-      if (saved) {
-        try {
-          currentUser.value = JSON.parse(saved)
-          userCookie.value = currentUser.value
-        } catch {
-          localStorage.removeItem('cnc_session_user')
-        }
+  // Restore session: only if the cryptographic signature is authentic
+  if (!currentUser.value && sessionToken.value) {
+    verifySessionToken(sessionToken.value).then(verified => {
+      if (verified) {
+        currentUser.value = verified
+      } else {
+        sessionToken.value = null
+        currentUser.value = null
       }
-    }
+    }).catch(() => {
+      sessionToken.value = null
+      currentUser.value = null
+    })
   }
 
   // Helper calculate plate weight
@@ -334,33 +344,90 @@ export function useCncStore() {
     }
   }
 
-  // AUTH ACTIONS
-  function login(identity: string, password: string): { success: boolean; message?: string } {
-    const term = identity.trim().toLowerCase()
+  // AUTH ACTIONS (SECURE & ANTI-HACKER)
+  async function login(rawIdentity: string, rawPassword: string): Promise<{ success: boolean; message?: string }> {
+    // 1. Anti Brute-Force Check
+    const rateLimit = getRateLimitStatus()
+    if (rateLimit.isLocked) {
+      return {
+        success: false,
+        message: `Terlalu banyak percobaan gagal. Akses dikunci sementara selama ${rateLimit.remainingSeconds} detik demi keamanan.`
+      }
+    }
+
+    // 2. Input Sanitization
+    const term = sanitizeInput(rawIdentity).toLowerCase()
+    const pwd = (rawPassword || '').trim()
+
+    if (!term || !pwd) {
+      return { success: false, message: 'Email/Username dan Password wajib diisi.' }
+    }
+
+    // 3. User Lookup (supports operator, mandor, admin, and user)
     const user = users.value.find(u => 
-      u.email.toLowerCase() === term || u.username.toLowerCase() === term
+      u.email.toLowerCase() === term || 
+      u.username.toLowerCase() === term ||
+      (term === 'mandor' && u.username === 'operator') ||
+      (term === 'mandor@gmail.com' && u.email === 'operator@gmail.com') ||
+      (term === 'operator' && u.username === 'mandor') ||
+      (term === 'operator@gmail.com' && u.email === 'mandor@gmail.com')
     )
 
     if (!user) {
-      return { success: false, message: 'Username atau Email tidak ditemukan.' }
+      const lock = recordFailedLogin()
+      const msg = lock.isLocked
+        ? `5 kali gagal berturut-turut. Akses login dikunci selama ${lock.remainingSeconds} detik.`
+        : 'Email/Username atau Password tidak valid.'
+      return { success: false, message: msg }
     }
 
-    if (user.password_hash && user.password_hash !== password) {
-      return { success: false, message: 'Password tidak sesuai.' }
+    // 4. Secure Password Verification (Salted SHA-256 + Timing Safe)
+    const isMatch = await verifyPassword(pwd, user.password_hash || '')
+    if (!isMatch) {
+      const lock = recordFailedLogin()
+      const msg = lock.isLocked
+        ? `5 kali gagal berturut-turut. Akses login dikunci selama ${lock.remainingSeconds} detik.`
+        : 'Email/Username atau Password tidak valid.'
+      return { success: false, message: msg }
     }
 
-    currentUser.value = user
-    userCookie.value = user
-    saveToLocalStorage()
+    // 5. Success: Reset brute-force counter
+    resetRateLimit()
+
+    // 6. Normalize role (treat mandor as operator)
+    const normalizedRole: 'admin' | 'operator' | 'mandor' | 'user' = 
+      user.role === 'mandor' ? 'operator' : user.role
+
+    const safeUser: SafeUser = {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      role: normalizedRole,
+      department: user.department
+    }
+
+    // 7. Generate Signed HMAC Token (Tamper-Proof)
+    const token = await createSessionToken(safeUser)
+    sessionToken.value = token
+    currentUser.value = safeUser
+
+    // 8. Auto-upgrade plain password to secure salted hash in storage
+    if (user.password_hash === pwd) {
+      user.password_hash = await hashPassword(pwd)
+      saveToLocalStorage()
+    }
+
     return { success: true }
   }
 
   function logout() {
     currentUser.value = null
-    userCookie.value = null
-    saveToLocalStorage()
+    sessionToken.value = null
+    resetRateLimit()
     if (import.meta.client) {
       localStorage.removeItem('cnc_session_user')
+      document.cookie = 'cnc_session_token=; Max-Age=0; path=/; SameSite=Strict;'
       document.cookie = 'cnc_session_user=; Max-Age=0; path=/;'
     }
   }
@@ -759,15 +826,16 @@ export function useCncStore() {
   }
 
   // ADMIN ACTIONS
-  async function createUser(data: { name: string; username: string; email: string; role: 'admin' | 'mandor' | 'user'; department?: string; password: string }) {
+  async function createUser(data: { name: string; username: string; email: string; role: 'admin' | 'operator' | 'mandor' | 'user'; department?: string; password: string }) {
+    const hashedPassword = await hashPassword(data.password || '123')
     const newUser: UserProfile = {
       id: String(Date.now()),
-      name: data.name.trim(),
-      username: data.username.trim().toLowerCase(),
-      email: data.email.trim().toLowerCase(),
+      name: sanitizeInput(data.name),
+      username: sanitizeInput(data.username).toLowerCase(),
+      email: sanitizeInput(data.email).toLowerCase(),
       role: data.role,
-      department: data.department?.trim() || '',
-      password_hash: data.password || '123'
+      department: sanitizeInput(data.department || ''),
+      password_hash: hashedPassword
     }
     users.value.push(newUser)
     saveToLocalStorage()
@@ -780,7 +848,7 @@ export function useCncStore() {
     }
   }
 
-  async function updateUserRole(userId: string, newRole: 'admin' | 'mandor' | 'user') {
+  async function updateUserRole(userId: string, newRole: 'admin' | 'operator' | 'mandor' | 'user') {
     const u = users.value.find(user => user.id === userId)
     if (!u) return
     u.role = newRole

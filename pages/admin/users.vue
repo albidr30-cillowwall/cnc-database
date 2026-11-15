@@ -91,7 +91,8 @@
                       class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-[11px] font-bold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50"
                     >
                       <option value="admin">Admin (Full + Reset)</option>
-                      <option value="mandor">Mandor (Full Operational)</option>
+                      <option value="operator">Operator (Full Operasional CNC)</option>
+                      <option value="mandor">Mandor (Full Operasional)</option>
                       <option value="user">User (Order & PIN Only)</option>
                     </select>
                   </td>
@@ -188,6 +189,7 @@
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
               >
                 <option value="user">User (Hanya Order Pekerjaan & PIN)</option>
+                <option value="operator">Operator (Full Menu Operasional CNC)</option>
                 <option value="mandor">Mandor (Full Menu Operasional)</option>
                 <option value="admin">Admin (Full Akses + Manajemen User)</option>
               </select>
@@ -239,12 +241,12 @@ const newUser = reactive({
   name: '',
   username: '',
   email: '',
-  role: 'user' as 'admin' | 'mandor' | 'user',
+  role: 'user' as 'admin' | 'operator' | 'mandor' | 'user',
   department: '',
   password: '123'
 })
 
-async function handleRoleChange(userId: string, newRole: 'admin' | 'mandor' | 'user') {
+async function handleRoleChange(userId: string, newRole: 'admin' | 'operator' | 'mandor' | 'user') {
   await store.updateUserRole(userId, newRole)
   toast.value = {
     type: 'success',

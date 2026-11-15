@@ -9,13 +9,19 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
+import { useSecurity } from '~/composables/useSecurity'
 
 const router = useRouter()
 const { currentUser } = useCncStore()
-const userCookie = useCookie<any>('cnc_session_user')
+const { verifySessionToken } = useSecurity()
+const sessionToken = useCookie<string | null>('cnc_session_token')
 
-onMounted(() => {
-  const active = currentUser.value || userCookie.value
+onMounted(async () => {
+  let active = currentUser.value
+  if (!active && sessionToken.value) {
+    active = await verifySessionToken(sessionToken.value)
+  }
+
   if (!active) {
     router.replace('/login')
   } else if (active.role === 'user') {

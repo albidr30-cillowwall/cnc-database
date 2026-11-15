@@ -181,7 +181,7 @@ const selectedType = ref('')
 const selectedStatus = ref('')
 
 const isFullAccess = computed(() => {
-  return currentUser.value?.role === 'admin' || currentUser.value?.role === 'mandor'
+  return currentUser.value?.role === 'admin' || currentUser.value?.role === 'operator' || currentUser.value?.role === 'mandor'
 })
 
 const filteredOrders = computed(() => {

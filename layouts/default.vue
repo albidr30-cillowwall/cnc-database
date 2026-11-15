@@ -361,12 +361,12 @@ const { isDark, toggleTheme } = useTheme()
 const isMobileMenuOpen = ref(false)
 
 const isAdmin = computed(() => currentUser.value?.role === 'admin')
-const isMandor = computed(() => currentUser.value?.role === 'mandor')
-const isFullAccess = computed(() => isAdmin.value || isMandor.value)
+const isOperator = computed(() => currentUser.value?.role === 'operator' || currentUser.value?.role === 'mandor')
+const isFullAccess = computed(() => isAdmin.value || isOperator.value)
 
 const roleLabel = computed(() => {
   if (isAdmin.value) return 'Admin'
-  if (isMandor.value) return 'Mandor'
+  if (isOperator.value) return 'Operator'
   return 'User'
 })
 
@@ -376,13 +376,13 @@ const userInitial = computed(() => {
 
 const roleBadgeClass = computed(() => {
   if (isAdmin.value) return 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40'
-  if (isMandor.value) return 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+  if (isOperator.value) return 'bg-amber-500/20 text-amber-300 border-amber-400/40'
   return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
 })
 
 const topRoleBadgeClass = computed(() => {
   if (isAdmin.value) return 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-  if (isMandor.value) return 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+  if (isOperator.value) return 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
   return 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
 })
 

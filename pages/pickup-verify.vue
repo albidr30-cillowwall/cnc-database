@@ -198,7 +198,7 @@ const feedback = ref<{ text: string; type: 'success' | 'error' } | null>(null)
 
 const isFullAccess = computed(() => {
   const role = store.currentUser.value?.role
-  return role === 'admin' || role === 'mandor'
+  return role === 'admin' || role === 'operator' || role === 'mandor'
 })
 
 const readyOrders = computed(() => {

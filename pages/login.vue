@@ -124,11 +124,11 @@ const showPassword = ref(false)
 const errorMessage = ref('')
 const isLoading = ref(false)
 
-function handleLogin() {
+async function handleLogin() {
   errorMessage.value = ''
   isLoading.value = true
 
-  const res = login(identity.value, password.value)
+  const res = await login(identity.value, password.value)
   isLoading.value = false
 
   if (!res.success) {
