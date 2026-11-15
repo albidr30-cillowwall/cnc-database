@@ -138,13 +138,27 @@
             <select 
               v-model="form.material" 
               required 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600"
+              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 outline-none"
             >
               <option value="">-- Pilih Material --</option>
-              <option value="Baja">Baja (Marine Steel AH36/DH36/SS400)</option>
-              <option value="Aluminium">Aluminium (Marine 5083/6061)</option>
-              <option value="Stainless">Stainless Steel (316L)</option>
+              <option value="Baja">Baja</option>
+              <option value="Alumunium">Alumunium</option>
+              <option value="Bordes Baja">Bordes Baja</option>
+              <option value="Bordes Alumunium">Bordes Alumunium</option>
+              <option value="Lainnya">Lainnya (Input Sendiri)</option>
             </select>
+          </div>
+
+          <!-- Input Manual Jika Memilih Material 'Lainnya' -->
+          <div v-if="form.material === 'Lainnya'">
+            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Sebutkan Jenis Material Lainnya *</label>
+            <input 
+              v-model="form.material_lainnya" 
+              type="text" 
+              required 
+              placeholder="Ketik jenis material (contoh: Kuningan, Tembaga, Hardox)..." 
+              class="w-full bg-white dark:bg-slate-950 border-2 border-blue-500 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500/20 outline-none"
+            >
           </div>
           <div>
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Ketebalan Plat *</label>
@@ -293,6 +307,7 @@ const form = reactive({
   nama_proyek: '',
   nama_proyek_kapal: '',
   material: 'Baja',
+  material_lainnya: '',
   ketebalan: '12mm',
   jumlah_pesanan: 1,
   ukuran_part: '',
@@ -318,6 +333,10 @@ function handleFileUpload(e: Event) {
 
 async function handleSubmit() {
   isSubmitting.value = true
+  const finalMaterial = form.material === 'Lainnya'
+    ? (form.material_lainnya?.trim() || 'Lainnya')
+    : form.material
+
   try {
     await createOrder({
       jenis_pekerjaan_kategori: form.jenis_pekerjaan_kategori,
@@ -329,7 +348,7 @@ async function handleSubmit() {
       no_hp_pemesan: form.no_hp_pemesan,
       nama_proyek: form.nama_proyek,
       nama_proyek_kapal: form.nama_proyek_kapal,
-      material: form.material,
+      material: finalMaterial,
       ketebalan: form.ketebalan,
       jumlah_pesanan: form.jumlah_pesanan,
       ukuran_part: form.ukuran_part,

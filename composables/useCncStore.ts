@@ -119,7 +119,8 @@ export function useCncStore() {
 
   // Helper calculate plate weight
   function calculateWeight(p: number, l: number, t: number, mat: string): number {
-    const density = mat === 'Aluminium' ? 0.0000027 : (mat === 'Stainless' ? 0.0000080 : 0.00000785)
+    const m = (mat || '').toLowerCase()
+    const density = m.includes('alumin') ? 0.0000027 : (m.includes('stainless') ? 0.0000080 : 0.00000785)
     return parseFloat((p * l * t * density).toFixed(2))
   }
 
@@ -516,7 +517,7 @@ export function useCncStore() {
     lokasi_yard: string
   }): Promise<Plate> {
     const nextId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
-    const prefix = data.material_type === 'Aluminium' ? 'AL' : 'KS'
+    const prefix = (data.material_type || '').toLowerCase().includes('alumin') ? 'AL' : 'KS'
     const noPlat = `PLT-${prefix}-${new Date().getFullYear()}-${String(nextId).padStart(3, '0')}`
     const weight = calculateWeight(data.panjang_mm, data.lebar_mm, data.tebal_mm, data.material_type)
 

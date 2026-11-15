@@ -426,8 +426,8 @@ function autoCalcWeight() {
     }
   }
 
-  const mat = selectedOrder.value?.material || 'Baja'
-  const density = mat === 'Aluminium' ? 0.0000027 : (mat === 'Stainless' ? 0.0000080 : 0.00000785)
+  const mat = (selectedOrder.value?.material || 'Baja').toLowerCase()
+  const density = mat.includes('alumin') ? 0.0000027 : (mat.includes('stainless') ? 0.0000080 : 0.00000785)
   const weightPerSheet = p * l * tebal * density
   form.berat_kg = parseFloat((weightPerSheet * (form.lembar || 1)).toFixed(2))
 }

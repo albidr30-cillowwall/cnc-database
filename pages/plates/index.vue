@@ -189,9 +189,12 @@
                 required 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
               >
-                <option value="Baja">Baja Marine</option>
-                <option value="Aluminium">Aluminium Marine</option>
+                <option value="Baja">Baja</option>
+                <option value="Alumunium">Alumunium</option>
+                <option value="Bordes Baja">Bordes Baja</option>
+                <option value="Bordes Alumunium">Bordes Alumunium</option>
                 <option value="Stainless">Stainless Steel</option>
+                <option value="Lainnya">Lainnya</option>
               </select>
             </div>
             <div>
