@@ -105,24 +105,26 @@ const defaultUsers: UserProfile[] = [
   { id: '3', name: 'User (Pemesan / Viewer)', username: 'user', email: 'user@gmail.com', role: 'user', department: 'Hull Construction', password_hash: '123' }
 ]
 
-const currentUser = ref<UserProfile | null>(null)
-const users = ref<UserProfile[]>([...defaultUsers])
-const orders = ref<Order[]>([])
-const plates = ref<Plate[]>([])
-const estimations = ref<OrderEstimation[]>([])
-const yardPickups = ref<YardPickup[]>([])
-const isInitialized = ref(false)
-const isSyncing = ref(false)
-
 export function useCncStore() {
   const { supabase, isConfigured } = useSupabase()
+
+  // Nuxt 3 request-isolated state (SSR-safe, prevents cross-request session leakage)
+  const currentUser = useState<UserProfile | null>('cnc_current_user', () => null)
+  const users = useState<UserProfile[]>('cnc_users', () => [...defaultUsers])
+  const orders = useState<Order[]>('cnc_orders', () => [])
+  const plates = useState<Plate[]>('cnc_plates', () => [])
+  const estimations = useState<OrderEstimation[]>('cnc_estimations', () => [])
+  const yardPickups = useState<YardPickup[]>('cnc_pickups', () => [])
+  const isInitialized = useState<boolean>('cnc_initialized', () => false)
+  const isSyncing = useState<boolean>('cnc_syncing', () => false)
+
   const userCookie = useCookie<UserProfile | null>('cnc_session_user', {
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
     sameSite: 'lax'
   })
 
-  // Restore session immediately on both SSR server and browser client
+  // Restore session immediately only from current request's cookie or client localStorage
   if (!currentUser.value) {
     if (userCookie.value) {
       currentUser.value = userCookie.value
@@ -132,7 +134,9 @@ export function useCncStore() {
         try {
           currentUser.value = JSON.parse(saved)
           userCookie.value = currentUser.value
-        } catch {}
+        } catch {
+          localStorage.removeItem('cnc_session_user')
+        }
       }
     }
   }
@@ -355,6 +359,10 @@ export function useCncStore() {
     currentUser.value = null
     userCookie.value = null
     saveToLocalStorage()
+    if (import.meta.client) {
+      localStorage.removeItem('cnc_session_user')
+      document.cookie = 'cnc_session_user=; Max-Age=0; path=/;'
+    }
   }
 
   // ORDER ACTIONS
