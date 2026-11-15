@@ -90,11 +90,7 @@
           </button>
         </form>
 
-        <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1.5">
-          <div class="font-bold text-slate-700 dark:text-slate-300">Akun Mandor & Admin (Password: <code class="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-blue-600 dark:text-blue-400 font-bold">123</code>):</div>
-          <div>&bull; <code class="font-mono text-slate-800 dark:text-slate-200">mandor@gmail.com</code> (mandor) &rarr; Akses Operasional</div>
-          <div>&bull; <code class="font-mono text-slate-800 dark:text-slate-200">admin@gmail.com</code> (admin) &rarr; Akses Penuh & Kelola User</div>
-        </div>
+
 
 
       </div>
