@@ -109,9 +109,20 @@ export interface YardPickup {
   remnantPlate?: Plate
 }
 
+function generateUuid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 // Global Shared State
 const defaultUsers: UserProfile[] = [
-  { id: '1', name: 'Administrator CNC', username: 'admin', email: 'admin@gmail.com', role: 'admin', department: 'IT & Material Control', password_hash: '123' },
+  { id: '1', name: 'Administrator CNC', username: 'admin', email: 'admin@gmail.com', role: 'admin', department: 'Supervisor', password_hash: '123' },
   { id: '2', name: 'Workshop Operator CNC', username: 'operator', email: 'operator@gmail.com', role: 'operator', department: 'Produksi CNC', password_hash: '123' },
   { id: '3', name: 'User (Pemesan Plat)', username: 'user', email: 'user@gmail.com', role: 'user', department: 'Hull Construction', password_hash: '123' }
 ]
@@ -192,29 +203,29 @@ export function useCncStore() {
     if (savedSession) {
       try {
         currentUser.value = JSON.parse(savedSession)
-      } catch {}
+      } catch { }
     }
 
     // 2. Load LocalStorage first (for instant display)
     const localUsers = localStorage.getItem('cnc_users_v3')
     if (localUsers) {
-      try { users.value = JSON.parse(localUsers) } catch {}
+      try { users.value = JSON.parse(localUsers) } catch { }
     }
     const localOrders = localStorage.getItem('cnc_orders_v3')
     if (localOrders) {
-      try { orders.value = JSON.parse(localOrders) } catch {}
+      try { orders.value = JSON.parse(localOrders) } catch { }
     }
     const localPlates = localStorage.getItem('cnc_plates_v3')
     if (localPlates) {
-      try { plates.value = JSON.parse(localPlates) } catch {}
+      try { plates.value = JSON.parse(localPlates) } catch { }
     }
     const localEst = localStorage.getItem('cnc_estimations_v3')
     if (localEst) {
-      try { estimations.value = JSON.parse(localEst) } catch {}
+      try { estimations.value = JSON.parse(localEst) } catch { }
     }
     const localPickups = localStorage.getItem('cnc_pickups_v3')
     if (localPickups) {
-      try { yardPickups.value = JSON.parse(localPickups) } catch {}
+      try { yardPickups.value = JSON.parse(localPickups) } catch { }
     }
 
     isInitialized.value = true
@@ -238,7 +249,7 @@ export function useCncStore() {
           name: p.name,
           username: p.username,
           email: p.email,
-          role: p.role,
+          role: (p.role === 'mandor' ? 'operator' : p.role) as 'admin' | 'operator' | 'mandor' | 'user',
           department: p.department,
           password_hash: p.password_hash
         }))
@@ -381,14 +392,43 @@ export function useCncStore() {
     }
 
     // 3. User Lookup (supports operator, mandor, admin, and user)
-    const user = users.value.find(u => 
-      u.email.toLowerCase() === term || 
+    let user = users.value.find(u =>
+      u.email.toLowerCase() === term ||
       u.username.toLowerCase() === term ||
       (term === 'mandor' && u.username === 'operator') ||
       (term === 'mandor@gmail.com' && u.email === 'operator@gmail.com') ||
       (term === 'operator' && u.username === 'mandor') ||
       (term === 'operator@gmail.com' && u.email === 'mandor@gmail.com')
     )
+
+    // Fallback: If user not found in local memory, check Supabase directly (ensures newly created users can login instantly)
+    if (!user && isConfigured && supabase) {
+      try {
+        const { data: dbUser } = await supabase
+          .from('profiles')
+          .select('*')
+          .or(`email.ilike.${term},username.ilike.${term}`)
+          .maybeSingle()
+        if (dbUser) {
+          const mapped: UserProfile = {
+            id: dbUser.id,
+            name: dbUser.name,
+            username: dbUser.username,
+            email: dbUser.email,
+            role: (dbUser.role === 'mandor' ? 'operator' : dbUser.role) as 'admin' | 'operator' | 'mandor' | 'user',
+            department: dbUser.department,
+            password_hash: dbUser.password_hash
+          }
+          if (!users.value.some(u => u.id === mapped.id)) {
+            users.value.push(mapped)
+            saveToLocalStorage()
+          }
+          user = mapped
+        }
+      } catch (err) {
+        console.warn('Fallback Supabase login search error:', err)
+      }
+    }
 
     if (!user) {
       const lock = recordFailedLogin()
@@ -412,7 +452,7 @@ export function useCncStore() {
     resetRateLimit()
 
     // 6. Normalize role (treat mandor as operator)
-    const normalizedRole: 'admin' | 'operator' | 'mandor' | 'user' = 
+    const normalizedRole: 'admin' | 'operator' | 'mandor' | 'user' =
       user.role === 'mandor' ? 'operator' : user.role
 
     const safeUser: SafeUser = {
@@ -863,43 +903,121 @@ export function useCncStore() {
 
   // ADMIN ACTIONS
   async function createUser(data: { name: string; username: string; email: string; role: 'admin' | 'operator' | 'mandor' | 'user'; department?: string; password: string }) {
-    const hashedPassword = await hashPassword(data.password || '123')
+    const cleanUsername = sanitizeInput(data.username || '').toLowerCase().trim()
+    const cleanEmail = sanitizeInput(data.email || '').toLowerCase().trim()
+    const cleanName = sanitizeInput(data.name || '').trim()
+    const cleanDept = sanitizeInput(data.department || '').trim()
+    const rawPwd = (data.password || '123').trim()
+
+    // 1. Validation
+    if (!cleanUsername || !cleanEmail || !cleanName) {
+      return { success: false, message: 'Nama, Username, dan Email wajib diisi.' }
+    }
+
+    // 2. Check duplicate locally
+    const existing = users.value.find(u => 
+      u.username.toLowerCase() === cleanUsername || 
+      u.email.toLowerCase() === cleanEmail
+    )
+    if (existing) {
+      const msg = existing.username.toLowerCase() === cleanUsername 
+        ? `Username "${cleanUsername}" sudah digunakan oleh pengguna lain.` 
+        : `Email "${cleanEmail}" sudah digunakan oleh pengguna lain.`
+      return { success: false, message: msg }
+    }
+
+    // 3. Hash password
+    const hashedPassword = await hashPassword(rawPwd)
+
+    // 4. In Supabase profiles, map 'operator' to 'mandor' for compatibility with database schema constraint
+    const dbRole = data.role === 'operator' ? 'mandor' : data.role
+
+    // 5. Insert into Supabase if configured
+    let generatedId = generateUuid()
+    if (isConfigured && supabase) {
+      try {
+        const payload = {
+          id: generatedId,
+          name: cleanName,
+          username: cleanUsername,
+          email: cleanEmail,
+          role: dbRole,
+          department: cleanDept,
+          password_hash: hashedPassword
+        }
+
+        const { data: inserted, error } = await supabase
+          .from('profiles')
+          .insert([payload])
+          .select('*')
+          .single()
+
+        if (error) {
+          console.error('Supabase create user error:', error)
+          if (error.code === '23505') {
+            return { success: false, message: 'Username atau Email sudah terdaftar di Supabase.' }
+          }
+          return { success: false, message: error.message || 'Gagal menyimpan ke database Supabase.' }
+        }
+
+        if (inserted?.id) {
+          generatedId = inserted.id
+        }
+      } catch (e: any) {
+        console.error('Supabase create user exception:', e)
+        return { success: false, message: e.message || 'Gagal menghubungi database Supabase.' }
+      }
+    }
+
+    // 6. Add to reactive state and local storage
     const newUser: UserProfile = {
-      id: String(Date.now()),
-      name: sanitizeInput(data.name),
-      username: sanitizeInput(data.username).toLowerCase(),
-      email: sanitizeInput(data.email).toLowerCase(),
+      id: generatedId,
+      name: cleanName,
+      username: cleanUsername,
+      email: cleanEmail,
       role: data.role,
-      department: sanitizeInput(data.department || ''),
+      department: cleanDept,
       password_hash: hashedPassword
     }
     users.value.push(newUser)
     saveToLocalStorage()
-    if (isConfigured && supabase) {
-      try {
-        await supabase.from('profiles').insert([newUser])
-      } catch (e) {
-        console.warn('Supabase create user error:', e)
-      }
-    }
+
+    return { success: true, user: newUser }
   }
 
   async function updateUserRole(userId: string, newRole: 'admin' | 'operator' | 'mandor' | 'user') {
     const u = users.value.find(user => user.id === userId)
-    if (!u) return
+    if (!u) return { success: false, message: 'User tidak ditemukan.' }
+    const oldRole = u.role
     u.role = newRole
     saveToLocalStorage()
     if (isConfigured && supabase) {
-      await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
+      const dbRole = newRole === 'operator' ? 'mandor' : newRole
+      const { error } = await supabase.from('profiles').update({ role: dbRole }).eq('id', userId)
+      if (error) {
+        console.error('Supabase update role error:', error)
+        u.role = oldRole
+        saveToLocalStorage()
+        return { success: false, message: error.message }
+      }
     }
+    return { success: true }
   }
 
   async function deleteUser(userId: string) {
+    const prevUsers = [...users.value]
     users.value = users.value.filter(u => u.id !== userId)
     saveToLocalStorage()
     if (isConfigured && supabase) {
-      await supabase.from('profiles').delete().eq('id', userId)
+      const { error } = await supabase.from('profiles').delete().eq('id', userId)
+      if (error) {
+        console.error('Supabase delete user error:', error)
+        users.value = prevUsers
+        saveToLocalStorage()
+        return { success: false, message: error.message }
+      }
     }
+    return { success: true }
   }
 
   async function resetDataToZero() {

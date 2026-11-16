@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     name TEXT NOT NULL,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'mandor', 'user')),
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'operator', 'mandor', 'user')),
     department TEXT,
     password_hash TEXT NOT NULL DEFAULT '123',
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -102,7 +102,9 @@ CREATE TABLE IF NOT EXISTS order_estimations (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Kolom tambahan untuk database Supabase yang sudah berjalan:
+-- Kolom tambahan & migrasi constraint untuk database Supabase yang sudah berjalan:
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('admin', 'operator', 'mandor', 'user'));
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS project_name TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS nesting_no TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS block_item TEXT;
@@ -161,8 +163,8 @@ CREATE POLICY "Allow public delete yard_pickups" ON yard_pickups FOR DELETE USIN
 -- 8. DEFAULT SEED USERS (ADMIN, MANDOR, USER)
 INSERT INTO profiles (name, username, email, role, department, password_hash)
 VALUES
-    ('Administrator CNC', 'admin', 'admin@gmail.com', 'admin', 'IT & Material Control', '123'),
-    ('Mandor & Operator CNC', 'mandor', 'mandor@gmail.com', 'mandor', 'Produksi CNC', '123'),
+    ('Administrator CNC', 'admin', 'admin@gmail.com', 'admin', 'Supervisor', '123'),
+    ('Operator CNC', 'Operator', 'Operator@gmail.com', 'mandor', 'Produksi CNC', '123'),
     ('User (Pemesan / Viewer)', 'user', 'user@gmail.com', 'user', 'Hull Construction', '123')
 ON CONFLICT (username) DO NOTHING;
 

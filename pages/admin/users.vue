@@ -259,7 +259,14 @@ const newUser = reactive({
 })
 
 async function handleRoleChange(userId: string, newRole: 'admin' | 'operator' | 'mandor' | 'user') {
-  await store.updateUserRole(userId, newRole)
+  const res = await store.updateUserRole(userId, newRole)
+  if (res && !res.success) {
+    toast.value = {
+      type: 'error',
+      text: res.message || 'Gagal mengubah role user.'
+    }
+    return
+  }
   toast.value = {
     type: 'success',
     text: `Role user berhasil diubah menjadi ${newRole.toUpperCase()}!`
@@ -268,7 +275,14 @@ async function handleRoleChange(userId: string, newRole: 'admin' | 'operator' | 
 
 async function handleDeleteUser(user: UserProfile) {
   if (confirm(`Apakah Anda yakin ingin menghapus user ${user.name} (${user.username})?`)) {
-    await store.deleteUser(user.id)
+    const res = await store.deleteUser(user.id)
+    if (res && !res.success) {
+      toast.value = {
+        type: 'error',
+        text: res.message || 'Gagal menghapus user.'
+      }
+      return
+    }
     toast.value = {
       type: 'success',
       text: `User ${user.name} berhasil dihapus.`
@@ -277,7 +291,7 @@ async function handleDeleteUser(user: UserProfile) {
 }
 
 async function handleCreateUser() {
-  await store.createUser({
+  const res = await store.createUser({
     name: newUser.name,
     username: newUser.username,
     email: newUser.email,
@@ -285,6 +299,14 @@ async function handleCreateUser() {
     department: newUser.department,
     password: newUser.password
   })
+
+  if (!res.success) {
+    toast.value = {
+      type: 'error',
+      text: res.message || 'Gagal mendaftarkan pengguna baru.'
+    }
+    return
+  }
 
   toast.value = {
     type: 'success',
