@@ -4,11 +4,11 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-          <i class="fa-solid fa-calculator text-violet-500"></i>
-          <span>Estimasi Kebutuhan Plat CNC</span>
+          <i class="fa-solid fa-boxes-packing text-violet-500"></i>
+          <span>Estimasi Muat Plat CNC</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Bagian 2: Penentuan Project Name, Nesting No., Block/Item, Spec & Dimension of Material, Product & Heat Number
+          Input & Edit Data Project Name, Nesting No., Block/Item, Spec & Dimension Material, Product & Heat Number saat barang selesai dikerjakan atau diambil
         </p>
       </div>
 
@@ -40,21 +40,33 @@
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
       <!-- Order Selector -->
       <div>
-        <label class="block text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-          <span><i class="fa-solid fa-crosshairs mr-1"></i> Pilih Order yang Menunggu Estimasi:</span>
-          <span class="text-[11px] font-mono text-violet-500 font-bold lowercase">{{ pendingOrders.length }} order menunggu</span>
-        </label>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-crosshairs"></i>
+            <span>Pilih Order untuk Estimasi Muat:</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <button 
+              type="button" 
+              @click="showAllOrders = !showAllOrders" 
+              class="text-[11px] font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 underline cursor-pointer"
+            >
+              {{ showAllOrders ? 'Filter: Hanya Selesai / Diambil' : 'Tampilkan Semua Order' }}
+            </button>
+            <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">({{ eligibleOrders.length }} order)</span>
+          </div>
+        </div>
         <select 
           v-model="selectedOrderId" 
           class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-violet-500 outline-none transition"
         >
-          <option :value="null">-- Pilih Order Menunggu Estimasi --</option>
+          <option :value="null">-- Pilih Order untuk Estimasi Muat --</option>
           <option 
-            v-for="po in pendingOrders" 
+            v-for="po in eligibleOrders" 
             :key="po.id" 
             :value="po.id"
           >
-            {{ po.no_order }} - {{ po.nama_proyek }} ({{ po.material }} {{ po.ketebalan }}) [{{ po.status }}]
+            {{ po.no_order }} - {{ po.nama_proyek }} ({{ po.material }} {{ po.ketebalan }}) [Status: {{ po.status }}]
           </option>
         </select>
       </div>
@@ -241,8 +253,8 @@
               type="submit" 
               class="flex-1 bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-extrabold p-3.5 rounded-xl shadow-md shadow-violet-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <i class="fa-solid fa-paper-plane"></i>
-              <span>SIMPAN ESTIMASI & AJUKAN KE PEMESAN UNTUK PERSETUJUAN</span>
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>SIMPAN ESTIMASI MUAT</span>
             </button>
             <button 
               v-if="selectedOrder.status === 'Menunggu Persetujuan Pemesan' || selectedOrder.estimation"
@@ -260,12 +272,12 @@
 
       <!-- Empty State -->
       <div v-else class="py-12 text-center text-slate-400 dark:text-slate-500 text-xs italic space-y-2">
-        <i class="fa-solid fa-clipboard-check text-4xl mb-2 block text-slate-300 dark:text-slate-700"></i>
-        <p v-if="pendingOrders.length === 0" class="text-slate-600 dark:text-slate-300 font-semibold not-italic">
-          Semua estimasi order sudah selesai & disetujui. Tidak ada order yang menunggu estimasi saat ini.
+        <i class="fa-solid fa-boxes-packing text-4xl mb-2 block text-slate-300 dark:text-slate-700"></i>
+        <p v-if="eligibleOrders.length === 0" class="text-slate-600 dark:text-slate-300 font-semibold not-italic">
+          Belum ada order yang selesai dikerjakan atau diambil. Estimasi muat dapat diisi setelah Operator CNC menyelesaikan pemotongan barang.
         </p>
-        <p v-else>Pilih salah satu order di atas untuk mengisi data estimasi & nesting plat.</p>
-        <p class="text-[11px] text-slate-400 dark:text-slate-600">Order baru yang dibuat akan otomatis muncul pada daftar pilihan di atas.</p>
+        <p v-else>Pilih salah satu order di atas untuk mengisi atau mengedit data estimasi muat & nesting plat.</p>
+        <p class="text-[11px] text-slate-400 dark:text-slate-600">Estimasi muat dapat diedit kapan saja untuk order yang telah siap diambil atau sudah diserahkan.</p>
       </div>
     </div>
 
@@ -274,9 +286,9 @@
       <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
           <i class="fa-solid fa-table-list text-violet-500"></i>
-          <span>Daftar Estimasi Order Aktif</span>
+          <span>Daftar Estimasi Muat Order</span>
         </h2>
-        <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">{{ estimatedOrdersList.length }} order terestimasi</span>
+        <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">{{ estimatedOrdersList.length }} order terdata</span>
       </div>
 
       <div class="overflow-x-auto">
@@ -390,9 +402,17 @@ const form = reactive({
   heat_number: ''
 })
 
-// Orders that strictly need estimation (exclude already approved orders)
-const pendingOrders = computed(() => {
-  return store.orders.value.filter(o => o.status === 'Menunggu Estimasi')
+const showAllOrders = ref(false)
+
+// Orders available for estimasi muat: defaults to "selesai dikerjakan" (Siap Diambil) or "diambil" (Sudah Diambil)
+const eligibleOrders = computed(() => {
+  if (!showAllOrders.value) {
+    return store.orders.value.filter(o => 
+      ['Siap Diambil', 'Sudah Diambil'].includes(o.status) || 
+      o.id === selectedOrderId.value
+    )
+  }
+  return store.orders.value
 })
 
 const selectedOrder = computed(() => {
@@ -419,7 +439,7 @@ watch(selectedOrder, (order) => {
   form.heat_number = est?.heat_number || ''
 }, { immediate: true })
 
-// Handle Submit Estimation
+// Handle Submit Estimasi Muat
 async function handleSubmitEstimation() {
   if (!selectedOrder.value) return
 
@@ -436,7 +456,7 @@ async function handleSubmitEstimation() {
 
   feedbackMsg.value = {
     type: 'success',
-    text: `Estimasi & detail nesting untuk order ${selectedOrder.value.no_order} berhasil disimpan dan diajukan!`
+    text: `Estimasi muat untuk order ${selectedOrder.value.no_order} berhasil disimpan!`
   }
 }
 
@@ -445,10 +465,10 @@ async function handleDirectApprove(orderId: number) {
   await store.approveEstimation(orderId)
   feedbackMsg.value = {
     type: 'success',
-    text: `Estimasi order #${orderId} berhasil DISETUJUI! Order kini siap untuk pengambilan plat di Yard.`
+    text: `Estimasi muat order #${orderId} berhasil DISETUJUI!`
   }
-  // Reset selected order to next pending order or null
-  selectedOrderId.value = pendingOrders.value.length > 0 ? pendingOrders.value[0].id : null
+  // Reset selected order to next eligible order or null
+  selectedOrderId.value = eligibleOrders.value.length > 0 ? eligibleOrders.value[0].id : null
 }
 
 onMounted(() => {
@@ -460,8 +480,8 @@ onMounted(() => {
     if (oid) {
       selectedOrderId.value = oid
     }
-  } else if (pendingOrders.value.length > 0) {
-    selectedOrderId.value = pendingOrders.value[0].id
+  } else if (eligibleOrders.value.length > 0) {
+    selectedOrderId.value = eligibleOrders.value[0].id
   } else {
     selectedOrderId.value = null
   }

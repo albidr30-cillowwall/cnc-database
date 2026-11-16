@@ -7,7 +7,7 @@
     >
       <span class="flex items-center gap-2">
         <i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-base"></i>
-        Order baru berhasil dibuat dan tercatat di database!
+        Order baru berhasil dibuat dan langsung masuk ke antrian Operator CNC!
       </span>
       <button @click="$router.replace('/orders')" class="text-emerald-600 hover:text-emerald-900 dark:hover:text-emerald-300 font-bold text-sm cursor-pointer">&times;</button>
     </div>
@@ -40,10 +40,8 @@
         class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none"
       >
         <option value="">Semua Status</option>
-        <option value="Menunggu Estimasi">Menunggu Estimasi</option>
-        <option value="Menunggu Persetujuan Pemesan">Persetujuan Pemesan</option>
-        <option value="Estimasi Selesai">Estimasi Selesai</option>
         <option value="Diterima">Diterima</option>
+        <option value="Estimasi Selesai">Estimasi Selesai</option>
         <option value="Sedang Dipotong">Sedang Dipotong</option>
         <option value="Siap Diambil">Siap Diambil</option>
         <option value="Sudah Diambil">Sudah Diambil</option>
@@ -113,13 +111,15 @@
                 </div>
               </td>
               <td class="p-3.5 text-center whitespace-nowrap space-y-1">
-                <!-- Estimasi Button -->
+                <!-- Estimasi Muat Button (Bisa diedit ketika barang selesai dikerjakan / diambil) -->
                 <NuxtLink 
-                  v-if="isFullAccess && o.status === 'Menunggu Estimasi'" 
+                  v-if="isFullAccess && (o.status === 'Siap Diambil' || o.status === 'Sudah Diambil')" 
                   :to="`/estimation?order_id=${o.id}`" 
-                  class="inline-block bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-xs"
+                  class="inline-flex items-center gap-1 bg-violet-600 hover:bg-violet-700 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-xs transition"
+                  title="Isi / Edit Estimasi Muat"
                 >
-                  Estimasi
+                  <i class="fa-solid fa-boxes-packing text-[10px]"></i>
+                  <span>Estimasi Muat</span>
                 </NuxtLink>
 
                 <!-- Setujui Button -->
@@ -198,7 +198,7 @@ const filteredOrders = computed(() => {
     let matchStatus = true
     if (selectedStatus.value) {
       if (selectedStatus.value === 'Diterima') {
-        matchStatus = ['Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)
+        matchStatus = ['Diterima', 'Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)
       } else {
         matchStatus = o.status === selectedStatus.value
       }

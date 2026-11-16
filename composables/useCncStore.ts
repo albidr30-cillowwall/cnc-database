@@ -505,7 +505,7 @@ export function useCncStore() {
       drawing_file_name: data.drawing_file_name,
       drawing_data_url: data.drawing_data_url,
       target_cnc: data.target_cnc,
-      status: 'Menunggu Estimasi',
+      status: 'Diterima',
       created_at: new Date().toISOString()
     }
 
@@ -600,7 +600,9 @@ export function useCncStore() {
     }
 
     order.estimation = newEst
-    order.status = 'Menunggu Persetujuan Pemesan'
+    if (!['Siap Diambil', 'Sudah Diambil'].includes(order.status)) {
+      order.status = 'Estimasi Selesai'
+    }
     saveToLocalStorage()
 
     if (isConfigured && supabase) {

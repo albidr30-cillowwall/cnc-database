@@ -57,7 +57,7 @@
           </option>
         </select>
         <p v-if="readyOrders.length === 0" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1 italic">
-          <i class="fa-solid fa-triangle-exclamation mr-1"></i> Tidak ada order dengan status 'Estimasi Selesai'. Silahkan setujui estimasi terlebih dahulu di menu Estimasi.
+          <i class="fa-solid fa-triangle-exclamation mr-1"></i> Tidak ada order aktif yang siap diambil platnya.
         </p>
       </div>
 
@@ -231,8 +231,11 @@ const form = reactive({
 
 const readyOrders = computed(() => {
   return store.orders.value.filter(o => 
-    o.status === 'Estimasi Selesai' || 
-    o.status === 'Diterima Operator'
+    o.status === 'Diterima' ||
+    o.status === 'Diterima Operator' ||
+    o.status === 'Plat Telah Diambil Yard' ||
+    o.status === 'Sedang Dipotong' ||
+    o.status === 'Estimasi Selesai'
   )
 })
 

@@ -36,21 +36,12 @@
       </div>
 
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:shadow-md transition">
-        <div class="flex items-center justify-between text-xs text-amber-700 dark:text-amber-400 font-semibold">
-          <span>Menunggu Estimasi</span>
-          <i class="fa-solid fa-hourglass-half text-amber-500"></i>
-        </div>
-        <div class="text-2xl font-extrabold font-mono mt-2 text-amber-600 dark:text-amber-400">{{ waitingEstCount }}</div>
-        <div class="text-[11px] text-slate-400 mt-0.5">Admin Material</div>
-      </div>
-
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:shadow-md transition">
         <div class="flex items-center justify-between text-xs text-indigo-700 dark:text-indigo-400 font-semibold">
-          <span>Antrian / Diterima</span>
+          <span>Antrian Operator</span>
           <i class="fa-solid fa-inbox text-indigo-500"></i>
         </div>
         <div class="text-2xl font-extrabold font-mono mt-2 text-indigo-600 dark:text-indigo-400">{{ waitingAcceptCount }}</div>
-        <div class="text-[11px] text-slate-400 mt-0.5">Antrian Operator</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">Order Diterima</div>
       </div>
 
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:shadow-md transition">
@@ -252,8 +243,7 @@ const gradeCanvas = ref<HTMLCanvasElement | null>(null)
 let trendChartInstance: Chart | null = null
 let gradeChartInstance: Chart | null = null
 
-const waitingEstCount = computed(() => orders.value.filter(o => o.status === 'Menunggu Estimasi').length)
-const waitingAcceptCount = computed(() => orders.value.filter(o => ['Menunggu Persetujuan Pemesan', 'Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)).length)
+const waitingAcceptCount = computed(() => orders.value.filter(o => ['Diterima', 'Menunggu Persetujuan Pemesan', 'Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)).length)
 const cuttingCount = computed(() => orders.value.filter(o => o.status === 'Sedang Dipotong').length)
 const readyCount = computed(() => orders.value.filter(o => o.status === 'Siap Diambil').length)
 const completedCount = computed(() => orders.value.filter(o => o.status === 'Sudah Diambil').length)

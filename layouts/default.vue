@@ -53,7 +53,7 @@
           </div>
 
           <div class="space-y-1">
-            <div class="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Order & Estimasi</div>
+            <div class="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Order</div>
             <NuxtLink 
               to="/orders/create" 
               class="flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition"
@@ -77,20 +77,6 @@
               </span>
               <span v-if="activeOrdersCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-800 text-sky-300">
                 {{ activeOrdersCount }}
-              </span>
-            </NuxtLink>
-            <NuxtLink 
-              to="/estimation" 
-              class="flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition"
-              :class="$route.path === '/estimation' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'"
-              @click="isMobileMenuOpen = false"
-            >
-              <span class="flex items-center gap-3">
-                <i class="fa-solid fa-calculator w-4 text-center" :class="$route.path === '/estimation' ? 'text-white' : 'text-violet-400'"></i>
-                <span>Estimasi Plat</span>
-              </span>
-              <span v-if="waitingEstCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
-                {{ waitingEstCount }}
               </span>
             </NuxtLink>
           </div>
@@ -145,6 +131,20 @@
               </span>
               <span v-if="remnantsCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300">
                 {{ remnantsCount }}
+              </span>
+            </NuxtLink>
+            <NuxtLink 
+              to="/estimation" 
+              class="flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition"
+              :class="$route.path === '/estimation' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'"
+              @click="isMobileMenuOpen = false"
+            >
+              <span class="flex items-center gap-3">
+                <i class="fa-solid fa-boxes-packing w-4 text-center" :class="$route.path === '/estimation' ? 'text-white' : 'text-violet-400'"></i>
+                <span>Estimasi Muat</span>
+              </span>
+              <span v-if="readyMuatCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">
+                {{ readyMuatCount }}
               </span>
             </NuxtLink>
           </div>
@@ -390,8 +390,8 @@ const activeOrdersCount = computed(() => {
   return orders.value.filter(o => o.status !== 'Sudah Diambil').length
 })
 
-const waitingEstCount = computed(() => {
-  return orders.value.filter(o => o.status === 'Menunggu Estimasi' || o.status === 'Menunggu Persetujuan Pemesan').length
+const readyMuatCount = computed(() => {
+  return orders.value.filter(o => o.status === 'Siap Diambil' || o.status === 'Sudah Diambil').length
 })
 
 const readyPickupCount = computed(() => {
@@ -399,7 +399,7 @@ const readyPickupCount = computed(() => {
 })
 
 const operatorQueueCount = computed(() => {
-  return orders.value.filter(o => ['Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard', 'Sedang Dipotong'].includes(o.status)).length
+  return orders.value.filter(o => ['Diterima', 'Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard', 'Sedang Dipotong'].includes(o.status)).length
 })
 
 const remnantsCount = computed(() => {
@@ -411,7 +411,7 @@ const pageTitle = computed(() => {
   if (p === '/dashboard') return 'Dashboard Monitoring CNC'
   if (p === '/orders/create') return 'Form Buat Order Pemotongan Plat CNC'
   if (p === '/orders') return 'Daftar Order Pemotongan Plat CNC'
-  if (p === '/estimation') return 'Estimasi Kebutuhan Plat CNC'
+  if (p === '/estimation') return 'Estimasi Muat Plat CNC'
   if (p === '/plates') return 'Master Data Plat & Stok Yard'
   if (p === '/plates/remnants') return 'Daftar Plat Remnant (Sisa Potongan)'
   if (p === '/yard-pickup') return 'Pengambilan Plat dari Yard (Stock Lock)'
