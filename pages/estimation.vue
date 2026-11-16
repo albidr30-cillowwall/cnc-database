@@ -8,7 +8,6 @@
           <span>Material Identification</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-
         </p>
       </div>
 
