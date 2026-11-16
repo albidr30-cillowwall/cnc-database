@@ -178,22 +178,9 @@
               <input 
                 v-model="form.spec_material" 
                 type="text" 
-                list="spec-material-suggestions"
                 placeholder="contoh: AH36, DH36, EH36, Grade A, SS400, Al 5083..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-bold focus:ring-2 focus:ring-violet-500 outline-none"
+                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
               />
-              <datalist id="spec-material-suggestions">
-                <option value="AH36 (High Tensile Marine Steel)" />
-                <option value="DH36 (High Tensile Heavy Bulkhead)" />
-                <option value="EH36 (Extreme Strength Marine)" />
-                <option value="Grade A (Standard Mild Steel Hull)" />
-                <option value="Grade B (Mild Steel Deck Plate)" />
-                <option value="SS400 (General Outfitting Steel)" />
-                <option value="Aluminium 5083-H116 (Marine Grade)" />
-                <option value="Aluminium 6061-T6" />
-                <option value="Stainless Steel 316L" />
-                <option value="Stainless Steel 304" />
-              </datalist>
             </div>
 
             <!-- 5. Dimension of Material -->
