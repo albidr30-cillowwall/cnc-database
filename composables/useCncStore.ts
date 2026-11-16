@@ -35,16 +35,25 @@ export interface Plate {
 export interface OrderEstimation {
   id?: number
   order_id: number
-  grade: string
-  tebal: string
-  ukuran_plat: string
-  lembar: number
-  berat_kg: number
-  jam: number
-  remnant?: string
-  tgl_selesai: string
-  catatan?: string
+  // Standard Cutting/Nesting Sheet Fields
+  project_name?: string
+  nesting_no?: string
+  block_item?: string
+  spec_material?: string
+  dimension_material?: string
+  product_number?: string
+  heat_number?: string
   status_approval: string
+  // Legacy optional fields
+  grade?: string
+  tebal?: string
+  ukuran_plat?: string
+  lembar?: number
+  berat_kg?: number
+  jam?: number
+  remnant?: string
+  tgl_selesai?: string
+  catatan?: string
 }
 
 export interface Order {
@@ -263,12 +272,19 @@ export function useCncStore() {
         estimations.value = estData.map(e => ({
           id: e.id,
           order_id: e.order_id,
+          project_name: e.project_name || '',
+          nesting_no: e.nesting_no || '',
+          block_item: e.block_item || '',
+          spec_material: e.spec_material || e.grade || '',
+          dimension_material: e.dimension_material || e.ukuran_plat || e.tebal || '',
+          product_number: e.product_number || '',
+          heat_number: e.heat_number || '',
           grade: e.grade,
           tebal: e.tebal,
           ukuran_plat: e.ukuran_plat,
           lembar: e.lembar,
-          berat_kg: parseFloat(e.berat_kg),
-          jam: parseFloat(e.jam),
+          berat_kg: parseFloat(e.berat_kg || 0),
+          jam: parseFloat(e.jam || 0),
           remnant: e.remnant,
           tgl_selesai: e.tgl_selesai,
           catatan: e.catatan,
@@ -534,14 +550,21 @@ export function useCncStore() {
   // ESTIMATION ACTIONS
   async function saveEstimation(data: {
     order_id: number
-    grade: string
-    tebal: string
-    ukuran_plat: string
-    lembar: number
-    berat_kg: number
-    jam: number
+    project_name?: string
+    nesting_no?: string
+    block_item?: string
+    spec_material?: string
+    dimension_material?: string
+    product_number?: string
+    heat_number?: string
+    grade?: string
+    tebal?: string
+    ukuran_plat?: string
+    lembar?: number
+    berat_kg?: number
+    jam?: number
     remnant?: string
-    tgl_selesai: string
+    tgl_selesai?: string
     catatan?: string
   }) {
     const order = orders.value.find(o => o.id === data.order_id)
@@ -549,16 +572,24 @@ export function useCncStore() {
 
     const newEst: OrderEstimation = {
       order_id: data.order_id,
-      grade: data.grade,
-      tebal: data.tebal,
-      ukuran_plat: data.ukuran_plat,
+      project_name: data.project_name?.trim() || order.nama_proyek,
+      nesting_no: data.nesting_no?.trim() || '',
+      block_item: data.block_item?.trim() || '',
+      spec_material: data.spec_material?.trim() || data.grade || order.material,
+      dimension_material: data.dimension_material?.trim() || data.ukuran_plat || order.ketebalan,
+      product_number: data.product_number?.trim() || '',
+      heat_number: data.heat_number?.trim() || '',
+      status_approval: 'Menunggu Persetujuan',
+      // backward compatibility fields
+      grade: data.spec_material || data.grade || order.material,
+      tebal: data.dimension_material || data.tebal || order.ketebalan,
+      ukuran_plat: data.dimension_material || data.ukuran_plat || '',
       lembar: Number(data.lembar) || 1,
       berat_kg: Number(data.berat_kg) || 0,
       jam: Number(data.jam) || 0,
       remnant: data.remnant || '',
-      tgl_selesai: data.tgl_selesai,
-      catatan: data.catatan || '',
-      status_approval: 'Menunggu Persetujuan'
+      tgl_selesai: data.tgl_selesai || new Date().toISOString().split('T')[0],
+      catatan: data.catatan || ''
     }
 
     const existingIdx = estimations.value.findIndex(e => e.order_id === data.order_id)
@@ -891,7 +922,7 @@ export function useCncStore() {
 
     let csv = '\uFEFFNo. Order,Pemesan,Departemen,Proyek,Kapal/Hull,Material,Tebal,Grade,Jumlah,Target CNC,Pengambil,PIN,Waktu Diambil\n'
     completed.forEach(o => {
-      csv += `"${o.no_order}","${o.nama_pemesan}","${o.departemen_pemesan}","${o.nama_proyek}","${o.nama_proyek_kapal || '-'}","${o.material}","${o.ketebalan}","${o.estimation?.grade || '-'}","${o.jumlah_pesanan} ${o.satuan}","${o.target_cnc}","${o.pengambil_akhir || o.nama_pemesan}","${o.kode_pengambilan || '-'}","${o.waktu_diambil ? new Date(o.waktu_diambil).toLocaleString('id-ID') : '-'}"\n`
+      csv += `"${o.no_order}","${o.nama_pemesan}","${o.departemen_pemesan}","${o.nama_proyek}","${o.nama_proyek_kapal || '-'}","${o.material}","${o.ketebalan}","${o.estimation?.spec_material || o.estimation?.grade || '-'}","${o.jumlah_pesanan} ${o.satuan}","${o.target_cnc}","${o.pengambil_akhir || o.nama_pemesan}","${o.kode_pengambilan || '-'}","${o.waktu_diambil ? new Date(o.waktu_diambil).toLocaleString('id-ID') : '-'}"\n`
     })
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })

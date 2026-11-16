@@ -124,7 +124,7 @@
                 <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{{ o.jumlah_pesanan }} {{ o.satuan }}</div>
               </td>
               <td class="p-3.5">
-                <div class="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{{ o.estimation?.grade || '-' }}</div>
+                <div class="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{{ o.estimation?.spec_material || o.estimation?.grade || '-' }}</div>
                 <div class="text-[10px] font-mono text-slate-400 dark:text-slate-500">{{ o.plat_dipakai || '-' }}</div>
               </td>
               <td class="p-3.5">

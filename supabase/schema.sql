@@ -77,23 +77,39 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. ORDER ESTIMATIONS TABLE
+-- 5. ORDER ESTIMATIONS TABLE (NESTING & CUTTING PLAN SHEET)
 CREATE TABLE IF NOT EXISTS order_estimations (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT UNIQUE NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    grade TEXT NOT NULL,
-    tebal TEXT NOT NULL,
-    ukuran_plat TEXT NOT NULL,
-    lembar INTEGER NOT NULL,
-    berat_kg NUMERIC(10, 2) NOT NULL,
-    jam NUMERIC(8, 1) NOT NULL,
-    remnant TEXT,
-    tgl_selesai DATE NOT NULL,
-    catatan TEXT,
+    project_name TEXT,
+    nesting_no TEXT,
+    block_item TEXT,
+    spec_material TEXT,
+    dimension_material TEXT,
+    product_number TEXT,
+    heat_number TEXT,
     status_approval TEXT NOT NULL DEFAULT 'Menunggu Persetujuan',
+    grade TEXT,
+    tebal TEXT,
+    ukuran_plat TEXT,
+    lembar INTEGER DEFAULT 1,
+    berat_kg NUMERIC(10, 2) DEFAULT 0,
+    jam NUMERIC(8, 1) DEFAULT 0,
+    remnant TEXT,
+    tgl_selesai DATE DEFAULT CURRENT_DATE,
+    catatan TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Kolom tambahan untuk database Supabase yang sudah berjalan:
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS project_name TEXT;
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS nesting_no TEXT;
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS block_item TEXT;
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS spec_material TEXT;
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS dimension_material TEXT;
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS product_number TEXT;
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS heat_number TEXT;
 
 -- 6. YARD PICKUPS TABLE
 CREATE TABLE IF NOT EXISTS yard_pickups (
