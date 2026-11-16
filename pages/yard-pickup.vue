@@ -5,10 +5,10 @@
       <div>
         <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
           <i class="fa-solid fa-truck-ramp-box text-blue-500"></i>
-          <span>Pengambilan Plat Yard (Stock Lock & Bon)</span>
+          <span>Pengambilan Plat (Stock Lock & Bon)</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Bagian 4: Pengambilan plat dari Yard ke workshop dengan proteksi kunci stok dobel & pembuatan remnant otomatis
+
         </p>
       </div>
 
