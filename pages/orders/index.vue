@@ -111,15 +111,15 @@
                 </div>
               </td>
               <td class="p-3.5 text-center whitespace-nowrap space-y-1">
-                <!-- Estimasi Muat Button (Bisa diedit ketika barang selesai dikerjakan / diambil) -->
+                <!-- Material Identification Button (Bisa diedit ketika barang selesai dikerjakan / diambil) -->
                 <NuxtLink 
                   v-if="isFullAccess && (o.status === 'Siap Diambil' || o.status === 'Sudah Diambil')" 
                   :to="`/estimation?order_id=${o.id}`" 
                   class="inline-flex items-center gap-1 bg-violet-600 hover:bg-violet-700 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-xs transition"
-                  title="Isi / Edit Estimasi Muat"
+                  title="Isi / Edit Material Identification"
                 >
                   <i class="fa-solid fa-boxes-packing text-[10px]"></i>
-                  <span>Estimasi Muat</span>
+                  <span>Material ID</span>
                 </NuxtLink>
 
                 <!-- Setujui Button -->

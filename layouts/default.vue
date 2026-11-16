@@ -141,7 +141,7 @@
             >
               <span class="flex items-center gap-3">
                 <i class="fa-solid fa-boxes-packing w-4 text-center" :class="$route.path === '/estimation' ? 'text-white' : 'text-violet-400'"></i>
-                <span>Estimasi Muat</span>
+                <span>Material Identification</span>
               </span>
               <span v-if="readyMuatCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">
                 {{ readyMuatCount }}
@@ -411,7 +411,7 @@ const pageTitle = computed(() => {
   if (p === '/dashboard') return 'Dashboard Monitoring CNC'
   if (p === '/orders/create') return 'Form Buat Order Pemotongan Plat CNC'
   if (p === '/orders') return 'Daftar Order Pemotongan Plat CNC'
-  if (p === '/estimation') return 'Estimasi Muat Plat CNC'
+  if (p === '/estimation') return 'Material Identification - CNC'
   if (p === '/plates') return 'Master Data Plat & Stok Yard'
   if (p === '/plates/remnants') return 'Daftar Plat Remnant (Sisa Potongan)'
   if (p === '/yard-pickup') return 'Pengambilan Plat dari Yard (Stock Lock)'

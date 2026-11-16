@@ -5,10 +5,10 @@
       <div>
         <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
           <i class="fa-solid fa-boxes-packing text-violet-500"></i>
-          <span>Estimasi Muat Plat CNC</span>
+          <span>Material Identification</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Input & Edit Data Project Name, Nesting No., Block/Item, Spec & Dimension Material, Product & Heat Number saat barang selesai dikerjakan atau diambil
+          Input & Edit Data Project Name, Nesting No., Block/Item, Spec & Dimension Material, Product & Heat Number, serta Gambar Selesai Pemotongan
         </p>
       </div>
 
@@ -43,7 +43,7 @@
         <div class="flex items-center justify-between mb-1.5">
           <label class="text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
             <i class="fa-solid fa-crosshairs"></i>
-            <span>Pilih Order untuk Estimasi Muat:</span>
+            <span>Pilih Order untuk Material Identification:</span>
           </label>
           <div class="flex items-center gap-2">
             <button 
@@ -60,7 +60,7 @@
           v-model="selectedOrderId" 
           class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-violet-500 outline-none transition"
         >
-          <option :value="null">-- Pilih Order untuk Estimasi Muat --</option>
+          <option :value="null">-- Pilih Order untuk Material Identification --</option>
           <option 
             v-for="po in eligibleOrders" 
             :key="po.id" 
@@ -248,13 +248,62 @@
             </div>
           </div>
 
+          <!-- 8. Gambar Selesai Pemotongan Plat -->
+          <div class="pt-2">
+            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-camera text-emerald-500"></i>
+                <span>Gambar Selesai Pemotongan Plat</span>
+              </span>
+              <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
+            </label>
+            
+            <!-- Preview existing image -->
+            <div v-if="cuttingImagePreview" class="mb-3 relative inline-block">
+              <img 
+                :src="cuttingImagePreview" 
+                alt="Preview gambar pemotongan" 
+                class="max-h-48 rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs object-contain"
+              />
+              <button 
+                type="button" 
+                @click="removeCuttingImage" 
+                class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center hover:bg-rose-600 cursor-pointer shadow-md"
+                title="Hapus gambar"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <!-- Upload input -->
+            <div 
+              class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-violet-400 dark:hover:border-violet-600 transition cursor-pointer"
+              @click="($refs.cuttingImageInput as HTMLInputElement)?.click()"
+              @dragover.prevent
+              @drop.prevent="handleImageDrop"
+            >
+              <input 
+                ref="cuttingImageInput"
+                type="file" 
+                accept="image/*" 
+                class="hidden" 
+                @change="handleImageSelect"
+              />
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 dark:text-slate-600 mb-1.5 block"></i>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+                {{ cuttingImagePreview ? 'Klik untuk ganti gambar' : 'Klik atau seret gambar ke sini' }}
+              </p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">PNG, JPG, JPEG (max 5MB)</p>
+            </div>
+          </div>
+
           <div class="pt-2 flex flex-col sm:flex-row gap-3">
             <button 
               type="submit" 
               class="flex-1 bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-extrabold p-3.5 rounded-xl shadow-md shadow-violet-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <i class="fa-solid fa-floppy-disk"></i>
-              <span>SIMPAN ESTIMASI MUAT</span>
+              <span>SIMPAN MATERIAL IDENTIFICATION</span>
             </button>
             <button 
               v-if="selectedOrder.status === 'Menunggu Persetujuan Pemesan' || selectedOrder.estimation"
@@ -274,10 +323,10 @@
       <div v-else class="py-12 text-center text-slate-400 dark:text-slate-500 text-xs italic space-y-2">
         <i class="fa-solid fa-boxes-packing text-4xl mb-2 block text-slate-300 dark:text-slate-700"></i>
         <p v-if="eligibleOrders.length === 0" class="text-slate-600 dark:text-slate-300 font-semibold not-italic">
-          Belum ada order yang selesai dikerjakan atau diambil. Estimasi muat dapat diisi setelah Operator CNC menyelesaikan pemotongan barang.
+          Belum ada order yang selesai dikerjakan atau diambil. Material Identification dapat diisi setelah Operator CNC menyelesaikan pemotongan barang.
         </p>
-        <p v-else>Pilih salah satu order di atas untuk mengisi atau mengedit data estimasi muat & nesting plat.</p>
-        <p class="text-[11px] text-slate-400 dark:text-slate-600">Estimasi muat dapat diedit kapan saja untuk order yang telah siap diambil atau sudah diserahkan.</p>
+        <p v-else>Pilih salah satu order di atas untuk mengisi atau mengedit data Material Identification & nesting plat.</p>
+        <p class="text-[11px] text-slate-400 dark:text-slate-600">Material Identification dapat diedit kapan saja untuk order yang telah siap diambil atau sudah diserahkan.</p>
       </div>
     </div>
 
@@ -286,7 +335,7 @@
       <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
           <i class="fa-solid fa-table-list text-violet-500"></i>
-          <span>Daftar Estimasi Muat Order</span>
+          <span>Daftar Material Identification Order</span>
         </h2>
         <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">{{ estimatedOrdersList.length }} order terdata</span>
       </div>
@@ -303,6 +352,7 @@
               <th class="p-3.5">Dimension of Material</th>
               <th class="p-3.5">Product No.</th>
               <th class="p-3.5">Heat No.</th>
+              <th class="p-3.5">Gambar</th>
               <th class="p-3.5">Status Approval</th>
               <th class="p-3.5 text-center">Aksi</th>
             </tr>
@@ -339,6 +389,21 @@
                 {{ o.estimation?.heat_number || '-' }}
               </td>
               <td class="p-3.5">
+                <a 
+                  v-if="o.estimation?.cutting_image_url" 
+                  :href="o.estimation.cutting_image_url" 
+                  target="_blank"
+                  class="inline-block"
+                >
+                  <img 
+                    :src="o.estimation.cutting_image_url" 
+                    alt="Gambar pemotongan" 
+                    class="w-12 h-12 rounded-lg object-cover border border-slate-300 dark:border-slate-700 hover:opacity-80 transition"
+                  />
+                </a>
+                <span v-else class="text-slate-400 text-[10px] italic">-</span>
+              </td>
+              <td class="p-3.5">
                 <span 
                   class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold border"
                   :class="o.estimation?.status_approval === 'Disetujui' || o.status === 'Estimasi Selesai' 
@@ -369,7 +434,7 @@
               </td>
             </tr>
             <tr v-if="estimatedOrdersList.length === 0">
-              <td colspan="10" class="p-8 text-center text-slate-400 dark:text-slate-500 italic">
+              <td colspan="11" class="p-8 text-center text-slate-400 dark:text-slate-500 italic">
                 Belum ada data estimasi yang tercatat.
               </td>
             </tr>
@@ -391,7 +456,7 @@ const store = useCncStore()
 const selectedOrderId = ref<number | null>(null)
 const feedbackMsg = ref<{ text: string; type: 'success' | 'error' } | null>(null)
 
-// Form state with 7 standard cutting plan fields
+// Form state with 7 standard cutting plan fields + image
 const form = reactive({
   project_name: '',
   nesting_no: '',
@@ -401,6 +466,9 @@ const form = reactive({
   product_number: '',
   heat_number: ''
 })
+
+const cuttingImagePreview = ref<string>('')
+const cuttingImageInput = ref<HTMLInputElement | null>(null)
 
 const showAllOrders = ref(false)
 
@@ -437,9 +505,43 @@ watch(selectedOrder, (order) => {
   form.dimension_material = est?.dimension_material || est?.ukuran_plat || (order.ketebalan ? `${order.ketebalan} x 1500 x 6000 mm` : '12 x 1500 x 6000 mm')
   form.product_number = est?.product_number || order.ukuran_part || ''
   form.heat_number = est?.heat_number || ''
+  cuttingImagePreview.value = est?.cutting_image_url || ''
 }, { immediate: true })
 
-// Handle Submit Estimasi Muat
+// Image handlers
+function handleImageSelect(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files?.length) return
+  processImageFile(input.files[0])
+}
+
+function handleImageDrop(event: DragEvent) {
+  const file = event.dataTransfer?.files?.[0]
+  if (file && file.type.startsWith('image/')) {
+    processImageFile(file)
+  }
+}
+
+function processImageFile(file: File) {
+  if (file.size > 5 * 1024 * 1024) {
+    feedbackMsg.value = { type: 'error', text: 'Ukuran gambar maksimal 5MB!' }
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    cuttingImagePreview.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeCuttingImage() {
+  cuttingImagePreview.value = ''
+  if (cuttingImageInput.value) {
+    cuttingImageInput.value.value = ''
+  }
+}
+
+// Handle Submit Material Identification
 async function handleSubmitEstimation() {
   if (!selectedOrder.value) return
 
@@ -451,12 +553,13 @@ async function handleSubmitEstimation() {
     spec_material: form.spec_material,
     dimension_material: form.dimension_material,
     product_number: form.product_number,
-    heat_number: form.heat_number
+    heat_number: form.heat_number,
+    cutting_image_url: cuttingImagePreview.value
   })
 
   feedbackMsg.value = {
     type: 'success',
-    text: `Estimasi muat untuk order ${selectedOrder.value.no_order} berhasil disimpan!`
+    text: `Material Identification untuk order ${selectedOrder.value.no_order} berhasil disimpan!`
   }
 }
 
@@ -465,7 +568,7 @@ async function handleDirectApprove(orderId: number) {
   await store.approveEstimation(orderId)
   feedbackMsg.value = {
     type: 'success',
-    text: `Estimasi muat order #${orderId} berhasil DISETUJUI!`
+    text: `Material Identification order #${orderId} berhasil DISETUJUI!`
   }
   // Reset selected order to next eligible order or null
   selectedOrderId.value = eligibleOrders.value.length > 0 ? eligibleOrders.value[0].id : null

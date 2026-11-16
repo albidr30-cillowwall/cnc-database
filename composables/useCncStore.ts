@@ -43,6 +43,7 @@ export interface OrderEstimation {
   dimension_material?: string
   product_number?: string
   heat_number?: string
+  cutting_image_url?: string
   status_approval: string
   // Legacy optional fields
   grade?: string
@@ -557,6 +558,7 @@ export function useCncStore() {
     dimension_material?: string
     product_number?: string
     heat_number?: string
+    cutting_image_url?: string
     grade?: string
     tebal?: string
     ukuran_plat?: string
@@ -579,6 +581,7 @@ export function useCncStore() {
       dimension_material: data.dimension_material?.trim() || data.ukuran_plat || order.ketebalan,
       product_number: data.product_number?.trim() || '',
       heat_number: data.heat_number?.trim() || '',
+      cutting_image_url: data.cutting_image_url || '',
       status_approval: 'Menunggu Persetujuan',
       // backward compatibility fields
       grade: data.spec_material || data.grade || order.material,
