@@ -197,12 +197,25 @@
 
             <div>
               <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Departemen / Divisi</label>
-              <input 
+              <select 
                 v-model="newUser.department" 
-                type="text" 
-                placeholder="contoh: Hull Construction..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+              >
+                <option value="">-- Pilih Departemen --</option>
+                <option value="CNC">CNC</option>
+                <option value="FTS">FTS</option>
+                <option value="CLC">CLC</option>
+                <option value="LPS">LPS</option>
+                <option value="Gading Permata">Gading Permata</option>
+                <option value="Bubut">Bubut</option>
+                <option value="Repair">Repair</option>
+                <option value="Mekanik">Mekanik</option>
+                <option value="Electric">Electric</option>
+                <option value="HSE">HSE</option>
+                <option value="Interior">Interior</option>
+                <option value="Pipa">Pipa</option>
+                <option value="Painting">Painting</option>
+              </select>
             </div>
 
             <div>

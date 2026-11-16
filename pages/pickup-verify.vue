@@ -154,10 +154,26 @@
               v-model="inputDepartemen" 
               type="text" 
               required 
-              placeholder="contoh: Hull Construction, Outfitting..." 
+              list="department-pickup-list"
+              placeholder="Pilih atau ketik departemen (CNC, FTS, Bubut...)" 
               :disabled="!selectedOrder"
               class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
             />
+            <datalist id="department-pickup-list">
+              <option value="CNC" />
+              <option value="FTS" />
+              <option value="CLC" />
+              <option value="LPS" />
+              <option value="Gading Permata" />
+              <option value="Bubut" />
+              <option value="Repair" />
+              <option value="Mekanik" />
+              <option value="Electric" />
+              <option value="HSE" />
+              <option value="Interior" />
+              <option value="Pipa" />
+              <option value="Painting" />
+            </datalist>
           </div>
 
           <button 

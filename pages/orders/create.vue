@@ -76,13 +76,24 @@
           </div>
           <div>
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Departemen *</label>
-            <input 
+            <select 
               v-model="form.departemen_pemesan" 
-              type="text" 
               required 
-              placeholder="Isi nama departemen..." 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600"
+              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 font-semibold focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none"
             >
+              <option value="" disabled>-- Pilih Departemen --</option>
+              <option v-for="d in departmentOptions" :key="d" :value="d">{{ d }}</option>
+              <option value="Lainnya">Lainnya...</option>
+            </select>
+            <div v-if="form.departemen_pemesan === 'Lainnya'" class="mt-2">
+              <input 
+                v-model="customDepartemen" 
+                type="text" 
+                required 
+                placeholder="Tuliskan nama departemen lainnya..." 
+                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600 outline-none"
+              >
+            </div>
           </div>
           <div>
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">ID Karyawan / NIK (Opsional)</label>
@@ -277,13 +288,38 @@ const { createOrder, currentUser } = useCncStore()
 const isSubmitting = ref(false)
 const fileName = ref('')
 const fileDataUrl = ref('')
+const customDepartemen = ref('')
+
+const departmentOptions = [
+  'CNC',
+  'FTS',
+  'CLC',
+  'LPS',
+  'Gading Permata',
+  'Bubut',
+  'Repair',
+  'Mekanik',
+  'Electric',
+  'HSE',
+  'Interior',
+  'Pipa',
+  'Painting'
+]
+
+const initialDept = departmentOptions.includes(currentUser.value?.department || '')
+  ? currentUser.value!.department
+  : (currentUser.value?.department ? 'Lainnya' : 'CNC')
+
+if (initialDept === 'Lainnya' && currentUser.value?.department) {
+  customDepartemen.value = currentUser.value.department
+}
 
 const form = reactive({
   jenis_pekerjaan_kategori: 'Pemotongan Plat Baru',
   jenis_lainnya: '',
   deskripsi_pekerjaan: '',
   nama_pemesan: currentUser.value?.name || '',
-  departemen_pemesan: currentUser.value?.department || '',
+  departemen_pemesan: initialDept,
   nik_pemesan: '',
   no_hp_pemesan: '',
   nama_proyek: '',
@@ -319,13 +355,17 @@ async function handleSubmit() {
     ? (form.material_lainnya?.trim() || 'Lainnya')
     : form.material
 
+  const finalDepartemen = form.departemen_pemesan === 'Lainnya'
+    ? (customDepartemen.value?.trim() || 'Lainnya')
+    : form.departemen_pemesan
+
   try {
     await createOrder({
       jenis_pekerjaan_kategori: form.jenis_pekerjaan_kategori,
       jenis_lainnya: form.jenis_lainnya,
       deskripsi_pekerjaan: form.deskripsi_pekerjaan,
       nama_pemesan: form.nama_pemesan,
-      departemen_pemesan: form.departemen_pemesan,
+      departemen_pemesan: finalDepartemen,
       nik_pemesan: form.nik_pemesan,
       no_hp_pemesan: form.no_hp_pemesan,
       nama_proyek: form.nama_proyek,
