@@ -291,7 +291,7 @@
               {{ pageTitle }}
             </h1>
             <p class="text-xs text-slate-500 dark:text-slate-400 truncate hidden sm:block">
-              Sistem Order, Estimasi & Pemotongan Plat CNC
+
             </p>
           </div>
         </div>
