@@ -53,7 +53,7 @@
           </div>
 
           <div class="space-y-1">
-            <div class="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Order</div>
+            <div class="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Order & Estimasi</div>
             <NuxtLink 
               to="/orders/create" 
               class="flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition"
@@ -79,10 +79,6 @@
                 {{ activeOrdersCount }}
               </span>
             </NuxtLink>
-          </div>
-
-          <div class="space-y-1">
-            <div class="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Material & Produksi</div>
             <NuxtLink 
               to="/estimation" 
               class="flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition"
@@ -90,13 +86,17 @@
               @click="isMobileMenuOpen = false"
             >
               <span class="flex items-center gap-3">
-                <i class="fa-solid fa-id-card-clip w-4 text-center" :class="$route.path === '/estimation' ? 'text-white' : 'text-violet-400'"></i>
-                <span>Material Identification</span>
+                <i class="fa-solid fa-calculator w-4 text-center" :class="$route.path === '/estimation' ? 'text-white' : 'text-violet-400'"></i>
+                <span>Estimasi Plat</span>
               </span>
               <span v-if="waitingEstCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
                 {{ waitingEstCount }}
               </span>
             </NuxtLink>
+          </div>
+
+          <div class="space-y-1">
+            <div class="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Material & Produksi</div>
             <NuxtLink 
               to="/plates" 
               class="flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition"
@@ -399,7 +399,7 @@ const readyPickupCount = computed(() => {
 })
 
 const operatorQueueCount = computed(() => {
-  return orders.value.filter(o => ['Diterima', 'Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard', 'Sedang Dipotong'].includes(o.status)).length
+  return orders.value.filter(o => ['Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard', 'Sedang Dipotong'].includes(o.status)).length
 })
 
 const remnantsCount = computed(() => {
@@ -411,7 +411,7 @@ const pageTitle = computed(() => {
   if (p === '/dashboard') return 'Dashboard Monitoring CNC'
   if (p === '/orders/create') return 'Form Buat Order Pemotongan Plat CNC'
   if (p === '/orders') return 'Daftar Order Pemotongan Plat CNC'
-  if (p === '/estimation') return 'Material Identification'
+  if (p === '/estimation') return 'Estimasi Kebutuhan Plat CNC'
   if (p === '/plates') return 'Master Data Plat & Stok Yard'
   if (p === '/plates/remnants') return 'Daftar Plat Remnant (Sisa Potongan)'
   if (p === '/yard-pickup') return 'Pengambilan Plat dari Yard (Stock Lock)'

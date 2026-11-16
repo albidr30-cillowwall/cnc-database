@@ -36,12 +36,12 @@
       </div>
 
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:shadow-md transition">
-        <div class="flex items-center justify-between text-xs text-violet-700 dark:text-violet-400 font-semibold">
-          <span>Material ID</span>
-          <i class="fa-solid fa-id-card-clip text-violet-500"></i>
+        <div class="flex items-center justify-between text-xs text-amber-700 dark:text-amber-400 font-semibold">
+          <span>Menunggu Estimasi</span>
+          <i class="fa-solid fa-hourglass-half text-amber-500"></i>
         </div>
-        <div class="text-2xl font-extrabold font-mono mt-2 text-violet-600 dark:text-violet-400">{{ materialIdCount }}</div>
-        <div class="text-[11px] text-slate-400 mt-0.5">Identifikasi Nesting</div>
+        <div class="text-2xl font-extrabold font-mono mt-2 text-amber-600 dark:text-amber-400">{{ waitingEstCount }}</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">Admin Material</div>
       </div>
 
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:shadow-md transition">
@@ -252,8 +252,8 @@ const gradeCanvas = ref<HTMLCanvasElement | null>(null)
 let trendChartInstance: Chart | null = null
 let gradeChartInstance: Chart | null = null
 
-const materialIdCount = computed(() => orders.value.filter(o => Boolean(o.estimation)).length)
-const waitingAcceptCount = computed(() => orders.value.filter(o => ['Diterima', 'Menunggu Persetujuan Pemesan', 'Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)).length)
+const waitingEstCount = computed(() => orders.value.filter(o => o.status === 'Menunggu Estimasi').length)
+const waitingAcceptCount = computed(() => orders.value.filter(o => ['Menunggu Persetujuan Pemesan', 'Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)).length)
 const cuttingCount = computed(() => orders.value.filter(o => o.status === 'Sedang Dipotong').length)
 const readyCount = computed(() => orders.value.filter(o => o.status === 'Siap Diambil').length)
 const completedCount = computed(() => orders.value.filter(o => o.status === 'Sudah Diambil').length)

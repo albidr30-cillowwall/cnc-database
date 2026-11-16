@@ -113,15 +113,13 @@
                 </div>
               </td>
               <td class="p-3.5 text-center whitespace-nowrap space-y-1">
-                <!-- Material ID Button -->
+                <!-- Estimasi Button -->
                 <NuxtLink 
-                  v-if="isFullAccess && !['Siap Diambil', 'Sudah Diambil'].includes(o.status)" 
+                  v-if="isFullAccess && o.status === 'Menunggu Estimasi'" 
                   :to="`/estimation?order_id=${o.id}`" 
-                  class="inline-flex items-center gap-1 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/40 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-xs transition"
-                  title="Identifikasi Material & Nesting (Opsional)"
+                  class="inline-block bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-xs"
                 >
-                  <i class="fa-solid fa-id-card-clip text-[10px]"></i>
-                  <span>Material ID</span>
+                  Estimasi
                 </NuxtLink>
 
                 <!-- Setujui Button -->
@@ -200,7 +198,7 @@ const filteredOrders = computed(() => {
     let matchStatus = true
     if (selectedStatus.value) {
       if (selectedStatus.value === 'Diterima') {
-        matchStatus = ['Diterima', 'Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)
+        matchStatus = ['Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)
       } else {
         matchStatus = o.status === selectedStatus.value
       }

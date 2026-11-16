@@ -505,7 +505,7 @@ export function useCncStore() {
       drawing_file_name: data.drawing_file_name,
       drawing_data_url: data.drawing_data_url,
       target_cnc: data.target_cnc,
-      status: 'Diterima',
+      status: 'Menunggu Estimasi',
       created_at: new Date().toISOString()
     }
 
