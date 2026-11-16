@@ -183,12 +183,13 @@
         <form @submit.prevent="handleSubmitPlate" class="space-y-3.5 text-xs">
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Tipe Material *</label>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Tipe Material / Spec *</label>
               <select 
                 v-model="newPlateForm.material_type" 
                 required 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
               >
+                <option value="">-- Pilih Spec of Material --</option>
                 <option value="Baja">Baja</option>
                 <option value="Alumunium">Alumunium</option>
                 <option value="Bordes Baja">Bordes Baja</option>
@@ -310,10 +311,10 @@ const filterStatus = ref('')
 const feedbackMsg = ref<string | null>(null)
 
 const newPlateForm = reactive({
-  material_type: 'Baja',
-  grade: 'AH36',
+  material_type: '',
+  grade: '',
   heat_number: '',
-  no_sertifikat_class: 'BKI Class',
+  no_sertifikat_class: '',
   panjang_mm: 6000,
   lebar_mm: 1500,
   tebal_mm: 12,
