@@ -149,7 +149,7 @@
           <div class="flex items-center gap-2">
             <!-- Step 1: Terima Order -->
             <button 
-              v-if="o.status === 'Estimasi Selesai'"
+              v-if="o.status === 'Estimasi Selesai' || o.status === 'Diterima'"
               @click="handleAccept(o.id)" 
               class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm transition flex items-center gap-1.5"
             >
