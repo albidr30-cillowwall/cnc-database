@@ -278,7 +278,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
 
@@ -306,20 +306,12 @@ const departmentOptions = [
   'Painting'
 ]
 
-const initialDept = departmentOptions.includes(currentUser.value?.department || '')
-  ? currentUser.value!.department
-  : (currentUser.value?.department ? 'Lainnya' : 'CNC')
-
-if (initialDept === 'Lainnya' && currentUser.value?.department) {
-  customDepartemen.value = currentUser.value.department
-}
-
 const form = reactive({
   jenis_pekerjaan_kategori: 'Pemotongan Plat Baru',
   jenis_lainnya: '',
   deskripsi_pekerjaan: '',
   nama_pemesan: currentUser.value?.name || '',
-  departemen_pemesan: initialDept,
+  departemen_pemesan: '',
   nik_pemesan: '',
   no_hp_pemesan: '',
   nama_proyek: '',
@@ -334,6 +326,12 @@ const form = reactive({
   deadline_pekerjaan: '',
   catatan_pekerjaan: '',
   target_cnc: 'Group CNC 2'
+})
+
+watch(() => form.departemen_pemesan, (val) => {
+  if (val !== 'Lainnya') {
+    customDepartemen.value = ''
+  }
 })
 
 function handleFileUpload(e: Event) {
