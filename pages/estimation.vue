@@ -105,14 +105,16 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- 1. Project Name -->
             <div class="sm:col-span-2">
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">
-                <i class="fa-solid fa-ship text-blue-500"></i>
-                <span>Project Name *</span>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-ship text-blue-500"></i>
+                  <span>Project Name</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
               </label>
               <input 
                 v-model="form.project_name" 
                 type="text" 
-                required 
                 placeholder="contoh: KM. Sabuk Nusantara, Tugboat 24M, Barge 300 Feet..." 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
               />
@@ -120,14 +122,16 @@
 
             <!-- 2. Nesting No. -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">
-                <i class="fa-solid fa-layer-group text-violet-500"></i>
-                <span>Nesting No. *</span>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-layer-group text-violet-500"></i>
+                  <span>Nesting No.</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
               </label>
               <input 
                 v-model="form.nesting_no" 
                 type="text" 
-                required 
                 placeholder="contoh: NST-001, N-102-A, NST-HULL-01..." 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
               />
@@ -135,14 +139,16 @@
 
             <!-- 3. Block/Item -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">
-                <i class="fa-solid fa-cubes text-amber-500"></i>
-                <span>Block / Item *</span>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-cubes text-amber-500"></i>
+                  <span>Block / Item</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
               </label>
               <input 
                 v-model="form.block_item" 
                 type="text" 
-                required 
                 placeholder="contoh: Block 101, B-02, Web Frame 45..." 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
               />
@@ -150,14 +156,16 @@
 
             <!-- 4. Spec of Material -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">
-                <i class="fa-solid fa-certificate text-cyan-500"></i>
-                <span>Spec of Material *</span>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-certificate text-cyan-500"></i>
+                  <span>Spec of Material</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
               </label>
               <input 
                 v-model="form.spec_material" 
                 type="text" 
-                required 
                 list="spec-material-suggestions"
                 placeholder="contoh: AH36, DH36, EH36, Grade A, SS400, Al 5083..." 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-bold focus:ring-2 focus:ring-violet-500 outline-none"
@@ -178,14 +186,16 @@
 
             <!-- 5. Dimension of Material -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">
-                <i class="fa-solid fa-ruler-combined text-emerald-500"></i>
-                <span>Dimension of Material *</span>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-ruler-combined text-emerald-500"></i>
+                  <span>Dimension of Material</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
               </label>
               <input 
                 v-model="form.dimension_material" 
                 type="text" 
-                required 
                 placeholder="contoh: 12 x 1500 x 6000 mm, 8 x 2000 x 9000 mm..." 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
               />
@@ -193,14 +203,16 @@
 
             <!-- 6. Product Number -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">
-                <i class="fa-solid fa-barcode text-indigo-500"></i>
-                <span>Product Number *</span>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-barcode text-indigo-500"></i>
+                  <span>Product Number</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
               </label>
               <input 
                 v-model="form.product_number" 
                 type="text" 
-                required 
                 placeholder="contoh: PRD-001, P-304, PART-A..." 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
               />
@@ -208,14 +220,16 @@
 
             <!-- 7. Heat Number -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center gap-1.5">
-                <i class="fa-solid fa-fire text-rose-500"></i>
-                <span>Heat Number *</span>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-fire text-rose-500"></i>
+                  <span>Heat Number</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
               </label>
               <input 
                 v-model="form.heat_number" 
                 type="text" 
-                required 
                 placeholder="contoh: HT-98234, HN-2024-X, Heat 56421..." 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
               />
