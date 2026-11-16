@@ -8,7 +8,6 @@
           <span>Daftar Plat Remnant (Sisa Potongan Layak Pakai)</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Pemanfaatan kembali sisa potongan plat bersih galangan kapal agar efisiensi material maksimal
         </p>
       </div>
 

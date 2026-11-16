@@ -8,7 +8,6 @@
           <span>Pengambilan Barang & Verifikasi PIN 6-Digit</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Bagian 6: Kode verifikasi resmi serah terima barang antara Pemesan/User dan Operator CNC
         </p>
       </div>
 

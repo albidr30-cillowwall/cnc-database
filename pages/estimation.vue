@@ -8,7 +8,7 @@
           <span>Material Identification</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Input & Edit Data Project Name, Nesting No., Block/Item, Spec & Dimension Material, Product & Heat Number, serta Gambar Selesai Pemotongan
+
         </p>
       </div>
 
@@ -364,7 +364,7 @@
                 {{ o.estimation?.block_item || '-' }}
               </td>
               <td class="p-3.5">
-                <span class="font-bold text-cyan-600 dark:text-cyan-400">{{ o.estimation?.spec_material || o.estimation?.grade || o.material }}</span>
+                <span class="font-bold text-cyan-600 dark:text-cyan-400">{{ o.estimation?.spec_material || o.estimation?.grade || '-' }}</span>
               </td>
               <td class="p-3.5 font-mono text-slate-700 dark:text-slate-300">
                 {{ o.estimation?.dimension_material || o.estimation?.ukuran_plat || o.ketebalan || '-' }}
@@ -488,7 +488,15 @@ watch(selectedOrder, (order) => {
   form.project_name = est?.project_name || order.nama_proyek_kapal || order.nama_proyek || ''
   form.nesting_no = est?.nesting_no || ''
   form.block_item = est?.block_item || ''
-  form.spec_material = est?.spec_material || est?.grade || order.material || 'AH36'
+  const rawSpec = (est?.spec_material || est?.grade || '').trim()
+  const isGenericMaterial = !rawSpec || 
+    rawSpec.toLowerCase() === 'baja' || 
+    rawSpec.toLowerCase() === 'alumunium' || 
+    rawSpec.toLowerCase() === 'aluminium' ||
+    rawSpec.toLowerCase() === 'bordes baja' ||
+    rawSpec.toLowerCase() === 'bordes alumunium' ||
+    rawSpec.toLowerCase() === (order.material || '').toLowerCase()
+  form.spec_material = isGenericMaterial ? '' : rawSpec
   form.dimension_material = est?.dimension_material || est?.ukuran_plat || (order.ketebalan ? `${order.ketebalan} x 1500 x 6000 mm` : '12 x 1500 x 6000 mm')
   form.product_number = est?.product_number || order.ukuran_part || ''
   form.heat_number = est?.heat_number || ''

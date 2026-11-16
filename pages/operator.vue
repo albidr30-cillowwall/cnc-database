@@ -8,7 +8,6 @@
           <span>Workshop Operator Mesin CNC</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Bagian 5: Terima Order &rarr; Start Potong &rarr; Finish Potong (Auto Generate PIN 6-Digit Pengambilan)
         </p>
       </div>
 

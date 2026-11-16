@@ -8,7 +8,6 @@
           <span>Manajemen Pengguna & Reset Database</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Khusus Role Admin: Kelola akun pengguna, hak akses Role (Admin, Mandor, User), dan reset data operasional ke nol
         </p>
       </div>
 

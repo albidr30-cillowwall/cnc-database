@@ -8,7 +8,6 @@
           <span>Master Data Plat & Stok Yard</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Pencatatan Heat Number, Grade Material, Sertifikat Class BKI/ABS, Lokasi Rak Yard & Remnant
         </p>
       </div>
 

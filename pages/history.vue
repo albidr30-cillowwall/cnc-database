@@ -8,7 +8,6 @@
           <span>History & Traceability (Audit Trail Galangan)</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Bagian 8: Arsip permanen galangan kapal dari awal order, nomor heat, nesting, hingga serah terima barang
         </p>
       </div>
 
