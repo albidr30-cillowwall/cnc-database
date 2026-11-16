@@ -40,14 +40,15 @@
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
       <!-- Order Selector -->
       <div>
-        <label class="block text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-1.5">
-          <i class="fa-solid fa-crosshairs mr-1"></i> Pilih Order yang Akan Dibuatkan / Diedit Estimasinya:
+        <label class="block text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <span><i class="fa-solid fa-crosshairs mr-1"></i> Pilih Order yang Menunggu Estimasi:</span>
+          <span class="text-[11px] font-mono text-violet-500 font-bold lowercase">{{ pendingOrders.length }} order menunggu</span>
         </label>
         <select 
           v-model="selectedOrderId" 
           class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-violet-500 outline-none transition"
         >
-          <option :value="null">-- Pilih Order --</option>
+          <option :value="null">-- Pilih Order Menunggu Estimasi --</option>
           <option 
             v-for="po in pendingOrders" 
             :key="po.id" 
@@ -245,9 +246,12 @@
 
       <!-- Empty State -->
       <div v-else class="py-12 text-center text-slate-400 dark:text-slate-500 text-xs italic space-y-2">
-        <i class="fa-solid fa-calculator text-4xl mb-2 block text-slate-300 dark:text-slate-700"></i>
-        <p>Pilih salah satu order di atas untuk mengisi atau memperbarui data estimasi & nesting plat.</p>
-        <p class="text-[11px] text-slate-400 dark:text-slate-600">Jika tidak ada order pending, Anda dapat membuat order baru di menu Order.</p>
+        <i class="fa-solid fa-clipboard-check text-4xl mb-2 block text-slate-300 dark:text-slate-700"></i>
+        <p v-if="pendingOrders.length === 0" class="text-slate-600 dark:text-slate-300 font-semibold not-italic">
+          Semua estimasi order sudah selesai & disetujui. Tidak ada order yang menunggu estimasi saat ini.
+        </p>
+        <p v-else>Pilih salah satu order di atas untuk mengisi data estimasi & nesting plat.</p>
+        <p class="text-[11px] text-slate-400 dark:text-slate-600">Order baru yang dibuat akan otomatis muncul pada daftar pilihan di atas.</p>
       </div>
     </div>
 
@@ -372,14 +376,9 @@ const form = reactive({
   heat_number: ''
 })
 
-// Orders that can be estimated (or re-estimated)
+// Orders that strictly need estimation (exclude already approved orders)
 const pendingOrders = computed(() => {
-  return store.orders.value.filter(o => 
-    o.status === 'Menunggu Estimasi' || 
-    o.status === 'Menunggu Persetujuan Pemesan' || 
-    o.status === 'Estimasi Selesai' ||
-    Boolean(o.estimation)
-  )
+  return store.orders.value.filter(o => o.status === 'Menunggu Estimasi')
 })
 
 const selectedOrder = computed(() => {
@@ -434,6 +433,8 @@ async function handleDirectApprove(orderId: number) {
     type: 'success',
     text: `Estimasi order #${orderId} berhasil DISETUJUI! Order kini siap untuk pengambilan plat di Yard.`
   }
+  // Reset selected order to next pending order or null
+  selectedOrderId.value = pendingOrders.value.length > 0 ? pendingOrders.value[0].id : null
 }
 
 onMounted(() => {
@@ -445,8 +446,10 @@ onMounted(() => {
     if (oid) {
       selectedOrderId.value = oid
     }
-  } else if (pendingOrders.value.length > 0 && !selectedOrderId.value) {
+  } else if (pendingOrders.value.length > 0) {
     selectedOrderId.value = pendingOrders.value[0].id
+  } else {
+    selectedOrderId.value = null
   }
 })
 </script>
