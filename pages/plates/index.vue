@@ -79,15 +79,13 @@
           v-model="filterStatus" 
           class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
         >
-          <option value="">Semua Status ({{ store.plates.value.length }})</option>
-          <option value="Tersedia">Tersedia</option>
-          <option value="Dipesan">Dipesan</option>
-          <option value="Diambil">Diambil</option>
-          <option value="Sudah Dipotong">Sudah Dipotong</option>
+          <option value="">Semua Status ({{ store.plates.value.length }} jenis)</option>
+          <option value="Tersedia">Tersedia (Ada Stok)</option>
+          <option value="Habis">Habis (Stok 0)</option>
           <option value="Sisa Potongan / Remnant">Sisa Potongan / Remnant</option>
         </select>
         <span class="text-[11px] font-mono text-slate-400">
-          Tampil: <b>{{ filteredPlates.length }}</b> plat
+          Tampil: <b>{{ filteredPlates.length }}</b> jenis (<b>{{ totalLembar }}</b> lbr)
         </span>
       </div>
     </div>
@@ -99,13 +97,14 @@
           <thead class="bg-slate-50 dark:bg-slate-950/70 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-extrabold text-left">
             <tr>
               <th class="p-3.5">No. Plat</th>
-              <th class="p-3.5">Heat Number</th>
               <th class="p-3.5">Spesifikasi & Material</th>
               <th class="p-3.5">Dimensi (P x L x T)</th>
-              <th class="p-3.5">Berat (kg)</th>
-              <th class="p-3.5">Sertifikat Class</th>
-              <th class="p-3.5">Lokasi Yard</th>
+              <th class="p-3.5 text-center">Stok (Lembar)</th>
+              <th class="p-3.5">Berat</th>
+              <th class="p-3.5">Heat Number</th>
+              <th class="p-3.5">Lokasi</th>
               <th class="p-3.5">Status</th>
+              <th class="p-3.5 text-center">Aksi</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -120,9 +119,6 @@
                   REMNANT
                 </span>
               </td>
-              <td class="p-3.5 font-mono text-slate-800 dark:text-slate-200">
-                {{ p.heat_number }}
-              </td>
               <td class="p-3.5">
                 <div class="font-bold text-slate-900 dark:text-slate-100">{{ p.grade }}</div>
                 <div class="text-[10px] text-slate-500 dark:text-slate-400">{{ p.material_type }}</div>
@@ -130,11 +126,32 @@
               <td class="p-3.5 font-mono">
                 {{ p.panjang_mm }} x {{ p.lebar_mm }} x <b class="text-slate-900 dark:text-white">{{ p.tebal_mm }}mm</b>
               </td>
-              <td class="p-3.5 font-mono font-bold text-slate-800 dark:text-slate-200">
-                {{ Number(p.berat_kg).toLocaleString('id-ID', { minimumFractionDigits: 1 }) }} kg
+              <td class="p-3.5 text-center whitespace-nowrap">
+                <span 
+                  v-if="(p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)) > 0"
+                  class="inline-flex items-center gap-1 font-mono font-extrabold text-sm px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                >
+                  <i class="fa-solid fa-boxes-stacked text-xs"></i>
+                  <span>{{ p.stok !== undefined ? p.stok : 1 }}</span>
+                  <span class="text-[10px] font-sans font-semibold text-slate-400">lbr</span>
+                </span>
+                <span 
+                  v-else
+                  class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                >
+                  Habis (0 lbr)
+                </span>
               </td>
-              <td class="p-3.5 text-cyan-600 dark:text-cyan-400 font-semibold">
-                {{ p.no_sertifikat_class || '-' }}
+              <td class="p-3.5 font-mono">
+                <div class="font-bold text-slate-800 dark:text-slate-200">
+                  {{ ((Number(p.berat_kg) || 0) * (p.stok !== undefined ? p.stok : 1)).toLocaleString('id-ID', { minimumFractionDigits: 1 }) }} kg
+                </div>
+                <div v-if="(p.stok !== undefined ? p.stok : 1) > 1" class="text-[10px] text-slate-400">
+                  ({{ Number(p.berat_kg).toLocaleString('id-ID', { minimumFractionDigits: 1 }) }} kg/lbr)
+                </div>
+              </td>
+              <td class="p-3.5 font-mono text-slate-700 dark:text-slate-300">
+                {{ p.heat_number || '-' }}
               </td>
               <td class="p-3.5 text-slate-700 dark:text-slate-300">
                 <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>
@@ -143,17 +160,23 @@
               <td class="p-3.5">
                 <span 
                   class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold border"
-                  :class="getStatusBadgeClass(p.status)"
+                  :class="getStatusBadgeClass(p)"
                 >
-                  {{ p.status }}
+                  {{ (p.stok !== undefined && p.stok <= 0) ? 'Habis' : p.status }}
                 </span>
-                <div v-if="p.order_id_pemakai" class="text-[10px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
-                  Order: {{ p.order_id_pemakai }}
-                </div>
+              </td>
+              <td class="p-3.5 text-center">
+                <button 
+                  @click="handleDeletePlate(p)" 
+                  class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-700 transition cursor-pointer"
+                  title="Hapus Plat"
+                >
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
               </td>
             </tr>
             <tr v-if="filteredPlates.length === 0">
-              <td colspan="8" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
+              <td colspan="9" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
                 <i class="fa-solid fa-layer-group text-3xl mb-2 block text-slate-300 dark:text-slate-700"></i>
                 Tidak ada data plat yang sesuai dengan filter.
               </td>
@@ -372,11 +395,19 @@ const estimatedNewWeight = computed(() => {
 
 const filteredPlates = computed(() => {
   return store.plates.value.filter(p => {
-    if (filterStatus.value && p.status !== filterStatus.value) return false
+    const stok = p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)
+    if (filterStatus.value === 'Tersedia' && (stok <= 0 || p.status !== 'Tersedia')) return false
+    if (filterStatus.value === 'Habis' && stok > 0 && p.status !== 'Habis') return false
+    if (filterStatus.value === 'Sisa Potongan / Remnant' && !p.is_remnant) return false
+    if (filterStatus.value && !['Tersedia', 'Habis', 'Sisa Potongan / Remnant'].includes(filterStatus.value) && p.status !== filterStatus.value) return false
     if (filterMinP.value && p.panjang_mm < filterMinP.value) return false
     if (filterMinL.value && p.lebar_mm < filterMinL.value) return false
     return true
   })
+})
+
+const totalLembar = computed(() => {
+  return filteredPlates.value.reduce((acc, p) => acc + (p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)), 0)
 })
 
 function resetDimensionFilter() {
@@ -384,23 +415,25 @@ function resetDimensionFilter() {
   filterMinL.value = null
 }
 
-function getStatusBadgeClass(status: string) {
-  switch (status) {
+function getStatusBadgeClass(p: any) {
+  const stok = p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)
+  if (stok <= 0 || p.status === 'Habis') {
+    return 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+  }
+  switch (p.status) {
     case 'Tersedia':
       return 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
     case 'Sisa Potongan / Remnant':
       return 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800'
     case 'Diambil':
       return 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-    case 'Sudah Dipotong':
-      return 'bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800'
     default:
       return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
   }
 }
 
 async function handleSubmitPlate() {
-  const created = await store.addPlate({
+  const p = await store.addPlate({
     material_type: newPlateForm.material_type,
     grade: newPlateForm.grade,
     heat_number: newPlateForm.heat_number,
@@ -412,18 +445,20 @@ async function handleSubmitPlate() {
     jumlah: newPlateForm.jumlah
   })
 
-  const count = Array.isArray(created) ? created.length : 1
-  if (count > 1) {
-    feedbackMsg.value = `${count} lembar plat baru (${newPlateForm.material_type} - ${newPlateForm.grade}) berhasil didaftarkan ke Stok Plat!`
-  } else {
-    const p = Array.isArray(created) ? created[0] : created
-    feedbackMsg.value = `Plat baru ${p.no_plat} (${p.material_type} - ${p.grade}) berhasil didaftarkan ke Stok Plat!`
-  }
+  feedbackMsg.value = `Plat baru ${p.no_plat} (${p.material_type} - ${p.grade}) dengan stok ${p.stok} lembar berhasil didaftarkan ke Stok Plat!`
   isModalOpen.value = false
 
   // Reset form
+  newPlateForm.material_type = ''
+  newPlateForm.grade = ''
   newPlateForm.heat_number = ''
   newPlateForm.jumlah = 1
+}
+
+async function handleDeletePlate(plate: any) {
+  if (!confirm(`Hapus data plat ${plate.no_plat} (${plate.grade} ${plate.material_type})?`)) return
+  await store.deletePlate(plate.id)
+  feedbackMsg.value = `Plat ${plate.no_plat} berhasil dihapus.`
 }
 
 onMounted(() => {

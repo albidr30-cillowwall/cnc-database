@@ -248,9 +248,9 @@ const cuttingCount = computed(() => orders.value.filter(o => o.status === 'Sedan
 const readyCount = computed(() => orders.value.filter(o => o.status === 'Siap Diambil').length)
 const completedCount = computed(() => orders.value.filter(o => o.status === 'Sudah Diambil').length)
 
-const availPlates = computed(() => plates.value.filter(p => p.status === 'Tersedia'))
-const availPlatesCount = computed(() => availPlates.value.length)
-const totalWeightTon = computed(() => availPlates.value.reduce((acc, p) => acc + p.berat_kg, 0) / 1000)
+const availPlates = computed(() => plates.value.filter(p => p.status === 'Tersedia' && (p.stok === undefined || p.stok > 0)))
+const availPlatesCount = computed(() => availPlates.value.reduce((acc, p) => acc + (p.stok !== undefined ? p.stok : 1), 0))
+const totalWeightTon = computed(() => availPlates.value.reduce((acc, p) => acc + (p.berat_kg * (p.stok !== undefined ? p.stok : 1)), 0) / 1000)
 const remnantCount = computed(() => plates.value.filter(p => p.is_remnant && p.status === 'Sisa Potongan / Remnant').length)
 const uncutPlatesCount = computed(() => plates.value.filter(p => ['Tersedia', 'Diambil'].includes(p.status)).length)
 const cutPlatesCount = computed(() => plates.value.filter(p => p.status === 'Sudah Dipotong').length)

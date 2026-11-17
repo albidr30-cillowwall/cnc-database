@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS plates (
     lebar_mm INTEGER NOT NULL,
     tebal_mm NUMERIC(8, 2) NOT NULL,
     berat_kg NUMERIC(10, 2) NOT NULL,
+    stok INTEGER NOT NULL DEFAULT 1,
     no_sertifikat_class TEXT DEFAULT 'Mill Test',
     lokasi_yard TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'Tersedia', -- Tersedia, Dipesan, Diambil, Sudah Dipotong, Sisa Potongan / Remnant
@@ -116,8 +117,11 @@ ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS heat_number TEXT;
 -- 6. YARD PICKUPS TABLE
 CREATE TABLE IF NOT EXISTS yard_pickups (
     id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_id BIGINT REFERENCES orders(id) ON DELETE SET NULL,
     plate_id BIGINT NOT NULL REFERENCES plates(id) ON DELETE CASCADE,
+    jumlah_ambil INTEGER NOT NULL DEFAULT 1,
+    sisa_stok INTEGER,
+    keperluan TEXT,
     remnant_plate_id BIGINT REFERENCES plates(id) ON DELETE SET NULL,
     pengambil TEXT NOT NULL,
     petugas_yard TEXT NOT NULL,
@@ -127,6 +131,12 @@ CREATE TABLE IF NOT EXISTS yard_pickups (
     picked_up_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE plates ADD COLUMN IF NOT EXISTS stok INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE yard_pickups ALTER COLUMN order_id DROP NOT NULL;
+ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS jumlah_ambil INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS sisa_stok INTEGER;
+ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS keperluan TEXT;
 
 -- 7. ENABLE ROW LEVEL SECURITY (RLS) & OPEN POLICIES FOR ANON
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

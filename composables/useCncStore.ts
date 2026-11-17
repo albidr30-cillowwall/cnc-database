@@ -23,9 +23,10 @@ export interface Plate {
   lebar_mm: number
   tebal_mm: number
   berat_kg: number
+  stok?: number
   no_sertifikat_class?: string
   lokasi_yard: string
-  status: 'Tersedia' | 'Dipesan' | 'Diambil' | 'Sudah Dipotong' | 'Sisa Potongan / Remnant' | string
+  status: 'Tersedia' | 'Dipesan' | 'Diambil' | 'Sudah Dipotong' | 'Sisa Potongan / Remnant' | 'Habis' | string
   is_remnant: boolean
   parent_plate_id?: number | null
   order_id_pemakai?: string | null
@@ -95,8 +96,11 @@ export interface Order {
 
 export interface YardPickup {
   id: number
-  order_id: number
+  order_id?: number | null
   plate_id: number
+  jumlah_ambil?: number
+  sisa_stok?: number
+  keperluan?: string
   remnant_plate_id?: number | null
   pengambil: string
   petugas_yard: string
@@ -268,6 +272,7 @@ export function useCncStore() {
           lebar_mm: p.lebar_mm,
           tebal_mm: parseFloat(p.tebal_mm),
           berat_kg: parseFloat(p.berat_kg),
+          stok: p.stok !== undefined && p.stok !== null ? Number(p.stok) : 1,
           no_sertifikat_class: p.no_sertifikat_class,
           lokasi_yard: p.lokasi_yard,
           status: p.status,
@@ -352,8 +357,11 @@ export function useCncStore() {
       if (pickupData) {
         yardPickups.value = pickupData.map(yp => ({
           id: yp.id,
-          order_id: yp.order_id,
+          order_id: yp.order_id || null,
           plate_id: yp.plate_id,
+          jumlah_ambil: yp.jumlah_ambil !== undefined && yp.jumlah_ambil !== null ? Number(yp.jumlah_ambil) : 1,
+          sisa_stok: yp.sisa_stok !== undefined && yp.sisa_stok !== null ? Number(yp.sisa_stok) : undefined,
+          keperluan: yp.keperluan || '-',
           remnant_plate_id: yp.remnant_plate_id,
           pengambil: yp.pengambil,
           petugas_yard: yp.petugas_yard,
@@ -689,76 +697,100 @@ export function useCncStore() {
     tebal_mm: number
     lokasi_yard?: string
     jumlah?: number
-  }): Promise<Plate[]> {
-    const count = Math.max(1, Number(data.jumlah) || 1)
-    let maxId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) : 0
+  }): Promise<Plate> {
+    const qty = Math.max(1, Number(data.jumlah) || 1)
+    const nextId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
     const prefix = (data.material_type || '').toLowerCase().includes('alumin') ? 'AL' : 'KS'
     const year = new Date().getFullYear()
+    const noPlat = `PLT-${prefix}-${year}-${String(nextId).padStart(3, '0')}`
     const weight = calculateWeight(data.panjang_mm, data.lebar_mm, data.tebal_mm, data.material_type)
     const baseHeat = data.heat_number?.trim() || '-'
     const loc = data.lokasi_yard?.trim() || 'Yard A - Bay 1'
     const cert = data.no_sertifikat_class?.trim() || 'Mill Test'
 
-    const createdPlates: Plate[] = []
-    for (let i = 0; i < count; i++) {
-      maxId++
-      const noPlat = `PLT-${prefix}-${year}-${String(maxId).padStart(3, '0')}`
-      const newPlate: Plate = {
-        id: maxId,
-        no_plat: noPlat,
-        heat_number: baseHeat,
-        grade: data.grade?.trim() || '-',
-        material_type: data.material_type?.trim() || 'Baja',
-        panjang_mm: Number(data.panjang_mm),
-        lebar_mm: Number(data.lebar_mm),
-        tebal_mm: Number(data.tebal_mm),
-        berat_kg: weight,
-        no_sertifikat_class: cert,
-        lokasi_yard: loc,
-        status: 'Tersedia',
-        is_remnant: false,
-        created_at: new Date().toISOString()
-      }
-      createdPlates.push(newPlate)
+    const newPlate: Plate = {
+      id: nextId,
+      no_plat: noPlat,
+      heat_number: baseHeat,
+      grade: data.grade?.trim() || '-',
+      material_type: data.material_type?.trim() || 'Baja',
+      panjang_mm: Number(data.panjang_mm),
+      lebar_mm: Number(data.lebar_mm),
+      tebal_mm: Number(data.tebal_mm),
+      berat_kg: weight,
+      stok: qty,
+      no_sertifikat_class: cert,
+      lokasi_yard: loc,
+      status: qty > 0 ? 'Tersedia' : 'Habis',
+      is_remnant: false,
+      created_at: new Date().toISOString()
     }
 
-    plates.value.unshift(...createdPlates)
+    plates.value.unshift(newPlate)
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
       try {
-        await supabase.from('plates').insert(createdPlates)
+        await supabase.from('plates').insert([newPlate])
       } catch (e) {
         console.warn('Supabase addPlate error:', e)
       }
     }
 
-    return createdPlates
+    return newPlate
+  }
+
+  async function deletePlate(plateId: number) {
+    const idx = plates.value.findIndex(p => p.id === plateId)
+    if (idx >= 0) {
+      plates.value.splice(idx, 1)
+      saveToLocalStorage()
+      if (isConfigured && supabase) {
+        try {
+          await supabase.from('plates').delete().eq('id', plateId)
+        } catch (e) {
+          console.warn('Supabase deletePlate error:', e)
+        }
+      }
+      return true
+    }
+    return false
   }
 
   // YARD PICKUP & AUTO REMNANT
   async function pickupPlateYard(data: {
-    order_id: number
+    order_id?: number | null
     plate_id: number
+    jumlah_ambil?: number
     pengambil: string
     petugas_yard: string
+    keperluan?: string
     is_partial: boolean
     sisa_p?: number
     sisa_l?: number
   }) {
-    const order = orders.value.find(o => o.id === data.order_id)
     const plate = plates.value.find(p => p.id === data.plate_id)
-
-    if (!order || !plate) {
-      throw new Error('Order atau Plat tidak ditemukan.')
+    if (!plate) {
+      throw new Error('Plat tidak ditemukan.')
     }
 
-    if (plate.status !== 'Tersedia' && plate.status !== 'Sisa Potongan / Remnant') {
-      throw new Error('PERINGATAN STOK TERKUNCI (STOCK LOCK): Plat ini sudah diambil atau dipesan oleh order lain!')
+    const currentStok = plate.stok !== undefined && plate.stok !== null ? plate.stok : (plate.status === 'Diambil' || plate.status === 'Habis' ? 0 : 1)
+    const qtyAmbil = Math.max(1, Number(data.jumlah_ambil) || 1)
+
+    if (currentStok <= 0) {
+      throw new Error('PERINGATAN: Stok plat ini sudah habis!')
+    }
+    if (qtyAmbil > currentStok) {
+      throw new Error(`Jumlah yang diambil (${qtyAmbil} lembar) melebihi stok yang tersedia (${currentStok} lembar)!`)
     }
 
-    plate.status = 'Diambil'
-    plate.order_id_pemakai = order.no_order
+    // Kurangi stok plat
+    plate.stok = currentStok - qtyAmbil
+    if (plate.stok <= 0) {
+      plate.status = 'Habis'
+    } else {
+      plate.status = 'Tersedia'
+    }
 
     let remnantPlate: Plate | null = null
     const sisaP = Number(data.sisa_p) || 0
@@ -779,6 +811,7 @@ export function useCncStore() {
         lebar_mm: sisaL,
         tebal_mm: plate.tebal_mm,
         berat_kg: remWeight,
+        stok: 1,
         no_sertifikat_class: plate.no_sertifikat_class,
         lokasi_yard: 'Area CNC - Rak Remnant',
         status: 'Sisa Potongan / Remnant',
@@ -789,18 +822,28 @@ export function useCncStore() {
       plates.value.push(remnantPlate)
     }
 
-    order.status = 'Plat Telah Diambil Yard'
-    order.plate_id = plate.id
-    order.plat_dipakai = `${plate.no_plat} (Heat: ${plate.heat_number})`
+    // Update order jika ada order_id yang diberikan (opsional)
+    let order: Order | undefined = undefined
+    if (data.order_id) {
+      order = orders.value.find(o => o.id === data.order_id)
+      if (order) {
+        order.status = 'Plat Telah Diambil Yard'
+        order.plate_id = plate.id
+        order.plat_dipakai = `${plate.no_plat} (Heat: ${plate.heat_number})`
+      }
+    }
 
     const nextYpId = yardPickups.value.length > 0 ? Math.max(...yardPickups.value.map(y => y.id)) + 1 : 1
     const newYp: YardPickup = {
       id: nextYpId,
-      order_id: order.id,
+      order_id: order?.id || null,
       plate_id: plate.id,
+      jumlah_ambil: qtyAmbil,
+      sisa_stok: plate.stok,
+      keperluan: data.keperluan?.trim() || '-',
       remnant_plate_id: remnantPlate?.id || null,
-      pengambil: data.pengambil,
-      petugas_yard: data.petugas_yard,
+      pengambil: data.pengambil?.trim() || '-',
+      petugas_yard: data.petugas_yard?.trim() || '-',
       is_partial: data.is_partial && remnantPlate !== null,
       sisa_p: data.is_partial ? sisaP : null,
       sisa_l: data.is_partial ? sisaL : null,
@@ -812,22 +855,30 @@ export function useCncStore() {
 
     if (isConfigured && supabase) {
       try {
-        await supabase.from('plates').update({ status: 'Diambil', order_id_pemakai: order.no_order }).eq('id', plate.id)
+        await supabase.from('plates').update({
+          stok: plate.stok,
+          status: plate.status
+        }).eq('id', plate.id)
+
         if (remnantPlate) {
           await supabase.from('plates').insert([remnantPlate])
         }
-        await supabase.from('orders').update({
-          status: 'Plat Telah Diambil Yard',
-          plate_id: plate.id,
-          plat_dipakai: order.plat_dipakai
-        }).eq('id', order.id)
+
+        if (order) {
+          await supabase.from('orders').update({
+            status: 'Plat Telah Diambil Yard',
+            plate_id: plate.id,
+            plat_dipakai: order.plat_dipakai
+          }).eq('id', order.id)
+        }
+
         await supabase.from('yard_pickups').insert([newYp])
       } catch (e) {
         console.warn('Supabase yard pickup error:', e)
       }
     }
 
-    return { order, plate, remnant: remnantPlate }
+    return { order, plate, remnant: remnantPlate, jumlah_ambil: qtyAmbil, sisa_stok: plate.stok }
   }
 
   // OPERATOR CNC ACTIONS
@@ -1087,6 +1138,7 @@ export function useCncStore() {
     saveEstimation,
     approveEstimation,
     addPlate,
+    deletePlate,
     pickupPlateYard,
     operatorAccept,
     operatorStart,
