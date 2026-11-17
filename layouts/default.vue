@@ -91,7 +91,7 @@
             >
               <span class="flex items-center gap-3">
                 <i class="fa-solid fa-layer-group w-4 text-center" :class="$route.path === '/plates' ? 'text-white' : 'text-amber-400'"></i>
-                <span>Stok Plat Yard</span>
+                <span>Stok Plat</span>
               </span>
             </NuxtLink>
             <NuxtLink 
@@ -102,7 +102,7 @@
             >
               <span class="flex items-center gap-3">
                 <i class="fa-solid fa-truck-ramp-box w-4 text-center" :class="$route.path === '/yard-pickup' ? 'text-white' : 'text-blue-400'"></i>
-                <span>Ambil Plat </span>
+                <span>Ambil Plat</span>
               </span>
             </NuxtLink>
             <NuxtLink 
@@ -412,9 +412,9 @@ const pageTitle = computed(() => {
   if (p === '/orders/create') return 'Form Buat Order Pemotongan Plat CNC'
   if (p === '/orders') return 'Daftar Order Pemotongan Plat CNC'
   if (p === '/estimation') return 'Material Identification - CNC'
-  if (p === '/plates') return 'Master Data Plat & Stok Yard'
+  if (p === '/plates') return 'Stok Plat CNC'
   if (p === '/plates/remnants') return 'Daftar Plat Remnant (Sisa Potongan)'
-  if (p === '/yard-pickup') return 'Pengambilan Plat dari Yard (Stock Lock)'
+  if (p === '/yard-pickup') return 'Ambil Plat CNC'
   if (p === '/operator') return 'Workshop Operator CNC'
   if (p === '/pickup-verify') return 'Pengambilan Barang & Verifikasi PIN 6-Digit'
   if (p === '/history') return 'History & Traceability'
