@@ -102,7 +102,7 @@
             >
               <span class="flex items-center gap-3">
                 <i class="fa-solid fa-truck-ramp-box w-4 text-center" :class="$route.path === '/yard-pickup' ? 'text-white' : 'text-blue-400'"></i>
-                <span>Ambil Plat Yard</span>
+                <span>Ambil Plat </span>
               </span>
             </NuxtLink>
             <NuxtLink 

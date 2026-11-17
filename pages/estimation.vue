@@ -487,15 +487,7 @@ watch(selectedOrder, (order) => {
   form.project_name = est?.project_name || order.nama_proyek_kapal || order.nama_proyek || ''
   form.nesting_no = est?.nesting_no || ''
   form.block_item = est?.block_item || ''
-  const rawSpec = (est?.spec_material || est?.grade || '').trim()
-  const isGenericMaterial = !rawSpec || 
-    rawSpec.toLowerCase() === 'baja' || 
-    rawSpec.toLowerCase() === 'alumunium' || 
-    rawSpec.toLowerCase() === 'aluminium' ||
-    rawSpec.toLowerCase() === 'bordes baja' ||
-    rawSpec.toLowerCase() === 'bordes alumunium' ||
-    rawSpec.toLowerCase() === (order.material || '').toLowerCase()
-  form.spec_material = isGenericMaterial ? '' : rawSpec
+  form.spec_material = est?.spec_material || ''
   form.dimension_material = est?.dimension_material || est?.ukuran_plat || (order.ketebalan ? `${order.ketebalan} x 1500 x 6000 mm` : '12 x 1500 x 6000 mm')
   form.product_number = est?.product_number || order.ukuran_part || ''
   form.heat_number = est?.heat_number || ''
