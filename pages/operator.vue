@@ -148,7 +148,7 @@
           <div class="flex items-center gap-2">
             <!-- Step 1: Terima Order -->
             <button 
-              v-if="o.status === 'Diterima' || o.status === 'Estimasi Selesai'"
+              v-if="o.status === 'Diterima'"
               @click="handleAccept(o.id)" 
               class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm transition flex items-center gap-1.5"
             >
@@ -231,7 +231,6 @@ const groupOrders = computed(() => {
 function getStatusBadgeClass(status: string) {
   switch (status) {
     case 'Diterima':
-    case 'Estimasi Selesai':
       return 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
     case 'Diterima Operator':
     case 'Plat Telah Diambil Yard':

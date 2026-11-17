@@ -243,7 +243,7 @@ const gradeCanvas = ref<HTMLCanvasElement | null>(null)
 let trendChartInstance: Chart | null = null
 let gradeChartInstance: Chart | null = null
 
-const waitingAcceptCount = computed(() => orders.value.filter(o => ['Diterima', 'Menunggu Persetujuan Pemesan', 'Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)).length)
+const waitingAcceptCount = computed(() => orders.value.filter(o => ['Diterima', 'Menunggu Persetujuan Pemesan', 'Diterima Operator', 'Plat Telah Diambil Yard'].includes(o.status)).length)
 const cuttingCount = computed(() => orders.value.filter(o => o.status === 'Sedang Dipotong').length)
 const readyCount = computed(() => orders.value.filter(o => o.status === 'Siap Diambil').length)
 const completedCount = computed(() => orders.value.filter(o => o.status === 'Sudah Diambil').length)

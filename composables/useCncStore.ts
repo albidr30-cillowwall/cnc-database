@@ -217,7 +217,16 @@ export function useCncStore() {
     }
     const localOrders = localStorage.getItem('cnc_orders_v3')
     if (localOrders) {
-      try { orders.value = JSON.parse(localOrders) } catch { }
+      try { 
+        orders.value = JSON.parse(localOrders) 
+        orders.value.forEach(o => {
+          if (o.status === 'Estimasi Selesai') {
+            if (o.waktu_diambil) o.status = 'Sudah Diambil'
+            else if (o.kode_pengambilan) o.status = 'Siap Diambil'
+            else o.status = 'Diterima'
+          }
+        })
+      } catch { }
     }
     const localPlates = localStorage.getItem('cnc_plates_v3')
     if (localPlates) {
@@ -337,7 +346,9 @@ export function useCncStore() {
             drawing_file_name: o.drawing_file_name,
             drawing_data_url: o.drawing_data_url,
             target_cnc: o.target_cnc,
-            status: o.status,
+            status: o.status === 'Estimasi Selesai'
+              ? (o.waktu_diambil ? 'Sudah Diambil' : (o.kode_pengambilan ? 'Siap Diambil' : 'Diterima'))
+              : o.status,
             plate_id: o.plate_id,
             plat_dipakai: o.plat_dipakai,
             kode_pengambilan: o.kode_pengambilan,
@@ -651,15 +662,11 @@ export function useCncStore() {
     }
 
     order.estimation = newEst
-    if (!['Siap Diambil', 'Sudah Diambil'].includes(order.status)) {
-      order.status = 'Estimasi Selesai'
-    }
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
       try {
         await supabase.from('order_estimations').upsert([newEst], { onConflict: 'order_id' })
-        await supabase.from('orders').update({ status: order.status }).eq('id', order.id)
       } catch (e) {
         console.warn('Supabase estimation error:', e)
       }
@@ -673,13 +680,17 @@ export function useCncStore() {
     if (order.estimation) {
       order.estimation.status_approval = 'Disetujui'
     }
-    order.status = 'Estimasi Selesai'
+    // Heal status jika terlanjur 'Estimasi Selesai'
+    if (order.status === 'Estimasi Selesai') {
+      if (order.waktu_diambil) order.status = 'Sudah Diambil'
+      else if (order.kode_pengambilan) order.status = 'Siap Diambil'
+      else order.status = 'Diterima'
+    }
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
       try {
         await supabase.from('order_estimations').update({ status_approval: 'Disetujui' }).eq('order_id', orderId)
-        await supabase.from('orders').update({ status: 'Estimasi Selesai' }).eq('id', orderId)
       } catch (e) {
         console.warn('Supabase approve estimation error:', e)
       }

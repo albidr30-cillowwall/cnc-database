@@ -399,7 +399,7 @@ const readyPickupCount = computed(() => {
 })
 
 const operatorQueueCount = computed(() => {
-  return orders.value.filter(o => ['Diterima', 'Estimasi Selesai', 'Diterima Operator', 'Plat Telah Diambil Yard', 'Sedang Dipotong'].includes(o.status)).length
+  return orders.value.filter(o => ['Diterima', 'Diterima Operator', 'Plat Telah Diambil Yard', 'Sedang Dipotong'].includes(o.status)).length
 })
 
 const remnantsCount = computed(() => {

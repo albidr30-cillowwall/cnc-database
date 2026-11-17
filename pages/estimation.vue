@@ -292,7 +292,7 @@
               <span>SIMPAN MATERIAL IDENTIFICATION</span>
             </button>
             <button 
-              v-if="selectedOrder.status === 'Menunggu Persetujuan Pemesan' || selectedOrder.estimation"
+              v-if="!selectedOrder.estimation || selectedOrder.estimation.status_approval !== 'Disetujui'"
               type="button"
               @click="handleDirectApprove(selectedOrder.id)"
               class="px-5 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center justify-center gap-2 shadow-xs shrink-0 cursor-pointer"
@@ -301,6 +301,13 @@
               <i class="fa-solid fa-circle-check"></i>
               <span>Setujui Langsung</span>
             </button>
+            <div 
+              v-else
+              class="px-5 py-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-center gap-2 shrink-0"
+            >
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Sudah Disetujui</span>
+            </div>
           </div>
         </form>
       </template>
@@ -392,7 +399,7 @@
               <td class="p-3.5">
                 <span 
                   class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold border"
-                  :class="o.estimation?.status_approval === 'Disetujui' || o.status === 'Estimasi Selesai' 
+                  :class="o.estimation?.status_approval === 'Disetujui'
                     ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' 
                     : 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'"
                 >
@@ -409,13 +416,16 @@
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
                   <button 
-                    v-if="o.status === 'Menunggu Persetujuan Pemesan' || o.estimation?.status_approval !== 'Disetujui'"
+                    v-if="o.estimation?.status_approval !== 'Disetujui'"
                     @click="handleDirectApprove(o.id)" 
                     class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] cursor-pointer"
                     title="Setujui Sekarang"
                   >
                     <i class="fa-solid fa-check"></i>
                   </button>
+                  <span v-else class="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
+                    <i class="fa-solid fa-circle-check"></i>
+                  </span>
                 </div>
               </td>
             </tr>
