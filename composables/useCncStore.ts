@@ -682,47 +682,58 @@ export function useCncStore() {
   async function addPlate(data: {
     material_type: string
     grade: string
-    heat_number: string
+    heat_number?: string
     no_sertifikat_class?: string
     panjang_mm: number
     lebar_mm: number
     tebal_mm: number
-    lokasi_yard: string
-  }): Promise<Plate> {
-    const nextId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
+    lokasi_yard?: string
+    jumlah?: number
+  }): Promise<Plate[]> {
+    const count = Math.max(1, Number(data.jumlah) || 1)
+    let maxId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) : 0
     const prefix = (data.material_type || '').toLowerCase().includes('alumin') ? 'AL' : 'KS'
-    const noPlat = `PLT-${prefix}-${new Date().getFullYear()}-${String(nextId).padStart(3, '0')}`
+    const year = new Date().getFullYear()
     const weight = calculateWeight(data.panjang_mm, data.lebar_mm, data.tebal_mm, data.material_type)
+    const baseHeat = data.heat_number?.trim() || '-'
+    const loc = data.lokasi_yard?.trim() || 'Yard A - Bay 1'
+    const cert = data.no_sertifikat_class?.trim() || 'Mill Test'
 
-    const newPlate: Plate = {
-      id: nextId,
-      no_plat: noPlat,
-      heat_number: data.heat_number.trim(),
-      grade: data.grade.trim(),
-      material_type: data.material_type,
-      panjang_mm: Number(data.panjang_mm),
-      lebar_mm: Number(data.lebar_mm),
-      tebal_mm: Number(data.tebal_mm),
-      berat_kg: weight,
-      no_sertifikat_class: data.no_sertifikat_class?.trim() || 'Mill Test',
-      lokasi_yard: data.lokasi_yard.trim(),
-      status: 'Tersedia',
-      is_remnant: false,
-      created_at: new Date().toISOString()
+    const createdPlates: Plate[] = []
+    for (let i = 0; i < count; i++) {
+      maxId++
+      const noPlat = `PLT-${prefix}-${year}-${String(maxId).padStart(3, '0')}`
+      const newPlate: Plate = {
+        id: maxId,
+        no_plat: noPlat,
+        heat_number: baseHeat,
+        grade: data.grade?.trim() || '-',
+        material_type: data.material_type?.trim() || 'Baja',
+        panjang_mm: Number(data.panjang_mm),
+        lebar_mm: Number(data.lebar_mm),
+        tebal_mm: Number(data.tebal_mm),
+        berat_kg: weight,
+        no_sertifikat_class: cert,
+        lokasi_yard: loc,
+        status: 'Tersedia',
+        is_remnant: false,
+        created_at: new Date().toISOString()
+      }
+      createdPlates.push(newPlate)
     }
 
-    plates.value.unshift(newPlate)
+    plates.value.unshift(...createdPlates)
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
       try {
-        await supabase.from('plates').insert([newPlate])
+        await supabase.from('plates').insert(createdPlates)
       } catch (e) {
         console.warn('Supabase addPlate error:', e)
       }
     }
 
-    return newPlate
+    return createdPlates
   }
 
   // YARD PICKUP & AUTO REMNANT

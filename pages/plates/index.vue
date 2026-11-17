@@ -5,7 +5,7 @@
       <div>
         <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
           <i class="fa-solid fa-layer-group text-amber-500"></i>
-          <span>Master Data Plat & Stok Yard</span>
+          <span>Stok Plat CNC</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
         </p>
@@ -100,7 +100,7 @@
             <tr>
               <th class="p-3.5">No. Plat</th>
               <th class="p-3.5">Heat Number</th>
-              <th class="p-3.5">Grade & Material</th>
+              <th class="p-3.5">Spesifikasi & Material</th>
               <th class="p-3.5">Dimensi (P x L x T)</th>
               <th class="p-3.5">Berat (kg)</th>
               <th class="p-3.5">Sertifikat Class</th>
@@ -168,11 +168,11 @@
       v-if="isModalOpen" 
       class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
     >
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <h3 class="text-sm font-extrabold uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
             <i class="fa-solid fa-square-plus"></i>
-            <span>Pendaftaran Plat Baru ke Yard</span>
+            <span>Pendaftaran Stok Plat Baru</span>
           </h3>
           <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl leading-none">
             &times;
@@ -180,52 +180,32 @@
         </div>
 
         <form @submit.prevent="handleSubmitPlate" class="space-y-3.5 text-xs">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- 1. Jenis Material -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Tipe Material / Spec *</label>
-              <select 
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Jenis Material *</label>
+              <input 
                 v-model="newPlateForm.material_type" 
+                type="text" 
                 required 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                <option value="">-- Pilih Spec of Material --</option>
-                <option value="Baja">Baja</option>
-                <option value="Alumunium">Alumunium</option>
-                <option value="Bordes Baja">Bordes Baja</option>
-                <option value="Bordes Alumunium">Bordes Alumunium</option>
-                <option value="Stainless">Stainless Steel</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
+                placeholder="contoh: Baja, Aluminium, Stainless..." 
+                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+              />
             </div>
+
+            <!-- 2. Spesifikasi Material -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Grade Material *</label>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Spesifikasi Material *</label>
               <input 
                 v-model="newPlateForm.grade" 
                 type="text" 
                 required 
-                placeholder="contoh: AH36, DH36, SS400..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="contoh: AH36, DH36, Grade A, SS400..." 
+                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
-            <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Heat Number *</label>
-              <input 
-                v-model="newPlateForm.heat_number" 
-                type="text" 
-                required 
-                placeholder="nomor heat plat..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-            <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Sertifikat Class (BKI/ABS/LR)</label>
-              <input 
-                v-model="newPlateForm.no_sertifikat_class" 
-                type="text" 
-                placeholder="BKI-2026-XXXX..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
+
+            <!-- 3. Panjang (mm) -->
             <div>
               <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Panjang (mm) *</label>
               <input 
@@ -237,6 +217,8 @@
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
+
+            <!-- 4. Lebar (mm) -->
             <div>
               <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Lebar (mm) *</label>
               <input 
@@ -248,6 +230,8 @@
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
+
+            <!-- 5. Tebal (mm) -->
             <div>
               <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Tebal (mm) *</label>
               <input 
@@ -260,20 +244,72 @@
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
+
+            <!-- 6. Jumlah -->
             <div>
-              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Lokasi Yard *</label>
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1 flex items-center justify-between">
+                <span>Jumlah (Lembar) *</span>
+                <span class="text-[10px] text-blue-500 font-normal">Pcs / Lembar</span>
+              </label>
               <input 
-                v-model="newPlateForm.lokasi_yard" 
-                type="text" 
+                v-model.number="newPlateForm.jumlah" 
+                type="number" 
+                min="1" 
                 required 
-                placeholder="contoh: Yard A - Bay 1" 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="contoh: 1" 
+                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
           </div>
 
-          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
-            Perkiraan berat otomatis: <b class="text-amber-600 dark:text-amber-400 font-mono">{{ estimatedNewWeight }} kg</b>
+          <!-- Opsi Data Tambahan (Opsional) -->
+          <details class="text-xs group border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/50 dark:bg-slate-950/30">
+            <summary class="cursor-pointer font-bold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-sliders text-blue-500"></i>
+                <span>Data Tambahan (Heat No., Lokasi, Sertifikat - Opsional)</span>
+              </span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-open:rotate-180 transition-transform"></i>
+            </summary>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 mt-2 border-t border-slate-200 dark:border-slate-800">
+              <div>
+                <label class="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Heat Number</label>
+                <input 
+                  v-model="newPlateForm.heat_number" 
+                  type="text" 
+                  placeholder="nomor heat plat..." 
+                  class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Lokasi Yard</label>
+                <input 
+                  v-model="newPlateForm.lokasi_yard" 
+                  type="text" 
+                  placeholder="contoh: Yard A - Bay 1" 
+                  class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Sertifikat Class</label>
+                <input 
+                  v-model="newPlateForm.no_sertifikat_class" 
+                  type="text" 
+                  placeholder="BKI-2026-XXXX..." 
+                  class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+            </div>
+          </details>
+
+          <!-- Perkiraan Berat -->
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              Perkiraan berat per lembar: <b class="text-amber-600 dark:text-amber-400 font-mono">{{ estimatedNewWeight }} kg</b>
+            </div>
+            <div v-if="newPlateForm.jumlah > 1">
+              Total berat ({{ newPlateForm.jumlah }} lembar): <b class="text-blue-600 dark:text-blue-400 font-mono">{{ (Number(estimatedNewWeight) * newPlateForm.jumlah).toLocaleString('id-ID', { minimumFractionDigits: 1 }) }} kg</b>
+            </div>
           </div>
 
           <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -288,7 +324,7 @@
               type="submit" 
               class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20"
             >
-              Simpan Plat ke Yard
+              Simpan Stok Plat
             </button>
           </div>
         </form>
@@ -312,11 +348,12 @@ const feedbackMsg = ref<string | null>(null)
 const newPlateForm = reactive({
   material_type: '',
   grade: '',
-  heat_number: '',
-  no_sertifikat_class: '',
   panjang_mm: 6000,
   lebar_mm: 1500,
   tebal_mm: 12,
+  jumlah: 1,
+  heat_number: '',
+  no_sertifikat_class: '',
   lokasi_yard: 'Yard A - Bay 1'
 })
 
@@ -328,8 +365,8 @@ const estimatedNewWeight = computed(() => {
   const p = newPlateForm.panjang_mm || 0
   const l = newPlateForm.lebar_mm || 0
   const t = newPlateForm.tebal_mm || 0
-  const mat = newPlateForm.material_type
-  const density = mat === 'Aluminium' ? 0.0000027 : (mat === 'Stainless' ? 0.0000080 : 0.00000785)
+  const mat = (newPlateForm.material_type || '').toLowerCase()
+  const density = mat.includes('alumin') ? 0.0000027 : (mat.includes('stainless') ? 0.0000080 : 0.00000785)
   return (p * l * t * density).toFixed(2)
 })
 
@@ -363,7 +400,7 @@ function getStatusBadgeClass(status: string) {
 }
 
 async function handleSubmitPlate() {
-  const plate = await store.addPlate({
+  const created = await store.addPlate({
     material_type: newPlateForm.material_type,
     grade: newPlateForm.grade,
     heat_number: newPlateForm.heat_number,
@@ -371,14 +408,22 @@ async function handleSubmitPlate() {
     panjang_mm: newPlateForm.panjang_mm,
     lebar_mm: newPlateForm.lebar_mm,
     tebal_mm: newPlateForm.tebal_mm,
-    lokasi_yard: newPlateForm.lokasi_yard
+    lokasi_yard: newPlateForm.lokasi_yard,
+    jumlah: newPlateForm.jumlah
   })
 
-  feedbackMsg.value = `Plat baru ${plate.no_plat} (Heat: ${plate.heat_number}) berhasil didaftarkan ke Yard!`
+  const count = Array.isArray(created) ? created.length : 1
+  if (count > 1) {
+    feedbackMsg.value = `${count} lembar plat baru (${newPlateForm.material_type} - ${newPlateForm.grade}) berhasil didaftarkan ke Stok Plat!`
+  } else {
+    const p = Array.isArray(created) ? created[0] : created
+    feedbackMsg.value = `Plat baru ${p.no_plat} (${p.material_type} - ${p.grade}) berhasil didaftarkan ke Stok Plat!`
+  }
   isModalOpen.value = false
 
-  // Reset form heat number for next entry
+  // Reset form
   newPlateForm.heat_number = ''
+  newPlateForm.jumlah = 1
 }
 
 onMounted(() => {
