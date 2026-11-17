@@ -101,8 +101,6 @@
               <th class="p-3.5">Dimensi (P x L x T)</th>
               <th class="p-3.5 text-center">Stok (Lembar)</th>
               <th class="p-3.5">Berat</th>
-              <th class="p-3.5">Heat Number</th>
-              <th class="p-3.5">Lokasi</th>
               <th class="p-3.5">Status</th>
               <th class="p-3.5 text-center">Aksi</th>
             </tr>
@@ -150,13 +148,6 @@
                   ({{ Number(p.berat_kg).toLocaleString('id-ID', { minimumFractionDigits: 1 }) }} kg/lbr)
                 </div>
               </td>
-              <td class="p-3.5 font-mono text-slate-700 dark:text-slate-300">
-                {{ p.heat_number || '-' }}
-              </td>
-              <td class="p-3.5 text-slate-700 dark:text-slate-300">
-                <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>
-                <span>{{ p.lokasi_yard }}</span>
-              </td>
               <td class="p-3.5">
                 <span 
                   class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold border"
@@ -176,7 +167,7 @@
               </td>
             </tr>
             <tr v-if="filteredPlates.length === 0">
-              <td colspan="9" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
+              <td colspan="7" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
                 <i class="fa-solid fa-layer-group text-3xl mb-2 block text-slate-300 dark:text-slate-700"></i>
                 Tidak ada data plat yang sesuai dengan filter.
               </td>
@@ -285,46 +276,6 @@
             </div>
           </div>
 
-          <!-- Opsi Data Tambahan (Opsional) -->
-          <details class="text-xs group border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/50 dark:bg-slate-950/30">
-            <summary class="cursor-pointer font-bold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-between">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-sliders text-blue-500"></i>
-                <span>Data Tambahan (Heat No., Lokasi, Sertifikat - Opsional)</span>
-              </span>
-              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-open:rotate-180 transition-transform"></i>
-            </summary>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 mt-2 border-t border-slate-200 dark:border-slate-800">
-              <div>
-                <label class="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Heat Number</label>
-                <input 
-                  v-model="newPlateForm.heat_number" 
-                  type="text" 
-                  placeholder="nomor heat plat..." 
-                  class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label class="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Lokasi Yard</label>
-                <input 
-                  v-model="newPlateForm.lokasi_yard" 
-                  type="text" 
-                  placeholder="contoh: Yard A - Bay 1" 
-                  class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label class="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Sertifikat Class</label>
-                <input 
-                  v-model="newPlateForm.no_sertifikat_class" 
-                  type="text" 
-                  placeholder="BKI-2026-XXXX..." 
-                  class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-            </div>
-          </details>
-
           <!-- Perkiraan Berat -->
           <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -374,10 +325,7 @@ const newPlateForm = reactive({
   panjang_mm: 6000,
   lebar_mm: 1500,
   tebal_mm: 12,
-  jumlah: 1,
-  heat_number: '',
-  no_sertifikat_class: '',
-  lokasi_yard: 'Yard A - Bay 1'
+  jumlah: 1
 })
 
 const remnantCount = computed(() => {
@@ -436,12 +384,9 @@ async function handleSubmitPlate() {
   const p = await store.addPlate({
     material_type: newPlateForm.material_type,
     grade: newPlateForm.grade,
-    heat_number: newPlateForm.heat_number,
-    no_sertifikat_class: newPlateForm.no_sertifikat_class,
     panjang_mm: newPlateForm.panjang_mm,
     lebar_mm: newPlateForm.lebar_mm,
     tebal_mm: newPlateForm.tebal_mm,
-    lokasi_yard: newPlateForm.lokasi_yard,
     jumlah: newPlateForm.jumlah
   })
 
@@ -451,7 +396,6 @@ async function handleSubmitPlate() {
   // Reset form
   newPlateForm.material_type = ''
   newPlateForm.grade = ''
-  newPlateForm.heat_number = ''
   newPlateForm.jumlah = 1
 }
 
