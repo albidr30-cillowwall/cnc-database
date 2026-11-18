@@ -1,6 +1,11 @@
 -- ====================================================================
 -- CNC DATABASE - SUPABASE POSTGRESQL SCHEMA (100% FREE TIER READY)
--- Jalankan skrip ini di: Supabase Dashboard -> SQL Editor -> New Query -> Run
+-- Skrip ini AMAN dijalankan di Supabase yang sudah ada (Idempotent / Migration-Safe)
+-- Cara menjalankan:
+-- 1. Buka Supabase Dashboard -> Project Anda
+-- 2. Pilih menu "SQL Editor" di bilah kiri
+-- 3. Klik "New Query"
+-- 4. Copy-paste seluruh isi skrip ini, lalu klik "Run" (atau Ctrl+Enter)
 -- ====================================================================
 
 -- 1. EXTENSIONS
@@ -19,6 +24,12 @@ CREATE TABLE IF NOT EXISTS profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Migrasi kolom profiles jika tabel lama sudah ada
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS department TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS password_hash TEXT NOT NULL DEFAULT '123';
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('admin', 'operator', 'mandor', 'user'));
+
 -- 3. PLATES TABLE (MASTER PLAT YARD & REMNANT)
 CREATE TABLE IF NOT EXISTS plates (
     id BIGSERIAL PRIMARY KEY,
@@ -33,13 +44,20 @@ CREATE TABLE IF NOT EXISTS plates (
     stok INTEGER NOT NULL DEFAULT 1,
     no_sertifikat_class TEXT DEFAULT 'Mill Test',
     lokasi_yard TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'Tersedia', -- Tersedia, Dipesan, Diambil, Sudah Dipotong, Sisa Potongan / Remnant
+    status TEXT NOT NULL DEFAULT 'Tersedia', -- Tersedia, Dipesan, Diambil, Sudah Dipotong, Sisa Potongan / Remnant, Habis
     is_remnant BOOLEAN NOT NULL DEFAULT FALSE,
     parent_plate_id BIGINT REFERENCES plates(id) ON DELETE SET NULL,
     order_id_pemakai TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migrasi kolom plates jika tabel lama sudah ada
+ALTER TABLE plates ADD COLUMN IF NOT EXISTS stok INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE plates ADD COLUMN IF NOT EXISTS no_sertifikat_class TEXT DEFAULT 'Mill Test';
+ALTER TABLE plates ADD COLUMN IF NOT EXISTS is_remnant BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE plates ADD COLUMN IF NOT EXISTS parent_plate_id BIGINT REFERENCES plates(id) ON DELETE SET NULL;
+ALTER TABLE plates ADD COLUMN IF NOT EXISTS order_id_pemakai TEXT;
 
 -- 4. ORDERS TABLE (ORDER PEMOTONGAN PLAT CNC)
 CREATE TABLE IF NOT EXISTS orders (
@@ -78,6 +96,18 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Migrasi kolom orders jika tabel lama sudah ada
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS nama_proyek_kapal TEXT DEFAULT '-';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS drawing_data_url TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS plate_id BIGINT REFERENCES plates(id) ON DELETE SET NULL;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS plat_dipakai TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS kode_pengambilan VARCHAR(6);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS waktu_mulai TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS waktu_selesai TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS waktu_diambil TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS pengambil_akhir TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS departemen_pengambil TEXT;
+
 -- 5. ORDER ESTIMATIONS TABLE (NESTING & CUTTING PLAN SHEET)
 CREATE TABLE IF NOT EXISTS order_estimations (
     id BIGSERIAL PRIMARY KEY,
@@ -89,6 +119,7 @@ CREATE TABLE IF NOT EXISTS order_estimations (
     dimension_material TEXT,
     product_number TEXT,
     heat_number TEXT,
+    cutting_image_url TEXT,
     status_approval TEXT NOT NULL DEFAULT 'Menunggu Persetujuan',
     grade TEXT,
     tebal TEXT,
@@ -103,9 +134,7 @@ CREATE TABLE IF NOT EXISTS order_estimations (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Kolom tambahan & migrasi constraint untuk database Supabase yang sudah berjalan:
-ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
-ALTER TABLE profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('admin', 'operator', 'mandor', 'user'));
+-- Migrasi kolom order_estimations jika tabel lama sudah ada
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS project_name TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS nesting_no TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS block_item TEXT;
@@ -113,6 +142,8 @@ ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS spec_material TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS dimension_material TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS product_number TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS heat_number TEXT;
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS cutting_image_url TEXT;
+ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS status_approval TEXT NOT NULL DEFAULT 'Menunggu Persetujuan';
 
 -- 6. YARD PICKUPS TABLE
 CREATE TABLE IF NOT EXISTS yard_pickups (
@@ -132,20 +163,47 @@ CREATE TABLE IF NOT EXISTS yard_pickups (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE plates ADD COLUMN IF NOT EXISTS stok INTEGER NOT NULL DEFAULT 1;
+-- Migrasi kolom yard_pickups jika tabel lama sudah ada
 ALTER TABLE yard_pickups ALTER COLUMN order_id DROP NOT NULL;
 ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS jumlah_ambil INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS sisa_stok INTEGER;
 ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS keperluan TEXT;
+ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS remnant_plate_id BIGINT REFERENCES plates(id) ON DELETE SET NULL;
 
--- 7. ENABLE ROW LEVEL SECURITY (RLS) & HARDENED POLICIES
+-- 7. ENABLE ROW LEVEL SECURITY (RLS) & CLEAN POLICIES
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_estimations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE yard_pickups ENABLE ROW LEVEL SECURITY;
 
--- Profiles: Allow read, insert new user, update, but forbid deleting the main administrator account
+-- Drop existing policies first to prevent "policy already exists" errors
+DROP POLICY IF EXISTS "Allow public read profiles" ON profiles;
+DROP POLICY IF EXISTS "Allow public insert profiles" ON profiles;
+DROP POLICY IF EXISTS "Allow public update profiles" ON profiles;
+DROP POLICY IF EXISTS "Protect root admin from deletion" ON profiles;
+
+DROP POLICY IF EXISTS "Allow public read plates" ON plates;
+DROP POLICY IF EXISTS "Allow public insert plates" ON plates;
+DROP POLICY IF EXISTS "Allow public update plates" ON plates;
+DROP POLICY IF EXISTS "Allow public delete plates" ON plates;
+
+DROP POLICY IF EXISTS "Allow public read orders" ON orders;
+DROP POLICY IF EXISTS "Allow public insert orders" ON orders;
+DROP POLICY IF EXISTS "Allow public update orders" ON orders;
+DROP POLICY IF EXISTS "Allow public delete orders" ON orders;
+
+DROP POLICY IF EXISTS "Allow public read order_estimations" ON order_estimations;
+DROP POLICY IF EXISTS "Allow public insert order_estimations" ON order_estimations;
+DROP POLICY IF EXISTS "Allow public update order_estimations" ON order_estimations;
+DROP POLICY IF EXISTS "Allow public delete order_estimations" ON order_estimations;
+
+DROP POLICY IF EXISTS "Allow public read yard_pickups" ON yard_pickups;
+DROP POLICY IF EXISTS "Allow public insert yard_pickups" ON yard_pickups;
+DROP POLICY IF EXISTS "Allow public update yard_pickups" ON yard_pickups;
+DROP POLICY IF EXISTS "Allow public delete yard_pickups" ON yard_pickups;
+
+-- Create Policies
 CREATE POLICY "Allow public read profiles" ON profiles FOR SELECT USING (true);
 CREATE POLICY "Allow public insert profiles" ON profiles FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update profiles" ON profiles FOR UPDATE USING (true);
@@ -178,4 +236,3 @@ VALUES
     ('Operator CNC', 'Operator', 'Operator@gmail.com', 'mandor', 'Produksi CNC', '123'),
     ('User (Pemesan / Viewer)', 'user', 'user@gmail.com', 'user', 'Hull Construction', '123')
 ON CONFLICT (username) DO NOTHING;
-

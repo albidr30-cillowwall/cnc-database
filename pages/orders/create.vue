@@ -281,9 +281,11 @@
 import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
+import { useImageCompressor } from '~/composables/useImageCompressor'
 
 const router = useRouter()
 const { createOrder, currentUser } = useCncStore()
+const { compressImage } = useImageCompressor()
 
 const isSubmitting = ref(false)
 const fileName = ref('')
@@ -354,11 +356,15 @@ function handleFileUpload(e: Event) {
   }
 
   fileName.value = file.name
-  const reader = new FileReader()
-  reader.onload = () => {
-    fileDataUrl.value = reader.result as string
+  try {
+    fileDataUrl.value = await compressImage(file, 1200, 0.75)
+  } catch {
+    const reader = new FileReader()
+    reader.onload = () => {
+      fileDataUrl.value = reader.result as string
+    }
+    reader.readAsDataURL(file)
   }
-  reader.readAsDataURL(file)
 }
 
 async function handleSubmit() {

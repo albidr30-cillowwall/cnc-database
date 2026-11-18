@@ -132,7 +132,15 @@ const defaultUsers: UserProfile[] = [
 ]
 
 export function useCncStore() {
-  const { supabase, isConfigured } = useSupabase()
+  const { 
+    supabase, 
+    isConfigured, 
+    supabaseUrl, 
+    supabaseKey, 
+    setCustomCredentials, 
+    clearCustomCredentials, 
+    checkConnection 
+  } = useSupabase()
   const {
     hashPassword,
     verifyPassword,
@@ -185,24 +193,35 @@ export function useCncStore() {
     return parseFloat((p * l * t * density).toFixed(2))
   }
 
-  // Local Storage save (Security hardened: never stores raw session user or password hashes)
+  // Local Storage save (Security hardened: protects against quota exceeded errors & never stores password hashes)
   function saveToLocalStorage() {
     if (!import.meta.client) return
-    const safeUsers = users.value.map(u => ({
-      id: u.id,
-      name: u.name,
-      username: u.username,
-      email: u.email,
-      role: u.role,
-      department: u.department
-    }))
-    localStorage.setItem('cnc_users_v3', JSON.stringify(safeUsers))
-    localStorage.setItem('cnc_orders_v3', JSON.stringify(orders.value))
-    localStorage.setItem('cnc_plates_v3', JSON.stringify(plates.value))
-    localStorage.setItem('cnc_estimations_v3', JSON.stringify(estimations.value))
-    localStorage.setItem('cnc_pickups_v3', JSON.stringify(yardPickups.value))
-    // Clean up any legacy unverified session user in localStorage
-    localStorage.removeItem('cnc_session_user')
+    try {
+      const safeUsers = users.value.map(u => ({
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        email: u.email,
+        role: u.role,
+        department: u.department
+      }))
+      localStorage.setItem('cnc_users_v3', JSON.stringify(safeUsers))
+      localStorage.setItem('cnc_plates_v3', JSON.stringify(plates.value))
+      localStorage.setItem('cnc_pickups_v3', JSON.stringify(yardPickups.value))
+      localStorage.setItem('cnc_estimations_v3', JSON.stringify(estimations.value))
+      localStorage.setItem('cnc_orders_v3', JSON.stringify(orders.value))
+      localStorage.removeItem('cnc_session_user')
+    } catch (quotaError) {
+      console.warn('LocalStorage quota warning, saving lightweight fallback (stripping heavy images):', quotaError)
+      try {
+        const lightOrders = orders.value.map(o => ({ ...o, drawing_data_url: undefined }))
+        const lightEst = estimations.value.map(e => ({ ...e, cutting_image_url: undefined }))
+        localStorage.setItem('cnc_orders_v3', JSON.stringify(lightOrders))
+        localStorage.setItem('cnc_estimations_v3', JSON.stringify(lightEst))
+      } catch (inner) {
+        console.warn('Could not save to localStorage:', inner)
+      }
+    }
   }
 
   // Initialize store (from Supabase or LocalStorage)
@@ -271,15 +290,20 @@ export function useCncStore() {
     }
   }
 
-  // Sync from Supabase tables
+  // ==========================================
+  // FIX #3: syncFromSupabase() — ONLY overwrite local data when Supabase returns non-empty arrays
+  // FIX #5: Add cutting_image_url to estimation mapping
+  // ==========================================
   async function syncFromSupabase() {
     if (!supabase || !isConfigured) return
     isSyncing.value = true
     try {
       // Fetch users (Hardened: never select password_hash to prevent credential leakage to client memory)
-      const { data: profileData } = await supabase.from('profiles').select('id, name, username, email, role, department')
-      if (profileData && profileData.length > 0) {
-        users.value = profileData.map(p => ({
+      const { data: profileData, error: profileErr } = await supabase.from('profiles').select('id, name, username, email, role, department')
+      if (profileErr) {
+        console.error('Supabase sync profiles error:', profileErr.message)
+      } else if (profileData && profileData.length > 0) {
+        users.value = profileData.map((p: any) => ({
           id: p.id,
           name: p.name,
           username: p.username,
@@ -289,10 +313,12 @@ export function useCncStore() {
         }))
       }
 
-      // Fetch plates
-      const { data: plateData } = await supabase.from('plates').select('*').order('id', { ascending: false })
-      if (plateData) {
-        plates.value = plateData.map(p => ({
+      // Fetch plates — FIX: only overwrite if Supabase has data
+      const { data: plateData, error: plateErr } = await supabase.from('plates').select('*').order('id', { ascending: false })
+      if (plateErr) {
+        console.error('Supabase sync plates error:', plateErr.message)
+      } else if (plateData && plateData.length > 0) {
+        plates.value = plateData.map((p: any) => ({
           id: p.id,
           no_plat: p.no_plat,
           heat_number: p.heat_number,
@@ -312,11 +338,21 @@ export function useCncStore() {
           created_at: p.created_at
         }))
       }
+      // If Supabase returned empty BUT we have local plates, push them to Supabase
+      else if ((!plateData || plateData.length === 0) && plates.value.length > 0) {
+        console.info('Supabase plates empty but local has data — pushing local plates to Supabase')
+        for (const p of plates.value) {
+          const { id: _ignoreId, ...plateWithoutId } = p as any
+          await supabase.from('plates').upsert([p], { onConflict: 'id' })
+        }
+      }
 
-      // Fetch estimations
-      const { data: estData } = await supabase.from('order_estimations').select('*')
-      if (estData) {
-        estimations.value = estData.map(e => ({
+      // Fetch estimations — FIX #5: add cutting_image_url
+      const { data: estData, error: estErr } = await supabase.from('order_estimations').select('*')
+      if (estErr) {
+        console.error('Supabase sync estimations error:', estErr.message)
+      } else if (estData && estData.length > 0) {
+        estimations.value = estData.map((e: any) => ({
           id: e.id,
           order_id: e.order_id,
           project_name: e.project_name || '',
@@ -326,6 +362,7 @@ export function useCncStore() {
           dimension_material: e.dimension_material || e.ukuran_plat || e.tebal || '',
           product_number: e.product_number || '',
           heat_number: e.heat_number || '',
+          cutting_image_url: e.cutting_image_url || '',
           grade: e.grade,
           tebal: e.tebal,
           ukuran_plat: e.ukuran_plat,
@@ -339,10 +376,12 @@ export function useCncStore() {
         }))
       }
 
-      // Fetch orders
-      const { data: orderData } = await supabase.from('orders').select('*').order('id', { ascending: false })
-      if (orderData) {
-        orders.value = orderData.map(o => {
+      // Fetch orders — FIX: only overwrite if Supabase has data
+      const { data: orderData, error: orderErr } = await supabase.from('orders').select('*').order('id', { ascending: false })
+      if (orderErr) {
+        console.error('Supabase sync orders error:', orderErr.message)
+      } else if (orderData && orderData.length > 0) {
+        orders.value = orderData.map((o: any) => {
           const est = estimations.value.find(e => e.order_id === o.id) || null
           return {
             id: o.id,
@@ -384,10 +423,12 @@ export function useCncStore() {
         })
       }
 
-      // Fetch pickups
-      const { data: pickupData } = await supabase.from('yard_pickups').select('*').order('id', { ascending: false })
-      if (pickupData) {
-        yardPickups.value = pickupData.map(yp => ({
+      // Fetch pickups — FIX: only overwrite if Supabase has data
+      const { data: pickupData, error: pickupErr } = await supabase.from('yard_pickups').select('*').order('id', { ascending: false })
+      if (pickupErr) {
+        console.error('Supabase sync pickups error:', pickupErr.message)
+      } else if (pickupData && pickupData.length > 0) {
+        yardPickups.value = pickupData.map((yp: any) => ({
           id: yp.id,
           order_id: yp.order_id || null,
           plate_id: yp.plate_id,
@@ -543,7 +584,9 @@ export function useCncStore() {
     }
   }
 
-  // ORDER ACTIONS
+  // ==========================================
+  // FIX #2 & #4: createOrder — check Supabase error, let Supabase generate ID
+  // ==========================================
   async function createOrder(data: {
     jenis_pekerjaan_kategori: string
     jenis_lainnya?: string
@@ -566,9 +609,6 @@ export function useCncStore() {
     drawing_data_url?: string
     target_cnc: string
   }): Promise<Order> {
-    const nextId = orders.value.length > 0 ? Math.max(...orders.value.map(o => o.id)) + 1 : 1
-    const noOrder = 'ORD-CNC-' + String(nextId).padStart(3, '0')
-
     const jenisPekerjaan = data.jenis_pekerjaan_kategori === 'Lainnya'
       ? (data.jenis_lainnya?.trim() || 'Lainnya')
       : data.jenis_pekerjaan_kategori
@@ -577,9 +617,24 @@ export function useCncStore() {
       ? (data.waktu_custom || 'Tanggal + Jam belum diisi')
       : data.waktu_pengambilan
 
-    const newOrder: Order = {
-      id: nextId,
-      no_order: noOrder,
+    // Generate unique order number (prevents NOT NULL and UNIQUE constraint violation in Supabase)
+    let maxOrderNum = 0
+    orders.value.forEach(o => {
+      const match = o.no_order && o.no_order.match(/(\d+)$/)
+      if (match) {
+        const n = parseInt(match[1], 10)
+        if (!isNaN(n) && n > maxOrderNum) maxOrderNum = n
+      }
+    })
+    const orderSeq = maxOrderNum + 1
+    let generatedNoOrder = 'ORD-CNC-' + String(orderSeq).padStart(3, '0')
+    if (orders.value.some(o => o.no_order === generatedNoOrder)) {
+      generatedNoOrder = `ORD-CNC-${String(orderSeq).padStart(3, '0')}-${Date.now().toString().slice(-4)}`
+    }
+
+    // Build payload WITHOUT id — let Supabase BIGSERIAL auto-generate id
+    const orderPayload = {
+      no_order: generatedNoOrder,
       jenis_pekerjaan: jenisPekerjaan,
       jenis_pekerjaan_kategori: data.jenis_pekerjaan_kategori,
       deskripsi_pekerjaan: data.deskripsi_pekerjaan.trim(),
@@ -595,11 +650,42 @@ export function useCncStore() {
       satuan: 'pcs',
       ukuran_part: data.ukuran_part?.trim() || '-',
       waktu_pengambilan_diinginkan: waktuDiinginkan,
-      deadline_pekerjaan: data.deadline_pekerjaan || undefined,
-      catatan_pekerjaan: data.catatan_pekerjaan?.trim() || undefined,
-      drawing_file_name: data.drawing_file_name,
-      drawing_data_url: data.drawing_data_url,
+      deadline_pekerjaan: data.deadline_pekerjaan || null,
+      catatan_pekerjaan: data.catatan_pekerjaan?.trim() || null,
+      drawing_file_name: data.drawing_file_name || null,
+      drawing_data_url: data.drawing_data_url || null,
       target_cnc: data.target_cnc,
+      status: 'Diterima'
+    }
+
+    let finalId: number
+    let finalNoOrder: string = generatedNoOrder
+
+    if (isConfigured && supabase) {
+      // Insert to Supabase FIRST, get auto-generated id back
+      const { data: inserted, error } = await supabase
+        .from('orders')
+        .insert([orderPayload])
+        .select('*')
+        .single()
+
+      if (error) {
+        console.error('Supabase createOrder error:', error.message, error.details, error.code)
+        // Fallback: generate local ID
+        finalId = orders.value.length > 0 ? Math.max(...orders.value.map(o => o.id)) + 1 : 1
+      } else {
+        finalId = inserted.id
+        finalNoOrder = inserted.no_order || generatedNoOrder
+      }
+    } else {
+      // No Supabase: generate local ID
+      finalId = orders.value.length > 0 ? Math.max(...orders.value.map(o => o.id)) + 1 : 1
+    }
+
+    const newOrder: Order = {
+      id: finalId,
+      no_order: finalNoOrder,
+      ...orderPayload,
       status: 'Diterima',
       created_at: new Date().toISOString()
     }
@@ -607,42 +693,13 @@ export function useCncStore() {
     orders.value.unshift(newOrder)
     saveToLocalStorage()
 
-    if (isConfigured && supabase) {
-      try {
-        await supabase.from('orders').insert([{
-          id: newOrder.id,
-          no_order: newOrder.no_order,
-          jenis_pekerjaan: newOrder.jenis_pekerjaan,
-          jenis_pekerjaan_kategori: newOrder.jenis_pekerjaan_kategori,
-          deskripsi_pekerjaan: newOrder.deskripsi_pekerjaan,
-          nama_pemesan: newOrder.nama_pemesan,
-          departemen_pemesan: newOrder.departemen_pemesan,
-          nik_pemesan: newOrder.nik_pemesan,
-          no_hp_pemesan: newOrder.no_hp_pemesan,
-          nama_proyek: newOrder.nama_proyek,
-          nama_proyek_kapal: newOrder.nama_proyek_kapal,
-          material: newOrder.material,
-          ketebalan: newOrder.ketebalan,
-          jumlah_pesanan: newOrder.jumlah_pesanan,
-          satuan: newOrder.satuan,
-          ukuran_part: newOrder.ukuran_part,
-          waktu_pengambilan_diinginkan: newOrder.waktu_pengambilan_diinginkan,
-          deadline_pekerjaan: newOrder.deadline_pekerjaan || null,
-          catatan_pekerjaan: newOrder.catatan_pekerjaan || null,
-          drawing_file_name: newOrder.drawing_file_name || null,
-          drawing_data_url: newOrder.drawing_data_url || null,
-          target_cnc: newOrder.target_cnc,
-          status: newOrder.status
-        }])
-      } catch (e) {
-        console.warn('Supabase insert order error:', e)
-      }
-    }
-
     return newOrder
   }
 
-  // ESTIMATION ACTIONS
+  // ==========================================
+  // FIX #1: saveEstimation — REMOVED duplicate const existingIdx
+  // FIX #2: check Supabase { error } response
+  // ==========================================
   async function saveEstimation(data: {
     order_id: number
     project_name?: string
@@ -696,8 +753,9 @@ export function useCncStore() {
       catatan: data.catatan || ''
     }
 
-    const existingIdx = estimations.value.findIndex(e => e.order_id === data.order_id)
+    // FIX #1: REUSE existingIdx — no duplicate declaration!
     if (existingIdx >= 0) {
+      newEst.id = estimations.value[existingIdx].id
       estimations.value[existingIdx] = newEst
     } else {
       estimations.value.push(newEst)
@@ -707,10 +765,23 @@ export function useCncStore() {
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
-      try {
-        await supabase.from('order_estimations').upsert([newEst], { onConflict: 'order_id' })
-      } catch (e) {
-        console.warn('Supabase estimation error:', e)
+      // FIX #2: Check { error } from Supabase response (strip id so Supabase handles BIGSERIAL on insert or matches onConflict: order_id)
+      const { id: _ignoreId, ...estPayload } = newEst
+      const { data: upserted, error } = await supabase
+        .from('order_estimations')
+        .upsert([estPayload], { onConflict: 'order_id' })
+        .select('*')
+        .single()
+
+      if (error) {
+        console.error('Supabase saveEstimation error:', error.message, error.code)
+      } else if (upserted?.id) {
+        // Update local estimation with Supabase-generated id
+        newEst.id = upserted.id
+        const idx = estimations.value.findIndex(e => e.order_id === data.order_id)
+        if (idx >= 0) estimations.value[idx] = newEst
+        order.estimation = newEst
+        saveToLocalStorage()
       }
     }
   }
@@ -722,6 +793,10 @@ export function useCncStore() {
     if (order.estimation) {
       order.estimation.status_approval = 'Disetujui'
     }
+    const estIdx = estimations.value.findIndex(e => e.order_id === orderId)
+    if (estIdx >= 0) {
+      estimations.value[estIdx].status_approval = 'Disetujui'
+    }
     // Heal status jika terlanjur 'Estimasi Selesai'
     if (order.status === 'Estimasi Selesai') {
       if (order.waktu_diambil) order.status = 'Sudah Diambil'
@@ -731,15 +806,16 @@ export function useCncStore() {
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
-      try {
-        await supabase.from('order_estimations').update({ status_approval: 'Disetujui' }).eq('order_id', orderId)
-      } catch (e) {
-        console.warn('Supabase approve estimation error:', e)
+      const { error } = await supabase.from('order_estimations').update({ status_approval: 'Disetujui' }).eq('order_id', orderId)
+      if (error) {
+        console.error('Supabase approveEstimation error:', error.message)
       }
     }
   }
 
-  // PLATE ACTIONS
+  // ==========================================
+  // FIX #2 & #4: addPlate — check Supabase error, let Supabase generate ID
+  // ==========================================
   async function addPlate(data: {
     material_type: string
     grade: string
@@ -752,18 +828,31 @@ export function useCncStore() {
     jumlah?: number
   }): Promise<Plate> {
     const qty = Math.max(1, Number(data.jumlah) || 1)
-    const nextId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
     const prefix = (data.material_type || '').toLowerCase().includes('alumin') ? 'AL' : 'KS'
     const year = new Date().getFullYear()
-    const noPlat = `PLT-${prefix}-${year}-${String(nextId).padStart(3, '0')}`
     const weight = calculateWeight(data.panjang_mm, data.lebar_mm, data.tebal_mm, data.material_type)
     const baseHeat = data.heat_number?.trim() || '-'
     const loc = data.lokasi_yard?.trim() || 'Yard A - Bay 1'
     const cert = data.no_sertifikat_class?.trim() || 'Mill Test'
 
-    const newPlate: Plate = {
-      id: nextId,
-      no_plat: noPlat,
+    // Generate unique plate number (prevents NOT NULL and UNIQUE constraint violation in Supabase)
+    let maxPlateNum = 0
+    plates.value.forEach(p => {
+      const match = p.no_plat && p.no_plat.match(/(\d+)$/)
+      if (match) {
+        const n = parseInt(match[1], 10)
+        if (!isNaN(n) && n > maxPlateNum) maxPlateNum = n
+      }
+    })
+    const plateSeq = maxPlateNum + 1
+    let generatedNoPlat = `PLT-${prefix}-${year}-${String(plateSeq).padStart(3, '0')}`
+    if (plates.value.some(p => p.no_plat === generatedNoPlat)) {
+      generatedNoPlat = `PLT-${prefix}-${year}-${String(plateSeq).padStart(3, '0')}-${Date.now().toString().slice(-4)}`
+    }
+
+    // Build payload WITHOUT id — let Supabase BIGSERIAL auto-generate id
+    const platePayload = {
+      no_plat: generatedNoPlat,
       heat_number: baseHeat,
       grade: data.grade?.trim() || '-',
       material_type: data.material_type?.trim() || 'Baja',
@@ -775,20 +864,42 @@ export function useCncStore() {
       no_sertifikat_class: cert,
       lokasi_yard: loc,
       status: qty > 0 ? 'Tersedia' : 'Habis',
-      is_remnant: false,
+      is_remnant: false
+    }
+
+    let finalId: number
+    let finalNoPlat: string = generatedNoPlat
+
+    if (isConfigured && supabase) {
+      // Insert to Supabase FIRST, get auto-generated id back
+      const { data: inserted, error } = await supabase
+        .from('plates')
+        .insert([platePayload])
+        .select('*')
+        .single()
+
+      if (error) {
+        console.error('Supabase addPlate error:', error.message, error.details, error.code)
+        // Fallback: generate local ID
+        finalId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
+      } else {
+        finalId = inserted.id
+        finalNoPlat = inserted.no_plat || generatedNoPlat
+      }
+    } else {
+      // No Supabase: generate local ID
+      finalId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
+    }
+
+    const newPlate: Plate = {
+      id: finalId,
+      no_plat: finalNoPlat,
+      ...platePayload,
       created_at: new Date().toISOString()
     }
 
     plates.value.unshift(newPlate)
     saveToLocalStorage()
-
-    if (isConfigured && supabase) {
-      try {
-        await supabase.from('plates').insert([newPlate])
-      } catch (e) {
-        console.warn('Supabase addPlate error:', e)
-      }
-    }
 
     return newPlate
   }
@@ -799,10 +910,9 @@ export function useCncStore() {
       plates.value.splice(idx, 1)
       saveToLocalStorage()
       if (isConfigured && supabase) {
-        try {
-          await supabase.from('plates').delete().eq('id', plateId)
-        } catch (e) {
-          console.warn('Supabase deletePlate error:', e)
+        const { error } = await supabase.from('plates').delete().eq('id', plateId)
+        if (error) {
+          console.error('Supabase deletePlate error:', error.message)
         }
       }
       return true
@@ -810,7 +920,9 @@ export function useCncStore() {
     return false
   }
 
-  // YARD PICKUP & AUTO REMNANT
+  // ==========================================
+  // FIX #2 & #4: pickupPlateYard — check Supabase errors, let Supabase generate IDs
+  // ==========================================
   async function pickupPlateYard(data: {
     order_id?: number | null
     plate_id: number
@@ -850,13 +962,25 @@ export function useCncStore() {
     const sisaL = Number(data.sisa_l) || 0
 
     if (data.is_partial && sisaP > 0 && sisaL > 0) {
-      const nextRemId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
-      const noRem = `PLT-REM-${new Date().getFullYear()}-${String(nextRemId).padStart(3, '0')}`
       const remWeight = calculateWeight(sisaP, sisaL, plate.tebal_mm, plate.material_type)
 
-      remnantPlate = {
-        id: nextRemId,
-        no_plat: noRem,
+      // Generate unique remnant plate number (prevents NOT NULL constraint error)
+      let maxRemNum = 0
+      plates.value.forEach(p => {
+        const match = p.no_plat && p.no_plat.match(/(\d+)$/)
+        if (match) {
+          const n = parseInt(match[1], 10)
+          if (!isNaN(n) && n > maxRemNum) maxRemNum = n
+        }
+      })
+      const remSeq = maxRemNum + 1
+      let generatedRemNoPlat = `PLT-REM-${new Date().getFullYear()}-${String(remSeq).padStart(3, '0')}`
+      if (plates.value.some(p => p.no_plat === generatedRemNoPlat)) {
+        generatedRemNoPlat = `PLT-REM-${new Date().getFullYear()}-${String(remSeq).padStart(3, '0')}-${Date.now().toString().slice(-4)}`
+      }
+
+      const remPayload = {
+        no_plat: generatedRemNoPlat,
         heat_number: plate.heat_number,
         grade: plate.grade,
         material_type: plate.material_type,
@@ -869,7 +993,34 @@ export function useCncStore() {
         lokasi_yard: 'Area CNC - Rak Remnant',
         status: 'Sisa Potongan / Remnant',
         is_remnant: true,
-        parent_plate_id: plate.id,
+        parent_plate_id: plate.id
+      }
+
+      let remId: number
+      let remNoPlat: string = generatedRemNoPlat
+
+      if (isConfigured && supabase) {
+        const { data: insertedRem, error: remErr } = await supabase
+          .from('plates')
+          .insert([remPayload])
+          .select('*')
+          .single()
+
+        if (remErr) {
+          console.error('Supabase insert remnant error:', remErr.message)
+          remId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
+        } else {
+          remId = insertedRem.id
+          remNoPlat = insertedRem.no_plat || generatedRemNoPlat
+        }
+      } else {
+        remId = plates.value.length > 0 ? Math.max(...plates.value.map(p => p.id)) + 1 : 1
+      }
+
+      remnantPlate = {
+        id: remId,
+        no_plat: remNoPlat,
+        ...remPayload,
         created_at: new Date().toISOString()
       }
       plates.value.push(remnantPlate)
@@ -886,9 +1037,8 @@ export function useCncStore() {
       }
     }
 
-    const nextYpId = yardPickups.value.length > 0 ? Math.max(...yardPickups.value.map(y => y.id)) + 1 : 1
-    const newYp: YardPickup = {
-      id: nextYpId,
+    // Yard pickup record
+    const ypPayload = {
       order_id: order?.id || null,
       plate_id: plate.id,
       jumlah_ambil: qtyAmbil,
@@ -902,46 +1052,66 @@ export function useCncStore() {
       sisa_l: data.is_partial ? sisaL : null,
       picked_up_at: new Date().toISOString()
     }
+
+    let ypId: number
+
+    if (isConfigured && supabase) {
+      // Update plate stok in Supabase
+      const { error: plateUpErr } = await supabase.from('plates').update({
+        stok: plate.stok,
+        status: plate.status
+      }).eq('id', plate.id)
+      if (plateUpErr) console.error('Supabase update plate stok error:', plateUpErr.message)
+
+      // Update order in Supabase
+      if (order) {
+        const { error: orderUpErr } = await supabase.from('orders').update({
+          status: 'Plat Telah Diambil Yard',
+          plate_id: plate.id,
+          plat_dipakai: order.plat_dipakai
+        }).eq('id', order.id)
+        if (orderUpErr) console.error('Supabase update order for yard pickup error:', orderUpErr.message)
+      }
+
+      // Insert yard pickup to Supabase
+      const { data: insertedYp, error: ypErr } = await supabase
+        .from('yard_pickups')
+        .insert([ypPayload])
+        .select('*')
+        .single()
+
+      if (ypErr) {
+        console.error('Supabase insert yard_pickup error:', ypErr.message)
+        ypId = yardPickups.value.length > 0 ? Math.max(...yardPickups.value.map(y => y.id)) + 1 : 1
+      } else {
+        ypId = insertedYp.id
+      }
+    } else {
+      ypId = yardPickups.value.length > 0 ? Math.max(...yardPickups.value.map(y => y.id)) + 1 : 1
+    }
+
+    const newYp: YardPickup = {
+      id: ypId,
+      ...ypPayload
+    }
     yardPickups.value.unshift(newYp)
 
     saveToLocalStorage()
 
-    if (isConfigured && supabase) {
-      try {
-        await supabase.from('plates').update({
-          stok: plate.stok,
-          status: plate.status
-        }).eq('id', plate.id)
-
-        if (remnantPlate) {
-          await supabase.from('plates').insert([remnantPlate])
-        }
-
-        if (order) {
-          await supabase.from('orders').update({
-            status: 'Plat Telah Diambil Yard',
-            plate_id: plate.id,
-            plat_dipakai: order.plat_dipakai
-          }).eq('id', order.id)
-        }
-
-        await supabase.from('yard_pickups').insert([newYp])
-      } catch (e) {
-        console.warn('Supabase yard pickup error:', e)
-      }
-    }
-
     return { order, plate, remnant: remnantPlate, jumlah_ambil: qtyAmbil, sisa_stok: plate.stok }
   }
 
-  // OPERATOR CNC ACTIONS
+  // ==========================================
+  // FIX #2: Operator actions — check Supabase errors
+  // ==========================================
   async function operatorAccept(orderId: number) {
     const order = orders.value.find(o => o.id === orderId)
     if (!order) return
     order.status = 'Diterima Operator'
     saveToLocalStorage()
     if (isConfigured && supabase) {
-      await supabase.from('orders').update({ status: order.status }).eq('id', orderId)
+      const { error } = await supabase.from('orders').update({ status: order.status }).eq('id', orderId)
+      if (error) console.error('Supabase operatorAccept error:', error.message)
     }
   }
 
@@ -952,7 +1122,8 @@ export function useCncStore() {
     order.waktu_mulai = new Date().toISOString()
     saveToLocalStorage()
     if (isConfigured && supabase) {
-      await supabase.from('orders').update({ status: order.status, waktu_mulai: order.waktu_mulai }).eq('id', orderId)
+      const { error } = await supabase.from('orders').update({ status: order.status, waktu_mulai: order.waktu_mulai }).eq('id', orderId)
+      if (error) console.error('Supabase operatorStart error:', error.message)
     }
   }
 
@@ -965,16 +1136,17 @@ export function useCncStore() {
     order.waktu_selesai = new Date().toISOString()
     saveToLocalStorage()
     if (isConfigured && supabase) {
-      await supabase.from('orders').update({
+      const { error } = await supabase.from('orders').update({
         status: order.status,
         kode_pengambilan: order.kode_pengambilan,
         waktu_selesai: order.waktu_selesai
       }).eq('id', orderId)
+      if (error) console.error('Supabase operatorFinish error:', error.message)
     }
     return randomPin
   }
 
-  // PIN VERIFICATION
+  // PIN VERIFICATION — FIX #2: check errors
   async function verifyPin(orderId: number, pin: string, pengambil: string, departemen: string): Promise<boolean> {
     const order = orders.value.find(o => o.id === orderId)
     if (!order) return false
@@ -997,19 +1169,17 @@ export function useCncStore() {
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
-      try {
-        await supabase.from('orders').update({
-          status: 'Sudah Diambil',
-          waktu_diambil: order.waktu_diambil,
-          pengambil_akhir: order.pengambil_akhir,
-          departemen_pengambil: order.departemen_pengambil
-        }).eq('id', orderId)
+      const { error: orderErr } = await supabase.from('orders').update({
+        status: 'Sudah Diambil',
+        waktu_diambil: order.waktu_diambil,
+        pengambil_akhir: order.pengambil_akhir,
+        departemen_pengambil: order.departemen_pengambil
+      }).eq('id', orderId)
+      if (orderErr) console.error('Supabase verifyPin order update error:', orderErr.message)
 
-        if (order.plate_id) {
-          await supabase.from('plates').update({ status: 'Sudah Dipotong' }).eq('id', order.plate_id)
-        }
-      } catch (e) {
-        console.warn('Supabase verify pin error:', e)
+      if (order.plate_id) {
+        const { error: plateErr } = await supabase.from('plates').update({ status: 'Sudah Dipotong' }).eq('id', order.plate_id)
+        if (plateErr) console.error('Supabase verifyPin plate update error:', plateErr.message)
       }
     }
 
@@ -1152,14 +1322,14 @@ export function useCncStore() {
     yardPickups.value = []
     saveToLocalStorage()
     if (isConfigured && supabase) {
-      try {
-        await supabase.from('yard_pickups').delete().neq('id', 0)
-        await supabase.from('order_estimations').delete().neq('id', 0)
-        await supabase.from('orders').delete().neq('id', 0)
-        await supabase.from('plates').delete().neq('id', 0)
-      } catch (e) {
-        console.warn('Supabase reset data error:', e)
-      }
+      const { error: e1 } = await supabase.from('yard_pickups').delete().neq('id', 0)
+      if (e1) console.error('Reset yard_pickups error:', e1.message)
+      const { error: e2 } = await supabase.from('order_estimations').delete().neq('id', 0)
+      if (e2) console.error('Reset order_estimations error:', e2.message)
+      const { error: e3 } = await supabase.from('orders').delete().neq('id', 0)
+      if (e3) console.error('Reset orders error:', e3.message)
+      const { error: e4 } = await supabase.from('plates').delete().neq('id', 0)
+      if (e4) console.error('Reset plates error:', e4.message)
     }
   }
 
@@ -1193,6 +1363,11 @@ export function useCncStore() {
     isInitialized,
     isSyncing,
     isConfigured,
+    supabaseUrl,
+    supabaseKey,
+    setCustomCredentials,
+    clearCustomCredentials,
+    checkConnection,
     initStore,
     syncFromSupabase,
     login,
@@ -1214,4 +1389,3 @@ export function useCncStore() {
     exportHistoryCsv
   }
 }
-

@@ -22,9 +22,9 @@
           </div>
           <div>
             <div class="text-sm font-extrabold tracking-wide text-white">CNC DATABASE</div>
-            <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>{{ isConfigured ? 'Supabase Cloud' : 'Cloud / Vercel Ready' }}</span>
+            <div class="text-[11px] flex items-center gap-1.5" :class="isConfigured ? 'text-emerald-400' : 'text-amber-400'">
+              <span class="w-1.5 h-1.5 rounded-full" :class="isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
+              <span>{{ isConfigured ? 'Supabase Terhubung' : 'Mode Offline (Lokal)' }}</span>
             </div>
           </div>
         </NuxtLink>

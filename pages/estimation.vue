@@ -495,10 +495,12 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
 import { useSecurity } from '~/composables/useSecurity'
+import { useImageCompressor } from '~/composables/useImageCompressor'
 
 const route = useRoute()
 const store = useCncStore()
 const { sanitizeUrl } = useSecurity()
+const { compressImage } = useImageCompressor()
 
 const selectedOrderId = ref<number | null>(null)
 const feedbackMsg = ref<{ text: string; type: 'success' | 'error' } | null>(null)
@@ -591,16 +593,20 @@ function handleImageDrop(event: DragEvent) {
   }
 }
 
-function processImageFile(file: File) {
-  if (file.size > 5 * 1024 * 1024) {
-    feedbackMsg.value = { type: 'error', text: 'Ukuran gambar maksimal 5MB!' }
+async function processImageFile(file: File) {
+  if (file.size > 10 * 1024 * 1024) {
+    feedbackMsg.value = { type: 'error', text: 'Ukuran gambar maksimal 10MB!' }
     return
   }
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    cuttingImagePreview.value = e.target?.result as string
+  try {
+    cuttingImagePreview.value = await compressImage(file, 1200, 0.75)
+  } catch {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      cuttingImagePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
   }
-  reader.readAsDataURL(file)
 }
 
 function removeCuttingImage() {

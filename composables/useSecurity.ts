@@ -243,11 +243,12 @@ export function useSecurity() {
     return '#'
   }
 
-  // 6. PostgREST Query Term Sanitization (Prevent PostgREST Filter Injection)
+  // 6. PostgREST Query Term Sanitization (Prevent PostgREST Filter Injection while preserving email dots)
   function sanitizePostgrestTerm(term: string): string {
     if (!term) return ''
-    // Strip operators and delimiters that could manipulate PostgREST filters (, ( ) . " ' : \)
-    return term.trim().replace(/[,()."':\\]/g, '')
+    // Strip operators and delimiters that could manipulate PostgREST filters (, ( ) " ' : \)
+    // Note: dots (.) are preserved for valid email address searches (e.g. admin@gmail.com)
+    return term.trim().replace(/[,()"':\\]/g, '')
   }
 
   return {

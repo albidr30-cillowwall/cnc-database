@@ -116,6 +116,117 @@
           </div>
         </div>
 
+        <!-- Supabase Cloud Connection & Diagnostics Card -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-cloud"></i>
+              </div>
+              <div>
+                <h3 class="text-xs font-extrabold uppercase tracking-wide text-slate-800 dark:text-slate-200">
+                  Status Database Supabase PostgreSQL
+                </h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                  Sinkronisasi cloud untuk memastikan data tidak hilang saat refresh
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span 
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border"
+                :class="store.isConfigured ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'"
+              >
+                <span class="w-2 h-2 rounded-full" :class="store.isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
+                <span>{{ store.isConfigured ? 'Supabase Terhubung' : 'Belum Dikonfigurasi (Mode Lokal)' }}</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Diagnostic Check Button & Alert -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button 
+              type="button"
+              @click="handleTestConnection" 
+              :disabled="isTestingConnection"
+              class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            >
+              <i class="fa-solid fa-plug" :class="{ 'fa-spin': isTestingConnection }"></i>
+              <span>{{ isTestingConnection ? 'Menguji Koneksi...' : 'Uji Koneksi Database' }}</span>
+            </button>
+
+            <button 
+              type="button"
+              @click="handleManualSync" 
+              :disabled="store.isSyncing.value"
+              class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            >
+              <i class="fa-solid fa-arrows-rotate" :class="{ 'fa-spin': store.isSyncing.value }"></i>
+              <span>{{ store.isSyncing.value ? 'Menyinkronkan...' : 'Sinkronkan Ulang dari Cloud' }}</span>
+            </button>
+
+            <button 
+              type="button"
+              @click="showCredModal = !showCredModal"
+              class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white underline"
+            >
+              <i class="fa-solid fa-gear"></i>
+              <span>{{ showCredModal ? 'Sembunyikan Form Kredensial' : 'Atur Supabase URL & Key Manual' }}</span>
+            </button>
+          </div>
+
+          <div v-if="connectionResult" class="p-3 rounded-xl text-xs font-medium border" :class="connectionResult.ok ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800'">
+            <div class="flex items-center gap-2">
+              <i :class="connectionResult.ok ? 'fa-solid fa-circle-check text-emerald-500' : 'fa-solid fa-circle-xmark text-rose-500'"></i>
+              <span>{{ connectionResult.message }}</span>
+            </div>
+          </div>
+
+          <!-- Manual Credentials Form -->
+          <div v-if="showCredModal" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">
+              Jika environment variable Vercel belum aktif, Anda dapat memasukkan URL dan Anon Public Key Supabase secara langsung di sini. Kredensial akan disimpan aman di browser Anda.
+            </div>
+            <div class="space-y-2">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Supabase URL</label>
+                <input 
+                  v-model="customUrl" 
+                  type="text" 
+                  placeholder="https://xyzcompany.supabase.co" 
+                  class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Supabase Anon Public Key</label>
+                <input 
+                  v-model="customKey" 
+                  type="password" 
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." 
+                  class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <button 
+                type="button"
+                @click="saveCustomCreds" 
+                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+              >
+                Simpan & Hubungkan Database
+              </button>
+              <button 
+                type="button"
+                @click="clearCustomCreds" 
+                class="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer"
+              >
+                Hapus Kredensial Manual
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Reset Database ke Nol Card -->
         <div class="bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div class="text-xs space-y-1.5">
@@ -248,6 +359,68 @@ import { useCncStore, type UserProfile } from '~/composables/useCncStore'
 
 const store = useCncStore()
 const toast = ref<{ text: string; type: 'success' | 'error' } | null>(null)
+
+// Supabase diagnostics & custom creds
+const isTestingConnection = ref(false)
+const connectionResult = ref<{ ok: boolean; message: string } | null>(null)
+const showCredModal = ref(false)
+const customUrl = ref(store.supabaseUrl || '')
+const customKey = ref(store.supabaseKey || '')
+
+async function handleTestConnection() {
+  isTestingConnection.value = true
+  connectionResult.value = null
+  try {
+    const res = await store.checkConnection()
+    connectionResult.value = res
+  } catch (e: any) {
+    connectionResult.value = { ok: false, message: e.message || 'Gagal menguji koneksi.' }
+  } finally {
+    isTestingConnection.value = false
+  }
+}
+
+async function handleManualSync() {
+  try {
+    await store.syncFromSupabase()
+    toast.value = {
+      type: 'success',
+      text: 'Berhasil menyinkronkan data terbaru dari database cloud!'
+    }
+  } catch (e: any) {
+    toast.value = {
+      type: 'error',
+      text: e.message || 'Gagal sinkronisasi data.'
+    }
+  }
+}
+
+function saveCustomCreds() {
+  if (!customUrl.value.trim() || !customKey.value.trim()) {
+    alert('URL dan Anon Public Key Supabase wajib diisi.')
+    return
+  }
+  store.setCustomCredentials(customUrl.value, customKey.value)
+  toast.value = {
+    type: 'success',
+    text: 'Kredensial Supabase berhasil disimpan! Menghubungkan ulang...'
+  }
+  handleTestConnection()
+  store.syncFromSupabase()
+}
+
+function clearCustomCreds() {
+  if (confirm('Hapus kredensial Supabase yang tersimpan di browser ini?')) {
+    store.clearCustomCredentials()
+    customUrl.value = ''
+    customKey.value = ''
+    connectionResult.value = null
+    toast.value = {
+      type: 'success',
+      text: 'Kredensial manual telah dihapus.'
+    }
+  }
+}
 
 const newUser = reactive({
   name: '',
