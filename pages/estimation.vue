@@ -8,19 +8,35 @@
           <span>Material Identification</span>
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Pencatatan lembar kerja nesting, spec material, heat number & verifikasi hasil pemotongan plat CNC (dengan atau tanpa order).
+          Pencatatan lembar kerja nesting, spec material, heat number & verifikasi hasil pemotongan plat CNC.
         </p>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Shortcut Button: Input Manual (Tanpa Order) -->
         <button 
-          v-if="isLocked || selectedOrderId" 
           type="button" 
-          @click="resetToNewManual" 
-          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+          @click="setMode('manual')" 
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+          :class="activeMode === 'manual' && !isLocked
+            ? 'bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-amber-400/30' 
+            : 'bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40'"
         >
-          <i class="fa-solid fa-plus-circle"></i>
-          <span>Form Baru (Input Manual)</span>
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>Input Manual (Tanpa Order)</span>
+        </button>
+
+        <!-- Shortcut Button: Dari Order Aplikasi -->
+        <button 
+          type="button" 
+          @click="setMode('order')" 
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+          :class="activeMode === 'order' && !isLocked
+            ? 'bg-violet-600 hover:bg-violet-700 text-white ring-2 ring-violet-500/30' 
+            : 'bg-violet-50 dark:bg-violet-950/40 border border-violet-300 dark:border-violet-800 text-violet-800 dark:text-violet-200 hover:bg-violet-100 dark:hover:bg-violet-900/40'"
+        >
+          <i class="fa-solid fa-clipboard-list"></i>
+          <span>Pilih dari Order</span>
         </button>
 
         <NuxtLink 
@@ -28,9 +44,77 @@
           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition shrink-0"
         >
           <i class="fa-solid fa-list-check text-blue-500"></i>
-          <span>Lihat Semua Order</span>
+          <span>Semua Order</span>
         </NuxtLink>
       </div>
+    </div>
+
+    <!-- 2 FITUR UTAMA DENGAN ICON (FEATURE SWITCHER TABS) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- FITUR 1: Berdasarkan Order Aplikasi -->
+      <button 
+        type="button" 
+        @click="setMode('order')"
+        class="p-4 rounded-2xl border transition text-left cursor-pointer flex items-center gap-4 relative overflow-hidden"
+        :class="activeMode === 'order'
+          ? 'bg-violet-50/90 dark:bg-violet-950/40 border-violet-500 ring-2 ring-violet-500/30 text-violet-950 dark:text-violet-100 shadow-sm'
+          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'"
+      >
+        <div 
+          class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition"
+          :class="activeMode === 'order' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+        >
+          <i class="fa-solid fa-clipboard-list text-xl"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+              <span>Fitur 1: Dari Order Aplikasi</span>
+              <span v-if="activeMode === 'order'" class="w-2 h-2 rounded-full bg-violet-500"></span>
+            </span>
+            <span 
+              v-if="eligibleOrders.length > 0"
+              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-900/60 text-violet-700 dark:text-violet-300 font-mono"
+            >
+              {{ eligibleOrders.length }} menunggu
+            </span>
+          </div>
+          <p class="text-[11px] opacity-80 mt-1">
+            Pilih order masuk dari pemesan untuk identifikasi material nesting & verifikasi plat.
+          </p>
+        </div>
+      </button>
+
+      <!-- FITUR 2: Input Manual (Tanpa Order) -->
+      <button 
+        type="button" 
+        @click="setMode('manual')"
+        class="p-4 rounded-2xl border transition text-left cursor-pointer flex items-center gap-4 relative overflow-hidden"
+        :class="activeMode === 'manual'
+          ? 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/30 text-amber-950 dark:text-amber-100 shadow-sm'
+          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'"
+      >
+        <div 
+          class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition"
+          :class="activeMode === 'manual' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+        >
+          <i class="fa-solid fa-pen-to-square text-xl"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+              <span>Fitur 2: Input Manual (Tanpa Order)</span>
+              <span v-if="activeMode === 'manual'" class="w-2 h-2 rounded-full bg-amber-500"></span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+              Mandiri
+            </span>
+          </div>
+          <p class="text-[11px] opacity-80 mt-1">
+            Input langsung lembar kerja plat mandiri tanpa membuat order di aplikasi.
+          </p>
+        </div>
+      </button>
     </div>
 
     <!-- Feedback Notification -->
@@ -48,7 +132,7 @@
       </button>
     </div>
 
-    <!-- Main Card: Form Selalu Tampil Langsung (Always Open) -->
+    <!-- MAIN WORK AREA CARD -->
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
       
       <!-- Banner jika Sedang Melihat Data yang Sudah Disetujui (Terkunci) -->
@@ -60,99 +144,196 @@
             <p class="text-[11px] text-emerald-600 dark:text-emerald-400">Data telah selesai dipotong & diverifikasi. Formulir dalam mode lihat (read-only).</p>
           </div>
         </div>
-        <button 
-          type="button" 
-          @click="resetToNewManual" 
-          class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0"
-        >
-          <i class="fa-solid fa-plus-circle"></i>
-          <span>Buat Identifikasi Baru</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <button 
+            type="button" 
+            @click="setMode('manual')" 
+            class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0"
+          >
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Input Manual Baru</span>
+          </button>
+          <button 
+            type="button" 
+            @click="setMode('order')" 
+            class="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0"
+          >
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Pilih Order Lain</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Bagian 1: Pemilihan Order (Opsional - Bisa Kosong untuk Input Manual) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-        <!-- Dropdown Hubungkan ke Order -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-            <span class="flex items-center gap-1.5 text-violet-600 dark:text-violet-400 font-extrabold uppercase">
-              <i class="fa-solid fa-link"></i>
-              <span>Hubungkan ke Order Aplikasi (Opsional):</span>
-            </span>
-            <span class="text-[10px] text-slate-400 font-normal">Tidak wajib dipilih</span>
-          </label>
-          <select 
-            v-model="selectedOrderId" 
-            :disabled="isLocked"
-            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-violet-500 outline-none transition disabled:opacity-60"
-          >
-            <option :value="null">-- Tanpa Order (Input Manual / Langsung) --</option>
-            <option 
-              v-for="po in eligibleOrders" 
-              :key="po.id" 
-              :value="po.id"
+      <!-- ======================================================== -->
+      <!-- TAMPILAN JIKA MODE 1: DARI ORDER APLIKASI                -->
+      <!-- ======================================================== -->
+      <div v-if="activeMode === 'order'" class="space-y-4">
+        <!-- Baris Selector Order & Tombol Shortcut Manual -->
+        <div class="p-4 rounded-xl bg-violet-50/70 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900/60 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <label class="text-xs font-black text-violet-800 dark:text-violet-300 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-crosshairs text-violet-600 dark:text-violet-400"></i>
+              <span>PILIH ORDER UNTUK MATERIAL IDENTIFICATION:</span>
+            </label>
+            <div class="flex items-center gap-3">
+              <button 
+                type="button" 
+                @click="showAllOrders = !showAllOrders" 
+                class="text-[11px] font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 underline cursor-pointer"
+              >
+                {{ showAllOrders ? 'Filter: Order Menunggu Saja' : 'Tampilkan Semua Order' }}
+              </button>
+              <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                ({{ eligibleOrders.length }} order menunggu)
+              </span>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <!-- Dropdown Pilihan Order -->
+            <select 
+              v-model="selectedOrderId" 
+              :disabled="isLocked && viewingEstId !== null"
+              class="flex-1 bg-white dark:bg-slate-950 border border-violet-300 dark:border-violet-800 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-violet-500 outline-none transition disabled:opacity-60"
             >
-              {{ po.no_order }} - {{ po.nama_proyek }} ({{ po.material }} {{ po.ketebalan }})
-            </option>
-          </select>
+              <option :value="null">-- Pilih Order untuk Material Identification --</option>
+              <option 
+                v-for="po in displayedOrders" 
+                :key="po.id" 
+                :value="po.id"
+              >
+                {{ po.no_order }} - {{ po.nama_proyek }} ({{ po.material }} {{ po.ketebalan }}) {{ po.estimation?.status_approval === 'Disetujui' ? ' [SUDAH SELESAI]' : '' }}
+              </option>
+            </select>
+
+            <!-- Tombol Switch Langsung ke Input Manual -->
+            <button 
+              type="button" 
+              @click="setMode('manual')" 
+              class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition cursor-pointer shadow-xs shrink-0"
+              title="Klik untuk input langsung tanpa memilih order"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>Input Manual (Tanpa Order)</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Dropdown Bantuan Ambil dari Stok Plat Yard (Opsional) -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-            <span class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-extrabold uppercase">
-              <i class="fa-solid fa-layer-group"></i>
-              <span>Ambil dari Stok Plat Yard (Opsional):</span>
+        <!-- Jika Belum Memilih Order: Tampilkan Info Ajak Memilih atau Input Manual -->
+        <div v-if="!selectedOrder && !viewingEstId" class="text-center py-10 px-4 border-2 border-dashed border-violet-200 dark:border-violet-900/50 rounded-2xl space-y-3 bg-violet-50/30 dark:bg-violet-950/10">
+          <div class="w-12 h-12 mx-auto rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-clipboard-question"></i>
+          </div>
+          <div>
+            <h3 class="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide">Pilih Order di Dropdown atau Gunakan Fitur Input Manual</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-lg mx-auto leading-relaxed">
+              Silakan pilih salah satu order di atas untuk mengisi/memverifikasi data Material Identification & nesting plat, atau klik tombol di bawah untuk input langsung secara mandiri.
+            </p>
+          </div>
+          <div class="pt-2">
+            <button 
+              type="button" 
+              @click="setMode('manual')" 
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition shadow-md shadow-amber-500/25 cursor-pointer"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>Buka Formulir Input Manual (Tanpa Order)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary Order Terpilih -->
+        <div v-if="selectedOrder" class="p-3.5 rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Pemesan</span>
+            <b class="text-slate-900 dark:text-white">{{ selectedOrder.nama_pemesan }}</b>
+            <div class="text-[10px] text-slate-400">{{ selectedOrder.departemen_pemesan }}</div>
+          </div>
+          <div>
+            <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Material Order</span>
+            <b class="text-slate-900 dark:text-white">{{ selectedOrder.material }} ({{ selectedOrder.ketebalan }})</b>
+            <div class="text-[10px] text-slate-400">Target: {{ selectedOrder.target_cnc }}</div>
+          </div>
+          <div>
+            <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Jumlah & Part</span>
+            <b class="font-mono text-slate-900 dark:text-white">{{ selectedOrder.jumlah_pesanan }} {{ selectedOrder.satuan }}</b>
+            <div class="text-[10px] text-slate-400">{{ selectedOrder.ukuran_part }}</div>
+          </div>
+          <div>
+            <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Status Order</span>
+            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+              {{ selectedOrder.status }}
             </span>
-            <span class="text-[10px] text-blue-500 font-normal">Auto-fill Dimensi & Heat No.</span>
-          </label>
-          <select 
-            v-model="selectedPlateHelper" 
-            @change="applyPlateHelper"
-            :disabled="isLocked"
-            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- TAMPILAN JIKA MODE 2: INPUT MANUAL (TANPA ORDER)         -->
+      <!-- ======================================================== -->
+      <div v-else-if="activeMode === 'manual'" class="space-y-4">
+        <!-- Header Banner Mode Manual -->
+        <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow-xs">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </div>
+            <div>
+              <div class="font-black text-amber-900 dark:text-amber-200 uppercase tracking-wider flex items-center gap-2">
+                <span>Fitur 2: Mode Input Manual (Tanpa Order)</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200">Aktif</span>
+              </div>
+              <p class="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
+                Operator dapat langsung mengisi lembar kerja identifikasi plat & upload foto hasil pemotongan tanpa memilih order di aplikasi.
+              </p>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            @click="setMode('order')" 
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-950 font-bold text-xs transition cursor-pointer shrink-0"
           >
-            <option :value="null">-- Ketik Manual atau Pilih dari Stok Plat --</option>
-            <option v-for="plt in store.plates.value" :key="plt.id" :value="plt">
-              {{ plt.no_plat }} ({{ plt.grade }} {{ plt.material_type }} - {{ plt.tebal_mm }}mm) - Heat: {{ plt.heat_number }}
-            </option>
-          </select>
+            <i class="fa-solid fa-clipboard-list text-violet-500"></i>
+            <span>Beralih ke Fitur Order</span>
+          </button>
         </div>
       </div>
 
-      <!-- Info Box jika Terhubung ke Order Aplikasi -->
-      <div v-if="selectedOrder" class="p-3.5 rounded-xl bg-violet-50/70 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900/60 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div>
-          <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Pemesan</span>
-          <b class="text-slate-900 dark:text-white">{{ selectedOrder.nama_pemesan }}</b>
-          <div class="text-[10px] text-slate-400">{{ selectedOrder.departemen_pemesan }}</div>
-        </div>
-        <div>
-          <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Material Order</span>
-          <b class="text-slate-900 dark:text-white">{{ selectedOrder.material }} ({{ selectedOrder.ketebalan }})</b>
-          <div class="text-[10px] text-slate-400">Target: {{ selectedOrder.target_cnc }}</div>
-        </div>
-        <div>
-          <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Jumlah & Part</span>
-          <b class="font-mono text-slate-900 dark:text-white">{{ selectedOrder.jumlah_pesanan }} {{ selectedOrder.satuan }}</b>
-          <div class="text-[10px] text-slate-400">{{ selectedOrder.ukuran_part }}</div>
-        </div>
-        <div>
-          <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Status Order</span>
-          <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
-            {{ selectedOrder.status }}
+      <!-- ======================================================== -->
+      <!-- HELPER STOK PLAT YARD (BISA DIGUNAKAN DI KEDUA MODE)     -->
+      <!-- ======================================================== -->
+      <div 
+        v-if="(activeMode === 'manual' || selectedOrder || viewingEstId) && !isLocked" 
+        class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800"
+      >
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-extrabold uppercase">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Helper: Ambil dari Stok Plat Yard (Opsional)</span>
           </span>
-        </div>
+          <span class="text-[10px] text-blue-500 font-normal">Auto-fill Spec, Dimensi & Heat No.</span>
+        </label>
+        <select 
+          v-model="selectedPlateHelper" 
+          @change="applyPlateHelper"
+          class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option :value="null">-- Ketik Manual atau Pilih dari Stok Plat Yard --</option>
+          <option v-for="plt in store.plates.value" :key="plt.id" :value="plt">
+            {{ plt.no_plat }} ({{ plt.grade }} {{ plt.material_type }} - {{ plt.tebal_mm }}mm) - Heat: {{ plt.heat_number }}
+          </option>
+        </select>
       </div>
 
-      <!-- Info Badge jika Mode Manual (Tanpa Order) -->
-      <div v-else-if="!isLocked" class="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs flex items-center gap-2.5 text-amber-800 dark:text-amber-300">
-        <i class="fa-solid fa-pen-ruler text-amber-500 text-sm"></i>
-        <span><strong>Mode Input Manual (Tanpa Order):</strong> Isi data identifikasi pemotongan di bawah ini. Data akan langsung tercatat di sistem sebagai pekerjaan workshop mandiri.</span>
-      </div>
-
-      <!-- FORMULIR 7 KOLOM MATERIAL IDENTIFICATION (LANGSUNG TAMPIL) -->
-      <form @submit.prevent="handleSubmitEstimation" class="space-y-4 text-xs">
+      <!-- ======================================================== -->
+      <!-- FORMULIR 7 KOLOM MATERIAL IDENTIFICATION                -->
+      <!-- Tampil langsung jika mode manual ATAU order telah dipilih -->
+      <!-- ======================================================== -->
+      <form 
+        v-if="activeMode === 'manual' || selectedOrder || viewingEstId" 
+        @submit.prevent="handleSubmitEstimation" 
+        class="space-y-4 text-xs pt-2"
+      >
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- 1. Project Name -->
           <div>
@@ -165,7 +346,7 @@
               type="text" 
               required
               :disabled="isLocked"
-              placeholder="contoh: KM. Sabuk Nusantara, Tugboat 24M, Barge 300..." 
+              placeholder="contoh: KM. Sabuk Nusantara, Tugboat 24M, Workshop CNC..." 
               :class="isLocked ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
               class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
             />
@@ -340,16 +521,24 @@
           </div>
         </div>
 
-        <!-- Tombol Simpan -->
+        <!-- Tombol Aksi Simpan & Setujui -->
         <div class="pt-2">
-          <div v-if="isLocked" class="flex justify-end">
+          <div v-if="isLocked" class="flex justify-end gap-2">
             <button 
               type="button" 
-              @click="resetToNewManual" 
+              @click="setMode('manual')" 
+              class="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs transition shadow-md shadow-amber-500/25 flex items-center gap-2 cursor-pointer"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>Buat Input Manual Baru</span>
+            </button>
+            <button 
+              type="button" 
+              @click="setMode('order')" 
               class="px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-extrabold text-xs transition shadow-md shadow-violet-600/25 flex items-center gap-2 cursor-pointer"
             >
-              <i class="fa-solid fa-plus-circle"></i>
-              <span>Buat Material Identification Baru</span>
+              <i class="fa-solid fa-clipboard-list"></i>
+              <span>Pilih Order Lain</span>
             </button>
           </div>
           <button 
@@ -402,7 +591,7 @@
                   {{ item.order.no_order }}
                 </span>
                 <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                  <i class="fa-solid fa-wrench text-[9px]"></i>
+                  <i class="fa-solid fa-pen-to-square text-[9px]"></i>
                   <span>MANUAL</span>
                 </span>
               </td>
@@ -463,8 +652,8 @@
                     <i class="fa-solid fa-eye text-blue-600 dark:text-blue-400"></i>
                   </button>
                   <button 
-                    v-if="item.id"
-                    @click="handleDeleteEst(item)"
+                    v-if="item.id" 
+                    @click="handleDeleteEst(item)" 
                     class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] cursor-pointer"
                     title="Hapus Data"
                   >
@@ -497,7 +686,11 @@ const store = useCncStore()
 const { sanitizeUrl } = useSecurity()
 const { compressImage } = useImageCompressor()
 
-// Selected order ID (null = Mode Manual tanpa order)
+// 2 Mode Fitur: 'order' (Fitur 1) atau 'manual' (Fitur 2)
+const activeMode = ref<'order' | 'manual'>('order')
+const showAllOrders = ref(false)
+
+// Selected order ID
 const selectedOrderId = ref<number | null>(null)
 const viewingEstId = ref<number | null>(null)
 const isLocked = ref(false)
@@ -518,9 +711,16 @@ const form = reactive({
 const cuttingImagePreview = ref<string>('')
 const cuttingImageInput = ref<HTMLInputElement | null>(null)
 
-// Eligible orders that still need material identification
+// Orders waiting for estimation
 const eligibleOrders = computed(() => {
   return store.orders.value.filter(o => o.estimation?.status_approval !== 'Disetujui')
+})
+
+const displayedOrders = computed(() => {
+  if (showAllOrders.value) {
+    return store.orders.value
+  }
+  return eligibleOrders.value
 })
 
 const selectedOrder = computed(() => {
@@ -539,10 +739,23 @@ const allEstimationsList = computed(() => {
   })
 })
 
-function resetToNewManual() {
-  selectedOrderId.value = null
+function setMode(mode: 'order' | 'manual') {
+  activeMode.value = mode
   viewingEstId.value = null
   isLocked.value = false
+
+  if (mode === 'manual') {
+    selectedOrderId.value = null
+    resetFormFields()
+  } else {
+    // Mode order: jika sebelumnya belum pilih order dan ada order pending, biarkan pilih
+    if (!selectedOrderId.value && eligibleOrders.value.length > 0) {
+      selectedOrderId.value = eligibleOrders.value[0].id
+    }
+  }
+}
+
+function resetFormFields() {
   selectedPlateHelper.value = null
   form.project_name = ''
   form.nesting_no = ''
@@ -557,6 +770,10 @@ function resetToNewManual() {
   }
 }
 
+function resetToNewManual() {
+  setMode('manual')
+}
+
 function applyPlateHelper() {
   if (!selectedPlateHelper.value) return
   const plt = selectedPlateHelper.value
@@ -565,11 +782,13 @@ function applyPlateHelper() {
   form.heat_number = plt.heat_number && plt.heat_number !== '-' ? plt.heat_number : ''
 }
 
-// Populate form when selectedOrder changes
+// Populate form when selectedOrder changes in order mode
 watch(selectedOrder, (order) => {
+  if (activeMode.value !== 'order') return
   if (!order) {
     if (!viewingEstId.value) {
-      resetToNewManual()
+      resetFormFields()
+      isLocked.value = false
     }
     return
   }
@@ -624,13 +843,16 @@ function removeCuttingImage() {
   }
 }
 
-// Handle Submit Material Identification (Dengan Order ataupun Manual Tanpa Order)
+// Handle Submit Material Identification (Order ataupun Manual)
 async function handleSubmitEstimation() {
   if (isLocked.value) return
 
-  // 1. Simpan ke database (jika selectedOrderId ada, dikaitkan ke order; jika null, disimpan sebagai manual)
+  const isFromOrder = activeMode.value === 'order' && Boolean(selectedOrderId.value)
+  const orderIdToSave = isFromOrder ? selectedOrderId.value : null
+
+  // 1. Simpan ke database
   const saved = await store.saveEstimation({
-    order_id: selectedOrderId.value || null,
+    order_id: orderIdToSave,
     project_name: form.project_name.trim(),
     nesting_no: form.nesting_no.trim(),
     block_item: form.block_item.trim(),
@@ -643,17 +865,13 @@ async function handleSubmitEstimation() {
   })
 
   // 2. Setujui secara resmi
-  if (selectedOrderId.value) {
+  if (isFromOrder && selectedOrderId.value) {
     await store.approveEstimation(selectedOrderId.value)
   } else if (saved?.id) {
     await store.approveEstimation(saved.id, true)
   }
 
   const projLabel = form.project_name || 'Material Identification'
-  const isFromOrder = Boolean(selectedOrderId.value)
-
-  // 3. Reset form siap untuk input berikutnya
-  resetToNewManual()
 
   feedbackMsg.value = {
     type: 'success',
@@ -661,13 +879,28 @@ async function handleSubmitEstimation() {
       ? `Material Identification untuk order berhasil DISIMPAN & DISETUJUI (Selesai)!`
       : `Material Identification Manual "${projLabel}" BERHASIL DISIMPAN & DISETUJUI (Selesai)!`
   }
+
+  // 3. Reset form
+  if (isFromOrder) {
+    selectedOrderId.value = null
+    resetFormFields()
+  } else {
+    resetToNewManual()
+  }
 }
 
 // Lihat detail dari baris tabel
 function handleViewEstimation(item: any) {
   viewingEstId.value = item.id || null
   isLocked.value = true
-  selectedOrderId.value = item.order_id || null
+
+  if (item.order_id) {
+    activeMode.value = 'order'
+    selectedOrderId.value = item.order_id
+  } else {
+    activeMode.value = 'manual'
+    selectedOrderId.value = null
+  }
 
   form.project_name = item.project_name || item.order?.nama_proyek || 'Workshop CNC'
   form.nesting_no = item.nesting_no || ''
@@ -705,8 +938,14 @@ onMounted(() => {
   if (route.query.order_id) {
     const oid = Number(route.query.order_id)
     if (oid) {
+      activeMode.value = 'order'
       selectedOrderId.value = oid
     }
+  } else if (eligibleOrders.value.length > 0) {
+    activeMode.value = 'order'
+    selectedOrderId.value = eligibleOrders.value[0].id
+  } else {
+    activeMode.value = 'manual'
   }
 })
 </script>
