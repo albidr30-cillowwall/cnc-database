@@ -111,7 +111,7 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS departemen_pengambil TEXT;
 -- 5. ORDER ESTIMATIONS TABLE (NESTING & CUTTING PLAN SHEET)
 CREATE TABLE IF NOT EXISTS order_estimations (
     id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT UNIQUE NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_id BIGINT UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
     project_name TEXT,
     nesting_no TEXT,
     block_item TEXT,
@@ -135,6 +135,7 @@ CREATE TABLE IF NOT EXISTS order_estimations (
 );
 
 -- Migrasi kolom order_estimations jika tabel lama sudah ada
+ALTER TABLE order_estimations ALTER COLUMN order_id DROP NOT NULL;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS project_name TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS nesting_no TEXT;
 ALTER TABLE order_estimations ADD COLUMN IF NOT EXISTS block_item TEXT;

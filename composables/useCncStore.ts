@@ -35,7 +35,7 @@ export interface Plate {
 
 export interface OrderEstimation {
   id?: number
-  order_id: number
+  order_id?: number | null
   // Standard Cutting/Nesting Sheet Fields
   project_name?: string
   nesting_no?: string
@@ -697,11 +697,12 @@ export function useCncStore() {
   }
 
   // ==========================================
-  // FIX #1: saveEstimation — REMOVED duplicate const existingIdx
+  // FIX #1: saveEstimation — supports both order-linked and manual (non-order) estimations
   // FIX #2: check Supabase { error } response
   // ==========================================
   async function saveEstimation(data: {
-    order_id: number
+    id?: number
+    order_id?: number | null
     project_name?: string
     nesting_no?: string
     block_item?: string
@@ -720,31 +721,40 @@ export function useCncStore() {
     tgl_selesai?: string
     catatan?: string
     status_approval?: string
-  }) {
-    const order = orders.value.find(o => o.id === data.order_id)
-    if (!order) return
+  }): Promise<OrderEstimation | undefined> {
+    const order = data.order_id ? orders.value.find(o => o.id === data.order_id) : undefined
 
-    // Proteksi: Jika estimasi sudah Disetujui, kunci dan cegah modifikasi
-    const existingIdx = estimations.value.findIndex(e => e.order_id === data.order_id)
-    if (existingIdx >= 0 && estimations.value[existingIdx].status_approval === 'Disetujui') {
-      console.warn('Material Identification order ini sudah disetujui dan terkunci.')
-      return
+    // Find existing
+    let existingIdx = -1
+    if (data.order_id) {
+      existingIdx = estimations.value.findIndex(e => e.order_id === data.order_id)
+    } else if (data.id) {
+      existingIdx = estimations.value.findIndex(e => e.id === data.id)
     }
 
+    // Proteksi: Jika estimasi sudah Disetujui, kunci dan cegah modifikasi
+    if (existingIdx >= 0 && estimations.value[existingIdx].status_approval === 'Disetujui') {
+      console.warn('Material Identification ini sudah disetujui dan terkunci.')
+      return estimations.value[existingIdx]
+    }
+
+    const nextEstId = estimations.value.length > 0 ? Math.max(...estimations.value.map(e => e.id || 0)) + 1 : 1
+
     const newEst: OrderEstimation = {
-      order_id: data.order_id,
-      project_name: data.project_name?.trim() || order.nama_proyek,
+      id: (existingIdx >= 0 && estimations.value[existingIdx].id) ? estimations.value[existingIdx].id : (data.id || nextEstId),
+      order_id: data.order_id || null,
+      project_name: data.project_name?.trim() || (order ? order.nama_proyek : 'Pekerjaan Workshop CNC (Manual)'),
       nesting_no: data.nesting_no?.trim() || '',
       block_item: data.block_item?.trim() || '',
       spec_material: data.spec_material?.trim() || '',
-      dimension_material: data.dimension_material?.trim() || data.ukuran_plat || order.ketebalan,
+      dimension_material: data.dimension_material?.trim() || data.ukuran_plat || (order ? order.ketebalan : ''),
       product_number: data.product_number?.trim() || '',
       heat_number: data.heat_number?.trim() || '',
       cutting_image_url: data.cutting_image_url || '',
       status_approval: data.status_approval || 'Disetujui',
       // backward compatibility fields
       grade: data.spec_material?.trim() || data.grade || '',
-      tebal: data.dimension_material || data.tebal || order.ketebalan,
+      tebal: data.dimension_material || data.tebal || (order ? order.ketebalan : ''),
       ukuran_plat: data.dimension_material || data.ukuran_plat || '',
       lembar: Number(data.lembar) || 1,
       berat_kg: Number(data.berat_kg) || 0,
@@ -754,52 +764,88 @@ export function useCncStore() {
       catatan: data.catatan || ''
     }
 
-    // FIX #1: REUSE existingIdx — no duplicate declaration!
     if (existingIdx >= 0) {
-      newEst.id = estimations.value[existingIdx].id
       estimations.value[existingIdx] = newEst
     } else {
-      estimations.value.push(newEst)
+      estimations.value.unshift(newEst)
     }
 
-    order.estimation = newEst
+    if (order) {
+      order.estimation = newEst
+    }
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
-      // FIX #2: Check { error } from Supabase response (strip id so Supabase handles BIGSERIAL on insert or matches onConflict: order_id)
       const { id: _ignoreId, ...estPayload } = newEst
-      const { data: upserted, error } = await supabase
-        .from('order_estimations')
-        .upsert([estPayload], { onConflict: 'order_id' })
-        .select('*')
-        .single()
+      try {
+        if (data.order_id) {
+          const { data: upserted, error } = await supabase
+            .from('order_estimations')
+            .upsert([estPayload], { onConflict: 'order_id' })
+            .select('*')
+            .single()
 
-      if (error) {
-        console.error('Supabase saveEstimation error:', error.message, error.code)
-      } else if (upserted?.id) {
-        // Update local estimation with Supabase-generated id
-        newEst.id = upserted.id
-        const idx = estimations.value.findIndex(e => e.order_id === data.order_id)
-        if (idx >= 0) estimations.value[idx] = newEst
-        order.estimation = newEst
-        saveToLocalStorage()
+          if (error) {
+            console.error('Supabase saveEstimation error:', error.message, error.code)
+          } else if (upserted?.id) {
+            newEst.id = upserted.id
+            const idx = estimations.value.findIndex(e => e.order_id === data.order_id)
+            if (idx >= 0) estimations.value[idx] = newEst
+            if (order) order.estimation = newEst
+            saveToLocalStorage()
+          }
+        } else {
+          // Manual estimation (order_id is null)
+          if (data.id) {
+            const { error } = await supabase.from('order_estimations').update(estPayload).eq('id', data.id)
+            if (error) console.error('Supabase update manual estimation error:', error.message)
+          } else {
+            const { data: inserted, error } = await supabase
+              .from('order_estimations')
+              .insert([estPayload])
+              .select('*')
+              .single()
+
+            if (error) {
+              console.error('Supabase insert manual estimation error:', error.message)
+            } else if (inserted?.id) {
+              newEst.id = inserted.id
+              const idx = estimations.value.findIndex(e => e === newEst)
+              if (idx >= 0) estimations.value[idx].id = inserted.id
+              saveToLocalStorage()
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase estimation exception:', err)
       }
     }
+
+    return newEst
   }
 
-  async function approveEstimation(orderId: number) {
-    const order = orders.value.find(o => o.id === orderId)
-    if (!order) return
+  async function approveEstimation(targetId: number, isDirectEstimationId = false) {
+    let est: OrderEstimation | undefined
+    let order: Order | undefined
 
-    if (order.estimation) {
+    if (isDirectEstimationId) {
+      est = estimations.value.find(e => e.id === targetId)
+      if (est && est.order_id) {
+        order = orders.value.find(o => o.id === est.order_id)
+      }
+    } else {
+      order = orders.value.find(o => o.id === targetId)
+      est = estimations.value.find(e => e.order_id === targetId)
+    }
+
+    if (order && order.estimation) {
       order.estimation.status_approval = 'Disetujui'
     }
-    const estIdx = estimations.value.findIndex(e => e.order_id === orderId)
-    if (estIdx >= 0) {
-      estimations.value[estIdx].status_approval = 'Disetujui'
+    if (est) {
+      est.status_approval = 'Disetujui'
     }
-    // Heal status jika terlanjur 'Estimasi Selesai'
-    if (order.status === 'Estimasi Selesai') {
+
+    if (order && order.status === 'Estimasi Selesai') {
       if (order.waktu_diambil) order.status = 'Sudah Diambil'
       else if (order.kode_pengambilan) order.status = 'Siap Diambil'
       else order.status = 'Diterima'
@@ -807,11 +853,30 @@ export function useCncStore() {
     saveToLocalStorage()
 
     if (isConfigured && supabase) {
-      const { error } = await supabase.from('order_estimations').update({ status_approval: 'Disetujui' }).eq('order_id', orderId)
-      if (error) {
-        console.error('Supabase approveEstimation error:', error.message)
+      if (est?.id) {
+        await supabase.from('order_estimations').update({ status_approval: 'Disetujui' }).eq('id', est.id)
+      } else if (order) {
+        await supabase.from('order_estimations').update({ status_approval: 'Disetujui' }).eq('order_id', order.id)
       }
     }
+  }
+
+  async function deleteEstimation(estimationId: number) {
+    const idx = estimations.value.findIndex(e => e.id === estimationId)
+    if (idx >= 0) {
+      const est = estimations.value[idx]
+      if (est.order_id) {
+        const o = orders.value.find(ord => ord.id === est.order_id)
+        if (o) o.estimation = null
+      }
+      estimations.value.splice(idx, 1)
+      saveToLocalStorage()
+      if (isConfigured && supabase) {
+        await supabase.from('order_estimations').delete().eq('id', estimationId)
+      }
+      return true
+    }
+    return false
   }
 
   // ==========================================
@@ -1376,6 +1441,7 @@ export function useCncStore() {
     createOrder,
     saveEstimation,
     approveEstimation,
+    deleteEstimation,
     addPlate,
     deletePlate,
     pickupPlateYard,
