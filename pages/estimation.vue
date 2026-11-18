@@ -502,7 +502,7 @@
           <div 
             v-if="!isLocked"
             class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-violet-400 dark:hover:border-violet-600 transition cursor-pointer"
-            @click="($refs.cuttingImageInput as HTMLInputElement)?.click()"
+            @click="triggerImageUpload"
             @dragover.prevent
             @drop.prevent="handleImageDrop"
           >
@@ -834,6 +834,10 @@ async function processImageFile(file: File) {
     }
     reader.readAsDataURL(file)
   }
+}
+
+function triggerImageUpload() {
+  cuttingImageInput.value?.click()
 }
 
 function removeCuttingImage() {

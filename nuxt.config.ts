@@ -11,7 +11,12 @@ export default defineNuxtConfig({
     ]
   },
   nitro: {
-    preset: 'vercel'
+    preset: 'vercel',
+    hooks: {
+      'close'() {
+        setTimeout(() => process.exit(0), 1000)
+      }
+    }
   },
   runtimeConfig: {
     public: {

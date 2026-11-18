@@ -85,7 +85,7 @@
                   <td class="p-3.5">
                     <select 
                       :value="u.role" 
-                      @change="handleRoleChange(u.id, ($event.target as HTMLSelectElement).value as any)"
+                      @change="handleRoleChange(u.id, $event)"
                       :disabled="u.id === store.currentUser.value?.id"
                       class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-[11px] font-bold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50"
                     >
@@ -431,7 +431,9 @@ const newUser = reactive({
   password: '123'
 })
 
-async function handleRoleChange(userId: string, newRole: 'admin' | 'operator' | 'mandor' | 'user') {
+async function handleRoleChange(userId: string, event: Event) {
+  const target = event.target as HTMLSelectElement
+  const newRole = target.value as 'admin' | 'operator' | 'mandor' | 'user'
   const res = await store.updateUserRole(userId, newRole)
   if (res && !res.success) {
     toast.value = {
