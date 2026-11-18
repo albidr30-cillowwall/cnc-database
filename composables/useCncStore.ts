@@ -631,6 +631,13 @@ export function useCncStore() {
     const order = orders.value.find(o => o.id === data.order_id)
     if (!order) return
 
+    // Proteksi: Jika estimasi sudah Disetujui, kunci dan cegah modifikasi
+    const existingIdx = estimations.value.findIndex(e => e.order_id === data.order_id)
+    if (existingIdx >= 0 && estimations.value[existingIdx].status_approval === 'Disetujui') {
+      console.warn('Material Identification order ini sudah disetujui dan terkunci.')
+      return
+    }
+
     const newEst: OrderEstimation = {
       order_id: data.order_id,
       project_name: data.project_name?.trim() || order.nama_proyek,

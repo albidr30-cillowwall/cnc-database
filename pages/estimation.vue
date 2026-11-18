@@ -61,6 +61,12 @@
         >
           <option :value="null">-- Pilih Order untuk Material Identification --</option>
           <option 
+            v-if="selectedOrder && isApproved" 
+            :value="selectedOrder.id"
+          >
+            {{ selectedOrder.no_order }} - {{ selectedOrder.nama_proyek }} [SUDAH SELESAI & DISETUJUI]
+          </option>
+          <option 
             v-for="po in eligibleOrders" 
             :key="po.id" 
             :value="po.id"
@@ -72,6 +78,24 @@
 
       <!-- Selected Order Preview & Form -->
       <template v-if="selectedOrder">
+        <!-- Banner jika order ini SUDAH DISETUJUI & SELESAI -->
+        <div v-if="isApproved" class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-200">
+          <div class="flex items-center gap-2.5">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+            <div>
+              <p class="font-bold">Material Identification Selesai & Disetujui</p>
+              <p class="text-[11px] text-emerald-600 dark:text-emerald-400">Data telah selesai dan terkunci. Tidak dapat diubah kembali.</p>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            @click="resetForm" 
+            class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+          >
+            <i class="fa-solid fa-xmark"></i>
+            <span>Tutup Form</span>
+          </button>
+        </div>
         <!-- Order Context Box -->
         <div class="p-4 rounded-xl bg-violet-50/70 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900/60 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3.5">
           <div>
@@ -126,8 +150,10 @@
               <input 
                 v-model="form.project_name" 
                 type="text" 
+                :disabled="isApproved"
                 placeholder="contoh: KM. Sabuk Nusantara, Tugboat 24M, Barge 300 Feet..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
+                :class="isApproved ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
               />
             </div>
 
@@ -143,8 +169,10 @@
               <input 
                 v-model="form.nesting_no" 
                 type="text" 
+                :disabled="isApproved"
                 placeholder="contoh: NST-001, N-102-A, NST-HULL-01..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
+                :class="isApproved ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
               />
             </div>
 
@@ -160,8 +188,10 @@
               <input 
                 v-model="form.block_item" 
                 type="text" 
+                :disabled="isApproved"
                 placeholder="contoh: Block 101, B-02, Web Frame 45..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
+                :class="isApproved ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
               />
             </div>
 
@@ -177,8 +207,10 @@
               <input 
                 v-model="form.spec_material" 
                 type="text" 
+                :disabled="isApproved"
                 placeholder="contoh: AH36, DH36, EH36, Grade A, SS400, Al 5083..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
+                :class="isApproved ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
               />
             </div>
 
@@ -194,8 +226,10 @@
               <input 
                 v-model="form.dimension_material" 
                 type="text" 
+                :disabled="isApproved"
                 placeholder="contoh: 12 x 1500 x 6000 mm, 8 x 2000 x 9000 mm..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
+                :class="isApproved ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
               />
             </div>
 
@@ -211,8 +245,10 @@
               <input 
                 v-model="form.product_number" 
                 type="text" 
+                :disabled="isApproved"
                 placeholder="contoh: PRD-001, P-304, PART-A..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
+                :class="isApproved ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
               />
             </div>
 
@@ -228,8 +264,10 @@
               <input 
                 v-model="form.heat_number" 
                 type="text" 
+                :disabled="isApproved"
                 placeholder="contoh: HT-98234, HN-2024-X, Heat 56421..." 
-                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
+                :class="isApproved ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
               />
             </div>
           </div>
@@ -252,6 +290,7 @@
                 class="max-h-48 rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs object-contain"
               />
               <button 
+                v-if="!isApproved"
                 type="button" 
                 @click="removeCuttingImage" 
                 class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center hover:bg-rose-600 cursor-pointer shadow-md"
@@ -263,6 +302,7 @@
 
             <!-- Upload input -->
             <div 
+              v-if="!isApproved"
               class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-violet-400 dark:hover:border-violet-600 transition cursor-pointer"
               @click="($refs.cuttingImageInput as HTMLInputElement)?.click()"
               @dragover.prevent
@@ -284,30 +324,39 @@
           </div>
 
           <div class="pt-2 flex flex-col sm:flex-row gap-3">
-            <button 
-              type="submit" 
-              class="flex-1 bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-extrabold p-3.5 rounded-xl shadow-md shadow-violet-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <i class="fa-solid fa-floppy-disk"></i>
-              <span>SIMPAN MATERIAL IDENTIFICATION</span>
-            </button>
-            <button 
-              v-if="!selectedOrder.estimation || selectedOrder.estimation.status_approval !== 'Disetujui'"
-              type="button"
-              @click="handleDirectApprove(selectedOrder.id)"
-              class="px-5 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center justify-center gap-2 shadow-xs shrink-0 cursor-pointer"
-              title="Setujui langsung (Mandor / Admin override)"
-            >
-              <i class="fa-solid fa-circle-check"></i>
-              <span>Setujui Langsung</span>
-            </button>
-            <div 
-              v-else
-              class="px-5 py-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-center gap-2 shrink-0"
-            >
-              <i class="fa-solid fa-circle-check"></i>
-              <span>Sudah Disetujui</span>
-            </div>
+            <template v-if="isApproved">
+              <div class="flex-1 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                  <i class="fa-solid fa-lock text-emerald-600"></i>
+                  <span>Material Identification Selesai & Disetujui (Terkunci)</span>
+                </span>
+                <button 
+                  type="button" 
+                  @click="resetForm" 
+                  class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+                >
+                  <i class="fa-solid fa-check mr-1.5"></i> Selesai / Tutup
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <button 
+                type="submit" 
+                class="flex-1 bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-extrabold p-3.5 rounded-xl shadow-md shadow-violet-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>SIMPAN MATERIAL IDENTIFICATION</span>
+              </button>
+              <button 
+                type="button"
+                @click="handleDirectApprove(selectedOrder.id)"
+                class="px-5 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center justify-center gap-2 shadow-xs shrink-0 cursor-pointer"
+                title="Setujui langsung (Mandor / Admin)"
+              >
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Setujui Langsung</span>
+              </button>
+            </template>
           </div>
         </form>
       </template>
@@ -411,9 +460,9 @@
                   <button 
                     @click="selectedOrderId = o.id" 
                     class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold text-[11px] cursor-pointer"
-                    title="Edit Estimasi"
+                    :title="o.estimation?.status_approval === 'Disetujui' ? 'Lihat Detail (Terkunci)' : 'Edit Estimasi'"
                   >
-                    <i class="fa-solid fa-pen-to-square"></i>
+                    <i :class="o.estimation?.status_approval === 'Disetujui' ? 'fa-solid fa-eye text-blue-600 dark:text-blue-400' : 'fa-solid fa-pen-to-square'"></i>
                   </button>
                   <button 
                     v-if="o.estimation?.status_approval !== 'Disetujui'"
@@ -423,7 +472,7 @@
                   >
                     <i class="fa-solid fa-check"></i>
                   </button>
-                  <span v-else class="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
+                  <span v-else class="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]" title="Sudah Selesai & Disetujui">
                     <i class="fa-solid fa-circle-check"></i>
                   </span>
                 </div>
@@ -468,15 +517,15 @@ const cuttingImageInput = ref<HTMLInputElement | null>(null)
 
 const showAllOrders = ref(false)
 
-// Orders available for estimasi muat: defaults to "selesai dikerjakan" (Siap Diambil) or "diambil" (Sudah Diambil)
+// Orders available for estimasi muat: defaults to "selesai dikerjakan" (Siap Diambil) or "diambil" (Sudah Diambil) yang BELUM disetujui
 const eligibleOrders = computed(() => {
   if (!showAllOrders.value) {
     return store.orders.value.filter(o => 
-      ['Siap Diambil', 'Sudah Diambil'].includes(o.status) || 
-      o.id === selectedOrderId.value
+      ['Siap Diambil', 'Sudah Diambil'].includes(o.status) &&
+      o.estimation?.status_approval !== 'Disetujui'
     )
   }
-  return store.orders.value
+  return store.orders.value.filter(o => o.estimation?.status_approval !== 'Disetujui')
 })
 
 const selectedOrder = computed(() => {
@@ -484,14 +533,36 @@ const selectedOrder = computed(() => {
   return store.orders.value.find(o => o.id === selectedOrderId.value) || null
 })
 
+const isApproved = computed(() => {
+  return selectedOrder.value?.estimation?.status_approval === 'Disetujui'
+})
+
 // Orders with existing estimations
 const estimatedOrdersList = computed(() => {
   return store.orders.value.filter(o => Boolean(o.estimation))
 })
 
+function resetForm() {
+  selectedOrderId.value = null
+  form.project_name = ''
+  form.nesting_no = ''
+  form.block_item = ''
+  form.spec_material = ''
+  form.dimension_material = ''
+  form.product_number = ''
+  form.heat_number = ''
+  cuttingImagePreview.value = ''
+  if (cuttingImageInput.value) {
+    cuttingImageInput.value.value = ''
+  }
+}
+
 // Populate form when selectedOrder changes
 watch(selectedOrder, (order) => {
-  if (!order) return
+  if (!order) {
+    resetForm()
+    return
+  }
   const est = order.estimation
 
   form.project_name = est?.project_name || order.nama_proyek_kapal || order.nama_proyek || ''
@@ -539,7 +610,7 @@ function removeCuttingImage() {
 
 // Handle Submit Material Identification
 async function handleSubmitEstimation() {
-  if (!selectedOrder.value) return
+  if (!selectedOrder.value || isApproved.value) return
 
   await store.saveEstimation({
     order_id: selectedOrder.value.id,
@@ -555,19 +626,39 @@ async function handleSubmitEstimation() {
 
   feedbackMsg.value = {
     type: 'success',
-    text: `Material Identification untuk order ${selectedOrder.value.no_order} berhasil disimpan!`
+    text: `Material Identification untuk order ${selectedOrder.value.no_order} berhasil disimpan! Silakan klik 'Setujui Langsung' untuk menyelesaikan.`
   }
 }
 
 // Handle Direct Approve
 async function handleDirectApprove(orderId: number) {
+  const target = store.orders.value.find(o => o.id === orderId)
+  const orderLabel = target ? target.no_order : `#${orderId}`
+
+  // Simpan data terbaru jika order ini sedang aktif di form
+  if (selectedOrder.value && selectedOrder.value.id === orderId && !isApproved.value) {
+    await store.saveEstimation({
+      order_id: orderId,
+      project_name: form.project_name,
+      nesting_no: form.nesting_no,
+      block_item: form.block_item,
+      spec_material: form.spec_material,
+      dimension_material: form.dimension_material,
+      product_number: form.product_number,
+      heat_number: form.heat_number,
+      cutting_image_url: cuttingImagePreview.value
+    })
+  }
+
   await store.approveEstimation(orderId)
+
+  // Langsung reset form & pilihan order karena Material Identification sudah SELESAI
+  resetForm()
+
   feedbackMsg.value = {
     type: 'success',
-    text: `Material Identification order #${orderId} berhasil DISETUJUI!`
+    text: `Material Identification untuk order ${orderLabel} berhasil DISETUJUI dan SELESAI!`
   }
-  // Reset selected order to next eligible order or null
-  selectedOrderId.value = eligibleOrders.value.length > 0 ? eligibleOrders.value[0].id : null
 }
 
 onMounted(() => {
