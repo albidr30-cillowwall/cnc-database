@@ -130,7 +130,7 @@
             <i class="fa-solid fa-file-image text-blue-500 text-sm"></i>
             <span>Lampiran Gambar: <strong class="text-slate-800 dark:text-slate-200">{{ selectedOrder.drawing_file_name || 'drawing.png' }}</strong></span>
           </div>
-          <a :href="selectedOrder.drawing_data_url" target="_blank" download="drawing.png" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+          <a :href="sanitizeUrl(selectedOrder.drawing_data_url)" target="_blank" download="drawing.png" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">
             <i class="fa-solid fa-eye mr-1"></i> Buka / Download
           </a>
         </div>
@@ -433,7 +433,7 @@
               <td class="p-3.5">
                 <a 
                   v-if="o.estimation?.cutting_image_url" 
-                  :href="o.estimation.cutting_image_url" 
+                  :href="sanitizeUrl(o.estimation.cutting_image_url)" 
                   target="_blank"
                   class="inline-block"
                 >
@@ -494,9 +494,11 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
+import { useSecurity } from '~/composables/useSecurity'
 
 const route = useRoute()
 const store = useCncStore()
+const { sanitizeUrl } = useSecurity()
 
 const selectedOrderId = ref<number | null>(null)
 const feedbackMsg = ref<{ text: string; type: 'success' | 'error' } | null>(null)

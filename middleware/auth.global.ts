@@ -7,10 +7,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { verifySessionToken } = useSecurity()
   const sessionToken = useCookie<string | null>('cnc_session_token')
 
-  // Cryptographically verify session token (HMAC-SHA256 signature check)
-  let activeUser: UserProfile | null = currentUser.value
+  // Cryptographically verify session token (HMAC-SHA256 signature check on EVERY route change)
+  let activeUser: UserProfile | null = null
 
-  if (!activeUser && sessionToken.value) {
+  if (sessionToken.value) {
     activeUser = await verifySessionToken(sessionToken.value)
     if (activeUser) {
       currentUser.value = activeUser
@@ -19,6 +19,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
       sessionToken.value = null
       currentUser.value = null
     }
+  } else {
+    currentUser.value = null
   }
 
   // If user is already authenticated and visits /login -> redirect to appropriate role home

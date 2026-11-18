@@ -217,12 +217,32 @@ const isFullAccess = computed(() => {
 })
 
 const readyOrders = computed(() => {
-  return store.orders.value.filter(o => o.status === 'Siap Diambil' && Boolean(o.kode_pengambilan))
+  const allReady = store.orders.value.filter(o => o.status === 'Siap Diambil' && Boolean(o.kode_pengambilan))
+  if (isFullAccess.value) {
+    return allReady
+  }
+  // Strict IDOR protection: User role only sees their own department/order PINs
+  const user = store.currentUser.value
+  if (!user) return []
+  return allReady.filter(o => {
+    const matchName = o.nama_pemesan && o.nama_pemesan.toLowerCase() === user.name.toLowerCase()
+    const matchNik = o.nik_pemesan && o.nik_pemesan === user.username
+    const matchDept = user.department && o.departemen_pemesan && o.departemen_pemesan.toLowerCase() === user.department.toLowerCase()
+    return matchName || matchNik || matchDept
+  })
 })
 
 const selectedOrder = computed(() => {
   if (!selectedOrderId.value) return null
-  return store.orders.value.find(o => o.id === selectedOrderId.value) || null
+  const found = store.orders.value.find(o => o.id === selectedOrderId.value) || null
+  if (!found) return null
+  if (isFullAccess.value) return found
+  const user = store.currentUser.value
+  if (!user) return null
+  const isOwner = (found.nama_pemesan && found.nama_pemesan.toLowerCase() === user.name.toLowerCase()) ||
+    (found.nik_pemesan && found.nik_pemesan === user.username) ||
+    (user.department && found.departemen_pemesan && found.departemen_pemesan.toLowerCase() === user.department.toLowerCase())
+  return isOwner ? found : null
 })
 
 // Auto-populate verifier form fields when selected order changes

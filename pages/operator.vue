@@ -134,7 +134,7 @@
           <div>
             <a 
               v-if="o.drawing_data_url" 
-              :href="o.drawing_data_url" 
+              :href="sanitizeUrl(o.drawing_data_url)" 
               target="_blank" 
               download="drawing.png" 
               class="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline"
@@ -213,8 +213,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useCncStore } from '~/composables/useCncStore'
+import { useSecurity } from '~/composables/useSecurity'
 
 const store = useCncStore()
+const { sanitizeUrl } = useSecurity()
 
 const groups = ['Group CNC 1', 'Group CNC 2', 'Group CNC 3']
 const activeGroup = ref('Group CNC 1')

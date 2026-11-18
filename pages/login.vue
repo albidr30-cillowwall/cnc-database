@@ -118,8 +118,8 @@ onMounted(() => {
   }
 })
 
-const identity = ref('user@gmail.com')
-const password = ref('123')
+const identity = ref('')
+const password = ref('')
 const showPassword = ref(false)
 const errorMessage = ref('')
 const isLoading = ref(false)

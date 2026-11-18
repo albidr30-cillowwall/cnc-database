@@ -339,6 +339,20 @@ function handleFileUpload(e: Event) {
   const file = target.files?.[0]
   if (!file) return
 
+  // Security validation: Allow only safe image formats or PDF, max 10MB
+  const safeTypes = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf']
+  if (!safeTypes.includes(file.type) && !file.type.startsWith('image/')) {
+    alert('File tidak didukung. Harap upload file gambar kerja (PNG, JPG, WEBP) atau PDF.')
+    target.value = ''
+    return
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Ukuran file melebihi batas maksimal 10MB!')
+    target.value = ''
+    return
+  }
+
   fileName.value = file.name
   const reader = new FileReader()
   reader.onload = () => {

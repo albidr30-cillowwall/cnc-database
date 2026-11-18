@@ -210,6 +210,46 @@ export function useSecurity() {
       .replace(/[<>]/g, '') // strip HTML bracket tags
   }
 
+  // 5. URL Sanitization (Anti-XSS via javascript: or malicious data URIs)
+  function sanitizeUrl(url: string | undefined | null): string {
+    if (!url || typeof url !== 'string') return '#'
+    const trimmed = url.trim()
+    const lower = trimmed.toLowerCase()
+    
+    // Explicitly block dangerous script-carrying URI schemes
+    if (
+      lower.startsWith('javascript:') ||
+      lower.startsWith('vbscript:') ||
+      lower.startsWith('data:text/html') ||
+      lower.startsWith('data:application/javascript') ||
+      lower.startsWith('data:text/javascript')
+    ) {
+      console.warn('SECURITY ALERT: Blocked dangerous URL scheme')
+      return '#'
+    }
+
+    // Allow safe protocols: http, https, data:image/*, data:application/pdf, or relative paths
+    if (
+      lower.startsWith('http://') ||
+      lower.startsWith('https://') ||
+      lower.startsWith('data:image/') ||
+      lower.startsWith('data:application/pdf') ||
+      lower.startsWith('/') ||
+      lower.startsWith('#')
+    ) {
+      return trimmed
+    }
+
+    return '#'
+  }
+
+  // 6. PostgREST Query Term Sanitization (Prevent PostgREST Filter Injection)
+  function sanitizePostgrestTerm(term: string): string {
+    if (!term) return ''
+    // Strip operators and delimiters that could manipulate PostgREST filters (, ( ) . " ' : \)
+    return term.trim().replace(/[,()."':\\]/g, '')
+  }
+
   return {
     hashPassword,
     verifyPassword,
@@ -218,6 +258,8 @@ export function useSecurity() {
     getRateLimitStatus,
     recordFailedLogin,
     resetRateLimit,
-    sanitizeInput
+    sanitizeInput,
+    sanitizeUrl,
+    sanitizePostgrestTerm
   }
 }

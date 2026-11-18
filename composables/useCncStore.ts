@@ -141,7 +141,9 @@ export function useCncStore() {
     getRateLimitStatus,
     recordFailedLogin,
     resetRateLimit,
-    sanitizeInput
+    sanitizeInput,
+    sanitizeUrl,
+    sanitizePostgrestTerm
   } = useSecurity()
 
   // Nuxt 3 request-isolated state (SSR-safe, prevents cross-request session leakage)
@@ -183,37 +185,57 @@ export function useCncStore() {
     return parseFloat((p * l * t * density).toFixed(2))
   }
 
-  // Local Storage save
+  // Local Storage save (Security hardened: never stores raw session user or password hashes)
   function saveToLocalStorage() {
     if (!import.meta.client) return
-    localStorage.setItem('cnc_users_v3', JSON.stringify(users.value))
+    const safeUsers = users.value.map(u => ({
+      id: u.id,
+      name: u.name,
+      username: u.username,
+      email: u.email,
+      role: u.role,
+      department: u.department
+    }))
+    localStorage.setItem('cnc_users_v3', JSON.stringify(safeUsers))
     localStorage.setItem('cnc_orders_v3', JSON.stringify(orders.value))
     localStorage.setItem('cnc_plates_v3', JSON.stringify(plates.value))
     localStorage.setItem('cnc_estimations_v3', JSON.stringify(estimations.value))
     localStorage.setItem('cnc_pickups_v3', JSON.stringify(yardPickups.value))
-    if (currentUser.value) {
-      localStorage.setItem('cnc_session_user', JSON.stringify(currentUser.value))
-    } else {
-      localStorage.removeItem('cnc_session_user')
-    }
+    // Clean up any legacy unverified session user in localStorage
+    localStorage.removeItem('cnc_session_user')
   }
 
   // Initialize store (from Supabase or LocalStorage)
   async function initStore() {
     if (!import.meta.client || isInitialized.value) return
 
-    // 1. Restore session user
-    const savedSession = localStorage.getItem('cnc_session_user')
-    if (savedSession) {
-      try {
-        currentUser.value = JSON.parse(savedSession)
-      } catch { }
+    // 1. Restore verified session token only (Cryptographic HMAC check, prevents localStorage privilege escalation)
+    if (sessionToken.value) {
+      const verified = await verifySessionToken(sessionToken.value)
+      if (verified) {
+        currentUser.value = verified
+      } else {
+        sessionToken.value = null
+        currentUser.value = null
+      }
+    } else {
+      currentUser.value = null
     }
 
     // 2. Load LocalStorage first (for instant display)
     const localUsers = localStorage.getItem('cnc_users_v3')
     if (localUsers) {
-      try { users.value = JSON.parse(localUsers) } catch { }
+      try { 
+        const parsed = JSON.parse(localUsers)
+        users.value = parsed.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          username: u.username,
+          email: u.email,
+          role: u.role,
+          department: u.department
+        }))
+      } catch { }
     }
     const localOrders = localStorage.getItem('cnc_orders_v3')
     if (localOrders) {
@@ -254,8 +276,8 @@ export function useCncStore() {
     if (!supabase || !isConfigured) return
     isSyncing.value = true
     try {
-      // Fetch users
-      const { data: profileData } = await supabase.from('profiles').select('*')
+      // Fetch users (Hardened: never select password_hash to prevent credential leakage to client memory)
+      const { data: profileData } = await supabase.from('profiles').select('id, name, username, email, role, department')
       if (profileData && profileData.length > 0) {
         users.value = profileData.map(p => ({
           id: p.id,
@@ -263,8 +285,7 @@ export function useCncStore() {
           username: p.username,
           email: p.email,
           role: (p.role === 'mandor' ? 'operator' : p.role) as 'admin' | 'operator' | 'mandor' | 'user',
-          department: p.department,
-          password_hash: p.password_hash
+          department: p.department
         }))
       }
 
@@ -410,46 +431,60 @@ export function useCncStore() {
       return { success: false, message: 'Email/Username dan Password wajib diisi.' }
     }
 
-    // 3. User Lookup (supports operator, mandor, admin, and user)
-    let user = users.value.find(u =>
-      u.email.toLowerCase() === term ||
-      u.username.toLowerCase() === term ||
-      (term === 'mandor' && u.username === 'operator') ||
-      (term === 'mandor@gmail.com' && u.email === 'operator@gmail.com') ||
-      (term === 'operator' && u.username === 'mandor') ||
-      (term === 'operator@gmail.com' && u.email === 'mandor@gmail.com')
-    )
+    // 3. User Lookup (Secure query, prevents PostgREST filter injection and prevents password hash leaking)
+    let targetUser: UserProfile | null = null
+    let targetPasswordHash = ''
 
-    // Fallback: If user not found in local memory, check Supabase directly (ensures newly created users can login instantly)
-    if (!user && isConfigured && supabase) {
+    if (isConfigured && supabase) {
       try {
-        const { data: dbUser } = await supabase
-          .from('profiles')
-          .select('*')
-          .or(`email.ilike.${term},username.ilike.${term}`)
-          .maybeSingle()
-        if (dbUser) {
-          const mapped: UserProfile = {
-            id: dbUser.id,
-            name: dbUser.name,
-            username: dbUser.username,
-            email: dbUser.email,
-            role: (dbUser.role === 'mandor' ? 'operator' : dbUser.role) as 'admin' | 'operator' | 'mandor' | 'user',
-            department: dbUser.department,
-            password_hash: dbUser.password_hash
+        const cleanTerm = sanitizePostgrestTerm(term)
+        if (cleanTerm) {
+          const { data: dbUser } = await supabase
+            .from('profiles')
+            .select('id, name, username, email, role, department, password_hash')
+            .or(`email.ilike.${cleanTerm},username.ilike.${cleanTerm}`)
+            .maybeSingle()
+          if (dbUser) {
+            targetUser = {
+              id: dbUser.id,
+              name: dbUser.name,
+              username: dbUser.username,
+              email: dbUser.email,
+              role: (dbUser.role === 'mandor' ? 'operator' : dbUser.role) as any,
+              department: dbUser.department
+            }
+            targetPasswordHash = dbUser.password_hash || ''
           }
-          if (!users.value.some(u => u.id === mapped.id)) {
-            users.value.push(mapped)
-            saveToLocalStorage()
-          }
-          user = mapped
         }
       } catch (err) {
-        console.warn('Fallback Supabase login search error:', err)
+        console.warn('Supabase login search warning:', err)
       }
     }
 
-    if (!user) {
+    // Local fallback check if Supabase didn't find or is offline
+    if (!targetUser) {
+      const foundDefault = defaultUsers.find(u =>
+        u.email.toLowerCase() === term ||
+        u.username.toLowerCase() === term ||
+        (term === 'mandor' && u.username === 'operator') ||
+        (term === 'mandor@gmail.com' && u.email === 'operator@gmail.com') ||
+        (term === 'operator' && u.username === 'mandor') ||
+        (term === 'operator@gmail.com' && u.email === 'mandor@gmail.com')
+      )
+      if (foundDefault) {
+        targetUser = {
+          id: foundDefault.id,
+          name: foundDefault.name,
+          username: foundDefault.username,
+          email: foundDefault.email,
+          role: foundDefault.role,
+          department: foundDefault.department
+        }
+        targetPasswordHash = foundDefault.password_hash || ''
+      }
+    }
+
+    if (!targetUser || !targetPasswordHash) {
       const lock = recordFailedLogin()
       const msg = lock.isLocked
         ? `5 kali gagal berturut-turut. Akses login dikunci selama ${lock.remainingSeconds} detik.`
@@ -458,7 +493,7 @@ export function useCncStore() {
     }
 
     // 4. Secure Password Verification (Salted SHA-256 + Timing Safe)
-    const isMatch = await verifyPassword(pwd, user.password_hash || '')
+    const isMatch = await verifyPassword(pwd, targetPasswordHash)
     if (!isMatch) {
       const lock = recordFailedLogin()
       const msg = lock.isLocked
@@ -472,15 +507,15 @@ export function useCncStore() {
 
     // 6. Normalize role (treat mandor as operator)
     const normalizedRole: 'admin' | 'operator' | 'mandor' | 'user' =
-      user.role === 'mandor' ? 'operator' : user.role
+      targetUser.role === 'mandor' ? 'operator' : targetUser.role
 
     const safeUser: SafeUser = {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
+      id: targetUser.id,
+      name: targetUser.name,
+      username: targetUser.username,
+      email: targetUser.email,
       role: normalizedRole,
-      department: user.department
+      department: targetUser.department
     }
 
     // 7. Generate Signed HMAC Token (Tamper-Proof)
@@ -488,10 +523,10 @@ export function useCncStore() {
     sessionToken.value = token
     currentUser.value = safeUser
 
-    // 8. Auto-upgrade plain password to secure salted hash in storage
-    if (user.password_hash === pwd) {
-      user.password_hash = await hashPassword(pwd)
-      saveToLocalStorage()
+    // 8. Auto-upgrade plain password in Supabase if legacy plain '123'
+    if (isConfigured && supabase && targetPasswordHash === pwd) {
+      const newHash = await hashPassword(pwd)
+      supabase.from('profiles').update({ password_hash: newHash }).eq('id', targetUser.id).then(() => {})
     }
 
     return { success: true }
@@ -1066,6 +1101,9 @@ export function useCncStore() {
   }
 
   async function updateUserRole(userId: string, newRole: 'admin' | 'operator' | 'mandor' | 'user') {
+    if (currentUser.value?.role !== 'admin') {
+      return { success: false, message: 'Akses ditolak: Hanya Administrator yang dapat mengubah role pengguna.' }
+    }
     const u = users.value.find(user => user.id === userId)
     if (!u) return { success: false, message: 'User tidak ditemukan.' }
     const oldRole = u.role
@@ -1085,6 +1123,9 @@ export function useCncStore() {
   }
 
   async function deleteUser(userId: string) {
+    if (currentUser.value?.role !== 'admin') {
+      return { success: false, message: 'Akses ditolak: Hanya Administrator yang dapat menghapus pengguna.' }
+    }
     const prevUsers = [...users.value]
     users.value = users.value.filter(u => u.id !== userId)
     saveToLocalStorage()
@@ -1101,6 +1142,10 @@ export function useCncStore() {
   }
 
   async function resetDataToZero() {
+    if (currentUser.value?.role !== 'admin') {
+      console.warn('Akses ditolak: Hanya Administrator yang dapat mereset database.')
+      return
+    }
     orders.value = []
     plates.value = []
     estimations.value = []

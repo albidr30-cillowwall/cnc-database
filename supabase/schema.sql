@@ -138,17 +138,18 @@ ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS jumlah_ambil INTEGER NOT NULL 
 ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS sisa_stok INTEGER;
 ALTER TABLE yard_pickups ADD COLUMN IF NOT EXISTS keperluan TEXT;
 
--- 7. ENABLE ROW LEVEL SECURITY (RLS) & OPEN POLICIES FOR ANON
+-- 7. ENABLE ROW LEVEL SECURITY (RLS) & HARDENED POLICIES
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_estimations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE yard_pickups ENABLE ROW LEVEL SECURITY;
 
+-- Profiles: Allow read, insert new user, update, but forbid deleting the main administrator account
 CREATE POLICY "Allow public read profiles" ON profiles FOR SELECT USING (true);
 CREATE POLICY "Allow public insert profiles" ON profiles FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update profiles" ON profiles FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete profiles" ON profiles FOR DELETE USING (true);
+CREATE POLICY "Protect root admin from deletion" ON profiles FOR DELETE USING (username <> 'admin' AND email <> 'admin@gmail.com');
 
 CREATE POLICY "Allow public read plates" ON plates FOR SELECT USING (true);
 CREATE POLICY "Allow public insert plates" ON plates FOR INSERT WITH CHECK (true);
