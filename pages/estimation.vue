@@ -59,12 +59,12 @@
           v-model="selectedOrderId" 
           class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-violet-500 outline-none transition"
         >
-          <option :value="null">-- Pilih Order untuk Material Identification --</option>
+          <option :value="null">-- {{ eligibleOrders.length > 0 ? `Pilih Order untuk Material Identification (${eligibleOrders.length} order menunggu)` : 'Semua Material Identification Telah Selesai' }} --</option>
           <option 
             v-if="selectedOrder && isApproved" 
             :value="selectedOrder.id"
           >
-            {{ selectedOrder.no_order }} - {{ selectedOrder.nama_proyek }} [SUDAH SELESAI & DISETUJUI]
+            {{ selectedOrder.no_order }} - {{ selectedOrder.nama_proyek }} [SUDAH SELESAI & DISETUJUI - TERKUNCI]
           </option>
           <option 
             v-for="po in eligibleOrders" 
@@ -325,36 +325,38 @@
 
           <div class="pt-2 flex flex-col sm:flex-row gap-3">
             <template v-if="isApproved">
-              <div class="flex-1 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-between">
+              <div class="flex-1 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span class="flex items-center gap-2">
                   <i class="fa-solid fa-lock text-emerald-600"></i>
                   <span>Material Identification Selesai & Disetujui (Terkunci)</span>
                 </span>
-                <button 
-                  type="button" 
-                  @click="resetForm" 
-                  class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
-                >
-                  <i class="fa-solid fa-check mr-1.5"></i> Selesai / Tutup
-                </button>
+                <div class="flex items-center gap-2">
+                  <button 
+                    v-if="eligibleOrders.length > 0"
+                    type="button" 
+                    @click="selectNextEligibleOrder" 
+                    class="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    <i class="fa-solid fa-forward"></i>
+                    <span>Pilih Order Berikutnya ({{ eligibleOrders.length }})</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    @click="resetForm" 
+                    class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+                  >
+                    <i class="fa-solid fa-xmark mr-1.5"></i> Tutup Tampilan
+                  </button>
+                </div>
               </div>
             </template>
             <template v-else>
               <button 
                 type="submit" 
-                class="flex-1 bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-extrabold p-3.5 rounded-xl shadow-md shadow-violet-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <i class="fa-solid fa-floppy-disk"></i>
-                <span>SIMPAN MATERIAL IDENTIFICATION</span>
-              </button>
-              <button 
-                type="button"
-                @click="handleDirectApprove(selectedOrder.id)"
-                class="px-5 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center justify-center gap-2 shadow-xs shrink-0 cursor-pointer"
-                title="Setujui langsung (Mandor / Admin)"
+                class="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold p-3.5 rounded-xl shadow-md shadow-emerald-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <i class="fa-solid fa-circle-check"></i>
-                <span>Setujui Langsung</span>
+                <span>SIMPAN & SETUJUI MATERIAL IDENTIFICATION (SELESAI)</span>
               </button>
             </template>
           </div>
@@ -616,12 +618,23 @@ function removeCuttingImage() {
   }
 }
 
-// Handle Submit Material Identification
+function selectNextEligibleOrder() {
+  if (eligibleOrders.value.length > 0) {
+    selectedOrderId.value = eligibleOrders.value[0].id
+  } else {
+    resetForm()
+  }
+}
+
+// Handle Submit Material Identification (Simpan & Setujui Sekaligus)
 async function handleSubmitEstimation() {
   if (!selectedOrder.value || isApproved.value) return
+  const currentOrderId = selectedOrder.value.id
+  const orderLabel = selectedOrder.value.no_order
 
+  // 1. Simpan Material Identification dengan status Disetujui
   await store.saveEstimation({
-    order_id: selectedOrder.value.id,
+    order_id: currentOrderId,
     project_name: form.project_name,
     nesting_no: form.nesting_no,
     block_item: form.block_item,
@@ -629,12 +642,26 @@ async function handleSubmitEstimation() {
     dimension_material: form.dimension_material,
     product_number: form.product_number,
     heat_number: form.heat_number,
-    cutting_image_url: cuttingImagePreview.value
+    cutting_image_url: cuttingImagePreview.value,
+    status_approval: 'Disetujui'
   })
+
+  // 2. Setujui secara resmi di store & database
+  await store.approveEstimation(currentOrderId)
+
+  // 3. Reset form (selesai sampai situ!)
+  resetForm()
 
   feedbackMsg.value = {
     type: 'success',
-    text: `Material Identification untuk order ${selectedOrder.value.no_order} berhasil disimpan! Silakan klik 'Setujui Langsung' untuk menyelesaikan.`
+    text: `Material Identification untuk order ${orderLabel} BERHASIL DISIMPAN & DISETUJUI (Selesai). Silakan pilih order/plat berikutnya.`
+  }
+
+  // 4. Otomatis pilih order berikutnya jika masih ada order yang belum diidentifikasi
+  if (eligibleOrders.value.length > 0) {
+    selectedOrderId.value = eligibleOrders.value[0].id
+  } else {
+    selectedOrderId.value = null
   }
 }
 
@@ -654,7 +681,8 @@ async function handleDirectApprove(orderId: number) {
       dimension_material: form.dimension_material,
       product_number: form.product_number,
       heat_number: form.heat_number,
-      cutting_image_url: cuttingImagePreview.value
+      cutting_image_url: cuttingImagePreview.value,
+      status_approval: 'Disetujui'
     })
   }
 
@@ -665,7 +693,14 @@ async function handleDirectApprove(orderId: number) {
 
   feedbackMsg.value = {
     type: 'success',
-    text: `Material Identification untuk order ${orderLabel} berhasil DISETUJUI dan SELESAI!`
+    text: `Material Identification untuk order ${orderLabel} BERHASIL DISETUJUI dan SELESAI!`
+  }
+
+  // Otomatis pilih order berikutnya jika masih ada
+  if (eligibleOrders.value.length > 0) {
+    selectedOrderId.value = eligibleOrders.value[0].id
+  } else {
+    selectedOrderId.value = null
   }
 }
 

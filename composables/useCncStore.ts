@@ -719,6 +719,7 @@ export function useCncStore() {
     remnant?: string
     tgl_selesai?: string
     catatan?: string
+    status_approval?: string
   }) {
     const order = orders.value.find(o => o.id === data.order_id)
     if (!order) return
@@ -740,7 +741,7 @@ export function useCncStore() {
       product_number: data.product_number?.trim() || '',
       heat_number: data.heat_number?.trim() || '',
       cutting_image_url: data.cutting_image_url || '',
-      status_approval: 'Menunggu Persetujuan',
+      status_approval: data.status_approval || 'Disetujui',
       // backward compatibility fields
       grade: data.spec_material?.trim() || data.grade || '',
       tebal: data.dimension_material || data.tebal || order.ketebalan,
