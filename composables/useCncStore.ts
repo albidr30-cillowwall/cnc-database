@@ -619,13 +619,40 @@ export function useCncStore() {
 
     // Generate unique order number (prevents NOT NULL and UNIQUE constraint violation in Supabase)
     let maxOrderNum = 0
+
+    // 1. Periksa state lokal terlebih dahulu
     orders.value.forEach(o => {
-      const match = o.no_order && o.no_order.match(/(\d+)$/)
+      const match = o.no_order && (o.no_order.match(/ORD-CNC-(\d+)/i) || o.no_order.match(/(\d+)/))
       if (match) {
         const n = parseInt(match[1], 10)
         if (!isNaN(n) && n > maxOrderNum) maxOrderNum = n
       }
     })
+
+    // 2. Query ke Supabase untuk mendapatkan data order terbaru secara real-time
+    // Ini mencegah duplicate key violation jika state lokal browser belum tersinkronisasi atau kosong
+    if (isConfigured && supabase) {
+      try {
+        const { data: recentOrders } = await supabase
+          .from('orders')
+          .select('no_order')
+          .order('id', { ascending: false })
+          .limit(30)
+
+        if (recentOrders && recentOrders.length > 0) {
+          recentOrders.forEach((o: any) => {
+            const match = o.no_order && (o.no_order.match(/ORD-CNC-(\d+)/i) || o.no_order.match(/(\d+)/))
+            if (match) {
+              const n = parseInt(match[1], 10)
+              if (!isNaN(n) && n > maxOrderNum) maxOrderNum = n
+            }
+          })
+        }
+      } catch (e) {
+        console.warn('Gagal membaca no_order terbaru dari Supabase, menggunakan nomor urut lokal:', e)
+      }
+    }
+
     const orderSeq = maxOrderNum + 1
     let generatedNoOrder = 'ORD-CNC-' + String(orderSeq).padStart(3, '0')
     if (orders.value.some(o => o.no_order === generatedNoOrder)) {
@@ -663,11 +690,28 @@ export function useCncStore() {
 
     if (isConfigured && supabase) {
       // Insert to Supabase FIRST, get auto-generated id back
-      const { data: inserted, error } = await supabase
+      let { data: inserted, error } = await supabase
         .from('orders')
         .insert([orderPayload])
         .select('*')
         .single()
+
+      // Auto-retry jika terjadi collision/race condition dengan nomor order yang sama
+      if (error && (error.code === '23505' || error.message?.toLowerCase().includes('unique') || error.message?.toLowerCase().includes('orders_no_order_key'))) {
+        console.warn('Terdeteksi duplikasi no_order (race condition), melakukan retry otomatis dengan suffix unik...')
+        const uniqueSuffix = Date.now().toString().slice(-4) + Math.random().toString(36).substring(2, 5).toUpperCase()
+        generatedNoOrder = `ORD-CNC-${String(orderSeq).padStart(3, '0')}-${uniqueSuffix}`
+        orderPayload.no_order = generatedNoOrder
+
+        const retryResult = await supabase
+          .from('orders')
+          .insert([orderPayload])
+          .select('*')
+          .single()
+
+        inserted = retryResult.data
+        error = retryResult.error
+      }
 
       if (error) {
         console.error('Supabase createOrder error:', error.message, error.details, error.code)
@@ -684,8 +728,8 @@ export function useCncStore() {
 
     const newOrder: Order = {
       id: finalId,
-      no_order: finalNoOrder,
       ...orderPayload,
+      no_order: finalNoOrder,
       status: 'Diterima',
       created_at: new Date().toISOString()
     }
