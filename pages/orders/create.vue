@@ -34,18 +34,7 @@
             </select>
           </div>
 
-          <div>
-            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Nama Pekerjaan / Deskripsi *</label>
-            <input 
-              v-model="form.deskripsi_pekerjaan" 
-              type="text" 
-              required 
-              placeholder="Contoh: Potong Flange untuk Exhaust" 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600"
-            >
-          </div>
-
-          <div v-if="form.jenis_pekerjaan_kategori === 'Lainnya'" class="sm:col-span-2">
+          <div v-if="form.jenis_pekerjaan_kategori === 'Lainnya'">
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Isi Jenis Pekerjaan Lainnya *</label>
             <input 
               v-model="form.jenis_lainnya" 
@@ -373,7 +362,7 @@ async function handleSubmit() {
     await createOrder({
       jenis_pekerjaan_kategori: form.jenis_pekerjaan_kategori,
       jenis_lainnya: form.jenis_lainnya,
-      deskripsi_pekerjaan: form.deskripsi_pekerjaan,
+      deskripsi_pekerjaan: form.deskripsi_pekerjaan?.trim() || form.nama_proyek?.trim() || form.jenis_pekerjaan_kategori,
       nama_pemesan: form.nama_pemesan,
       departemen_pemesan: finalDepartemen,
       nik_pemesan: form.nik_pemesan,

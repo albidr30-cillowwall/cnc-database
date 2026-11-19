@@ -590,7 +590,7 @@ export function useCncStore() {
   async function createOrder(data: {
     jenis_pekerjaan_kategori: string
     jenis_lainnya?: string
-    deskripsi_pekerjaan: string
+    deskripsi_pekerjaan?: string
     nama_pemesan: string
     departemen_pemesan: string
     nik_pemesan?: string
@@ -637,7 +637,7 @@ export function useCncStore() {
       no_order: generatedNoOrder,
       jenis_pekerjaan: jenisPekerjaan,
       jenis_pekerjaan_kategori: data.jenis_pekerjaan_kategori,
-      deskripsi_pekerjaan: data.deskripsi_pekerjaan.trim(),
+      deskripsi_pekerjaan: data.deskripsi_pekerjaan?.trim() || data.nama_proyek?.trim() || data.jenis_pekerjaan_kategori || '-',
       nama_pemesan: data.nama_pemesan.trim(),
       departemen_pemesan: data.departemen_pemesan.trim(),
       nik_pemesan: data.nik_pemesan?.trim() || undefined,
