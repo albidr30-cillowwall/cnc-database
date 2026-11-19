@@ -10,7 +10,7 @@
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
-        <!-- Shortcut Button: Input Manual (Tanpa Order) -->
+        <!-- Shortcut Button: Input Manual -->
         <button 
           type="button" 
           @click="setMode('manual')" 
@@ -20,10 +20,10 @@
             : 'bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40'"
         >
           <i class="fa-solid fa-pen-to-square"></i>
-          <span>Input Manual (Tanpa Order)</span>
+          <span>Input Manual</span>
         </button>
 
-        <!-- Shortcut Button: Dari Order Aplikasi -->
+        <!-- Shortcut Button: By Order -->
         <button 
           type="button" 
           @click="setMode('order')" 
@@ -33,7 +33,7 @@
             : 'bg-violet-50 dark:bg-violet-950/40 border border-violet-300 dark:border-violet-800 text-violet-800 dark:text-violet-200 hover:bg-violet-100 dark:hover:bg-violet-900/40'"
         >
           <i class="fa-solid fa-clipboard-list"></i>
-          <span>Pilih dari Order</span>
+          <span>By Order</span>
         </button>
 
         <NuxtLink 
@@ -48,7 +48,7 @@
 
     <!-- 2 FITUR UTAMA DENGAN ICON (FEATURE SWITCHER TABS) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <!-- FITUR 1: Berdasarkan Order Aplikasi -->
+      <!-- By Order -->
       <button 
         type="button" 
         @click="setMode('order')"
@@ -66,7 +66,7 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center justify-between gap-2">
             <span class="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-              <span>Fitur 1: Dari Order Aplikasi</span>
+              <span>By Order</span>
               <span v-if="activeMode === 'order'" class="w-2 h-2 rounded-full bg-violet-500"></span>
             </span>
             <span 
@@ -82,7 +82,7 @@
         </div>
       </button>
 
-      <!-- FITUR 2: Input Manual (Tanpa Order) -->
+      <!-- Input Manual -->
       <button 
         type="button" 
         @click="setMode('manual')"
@@ -100,7 +100,7 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center justify-between gap-2">
             <span class="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-              <span>Fitur 2: Input Manual (Tanpa Order)</span>
+              <span>Input Manual</span>
               <span v-if="activeMode === 'manual'" class="w-2 h-2 rounded-full bg-amber-500"></span>
             </span>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
@@ -211,7 +211,7 @@
               title="Klik untuk input langsung tanpa memilih order"
             >
               <i class="fa-solid fa-pen-to-square"></i>
-              <span>Input Manual (Tanpa Order)</span>
+              <span>Input Manual</span>
             </button>
           </div>
         </div>
@@ -222,7 +222,7 @@
             <i class="fa-solid fa-clipboard-question"></i>
           </div>
           <div>
-            <h3 class="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide">Pilih Order di Dropdown atau Gunakan Fitur Input Manual</h3>
+            <h3 class="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide">Pilih Order di Dropdown atau Gunakan Input Manual</h3>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-lg mx-auto leading-relaxed">
               Silakan pilih salah satu order di atas untuk mengisi/memverifikasi data Material Identification & nesting plat, atau klik tombol di bawah untuk input langsung secara mandiri.
             </p>
@@ -234,7 +234,7 @@
               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition shadow-md shadow-amber-500/25 cursor-pointer"
             >
               <i class="fa-solid fa-pen-to-square"></i>
-              <span>Buka Formulir Input Manual (Tanpa Order)</span>
+              <span>Buka Formulir Input Manual</span>
             </button>
           </div>
         </div>
@@ -277,7 +277,7 @@
             </div>
             <div>
               <div class="font-black text-amber-900 dark:text-amber-200 uppercase tracking-wider flex items-center gap-2">
-                <span>Fitur 2: Mode Input Manual (Tanpa Order)</span>
+                <span>Mode Input Manual</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200">Aktif</span>
               </div>
               <p class="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
@@ -291,7 +291,7 @@
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-950 font-bold text-xs transition cursor-pointer shrink-0"
           >
             <i class="fa-solid fa-clipboard-list text-violet-500"></i>
-            <span>Beralih ke Fitur Order</span>
+            <span>Beralih ke By Order</span>
           </button>
         </div>
       </div>
