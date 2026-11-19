@@ -336,7 +336,7 @@ watch(() => form.departemen_pemesan, (val) => {
   }
 })
 
-function handleFileUpload(e: Event) {
+async function handleFileUpload(e: Event) {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
