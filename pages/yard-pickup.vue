@@ -141,7 +141,7 @@
           <i class="fa-solid fa-receipt text-blue-500"></i>
           <span>Riwayat Pengambilan</span>
         </h2>
-        <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">Total: {{ store.yardPickups.value.length }} bon</span>
+        <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">Total: {{ store.yardPickups.value.length }} pengambilan</span>
       </div>
 
       <div class="overflow-x-auto">
@@ -184,7 +184,7 @@
             </tr>
             <tr v-if="store.yardPickups.value.length === 0">
               <td colspan="6" class="p-8 text-center text-slate-400 dark:text-slate-500 italic">
-                Belum ada bon pengambilan plat dari stok.
+                Belum ada riwayat pengambilan plat dari stok.
               </td>
             </tr>
           </tbody>
