@@ -7,9 +7,6 @@
           <i class="fa-solid fa-truck-ramp-box text-blue-500"></i>
           <span>Ambil Plat dari Stok</span>
         </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Pengambilan & pemotongan jumlah stok plat tanpa terikat dengan order baru
-        </p>
       </div>
 
       <NuxtLink 
@@ -142,7 +139,7 @@
       <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
         <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
           <i class="fa-solid fa-receipt text-blue-500"></i>
-          <span>Riwayat Bon Pengambilan Plat Terbaru</span>
+          <span>Riwayat Pengambilan</span>
         </h2>
         <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">Total: {{ store.yardPickups.value.length }} bon</span>
       </div>
