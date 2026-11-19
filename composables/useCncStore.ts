@@ -637,7 +637,7 @@ export function useCncStore() {
           .from('orders')
           .select('no_order')
           .order('id', { ascending: false })
-          .limit(30)
+          .limit(100)
 
         if (recentOrders && recentOrders.length > 0) {
           recentOrders.forEach((o: any) => {
@@ -653,8 +653,34 @@ export function useCncStore() {
       }
     }
 
-    const orderSeq = maxOrderNum + 1
+    let orderSeq = maxOrderNum + 1
     let generatedNoOrder = 'ORD-CNC-' + String(orderSeq).padStart(3, '0')
+
+    // 3. Pre-check langsung ke Supabase: pastikan no_order belum terpakai SEBELUM INSERT dilakukan
+    // Ini mencegah PostgreSQL melempar duplicate key error ke Supabase Postgres Logs
+    if (isConfigured && supabase) {
+      let attempts = 0
+      while (attempts < 20) {
+        try {
+          const { data: existing } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('no_order', generatedNoOrder)
+            .maybeSingle()
+
+          if (!existing) {
+            break // Nomor ini aman dan belum terpakai
+          }
+          // Jika nomor sudah terpakai oleh pengguna lain, naikkan ke nomor urut berikutnya
+          orderSeq++
+          generatedNoOrder = 'ORD-CNC-' + String(orderSeq).padStart(3, '0')
+          attempts++
+        } catch {
+          break
+        }
+      }
+    }
+
     if (orders.value.some(o => o.no_order === generatedNoOrder)) {
       generatedNoOrder = `ORD-CNC-${String(orderSeq).padStart(3, '0')}-${Date.now().toString().slice(-4)}`
     }

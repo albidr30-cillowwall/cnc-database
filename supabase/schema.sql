@@ -237,3 +237,31 @@ VALUES
     ('Operator CNC', 'Operator', 'Operator@gmail.com', 'mandor', 'Produksi CNC', '123'),
     ('User (Pemesan / Viewer)', 'user', 'user@gmail.com', 'user', 'Hull Construction', '123')
 ON CONFLICT (username) DO NOTHING;
+
+-- 9. AUTO-SEQUENCE TRIGGER UNTUK NO_ORDER (Mencegah duplicate key constraint & log error)
+CREATE SEQUENCE IF NOT EXISTS order_number_seq;
+
+-- Sinkronkan nomor urut sequence dengan nomor order tertinggi yang ada saat ini
+SELECT setval('order_number_seq', COALESCE((
+  SELECT MAX(SUBSTRING(no_order FROM 'ORD-CNC-(\d+)')::integer) 
+  FROM orders 
+  WHERE no_order ~ 'ORD-CNC-\d+'
+), 0));
+
+CREATE OR REPLACE FUNCTION set_order_no_trigger()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Jika no_order kosong atau sudah pernah terpakai di database, otomatis ganti ke nomor urut sequence berikutnya
+  IF NEW.no_order IS NULL OR NEW.no_order = '' OR EXISTS (SELECT 1 FROM orders WHERE no_order = NEW.no_order) THEN
+    NEW.no_order := 'ORD-CNC-' || LPAD(nextval('order_number_seq')::TEXT, 3, '0');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_set_order_no ON orders;
+CREATE TRIGGER trg_set_order_no
+BEFORE INSERT ON orders
+FOR EACH ROW
+EXECUTE FUNCTION set_order_no_trigger();
+
