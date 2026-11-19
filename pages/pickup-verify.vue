@@ -66,7 +66,7 @@
               :key="ro.id" 
               :value="ro.id"
             >
-              {{ ro.no_order }} - {{ ro.nama_proyek }} ({{ ro.target_cnc }})
+              {{ ro.no_order }} - {{ ro.nama_proyek }} ({{ ro.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || ro.target_cnc }})
             </option>
           </select>
         </div>

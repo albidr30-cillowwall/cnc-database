@@ -243,7 +243,7 @@
           <div>
             <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Material Order</span>
             <b class="text-slate-900 dark:text-white">{{ selectedOrder.material }} ({{ selectedOrder.ketebalan }})</b>
-            <div class="text-[10px] text-slate-400">Target: {{ selectedOrder.target_cnc }}</div>
+            <div class="text-[10px] text-slate-400">Target: {{ selectedOrder.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || selectedOrder.target_cnc }}</div>
           </div>
           <div>
             <span class="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Jumlah & Part</span>

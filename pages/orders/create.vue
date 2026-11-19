@@ -239,16 +239,16 @@
             E. Tujuan Mesin CNC
           </div>
           <div class="text-xs">
-            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Pilih Group CNC *</label>
+            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Pilih Mesin CNC *</label>
             <select 
               v-model="form.target_cnc" 
               required 
               class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100"
             >
-              <option>Group CNC 1</option>
-              <option>Group CNC 2</option>
-              <option>Group CNC 3</option>
-              <option>Group CNC 4</option>
+              <option>CNC 1</option>
+              <option>CNC 2</option>
+              <option>CNC 3</option>
+              <option>CNC 4</option>
             </select>
           </div>
         </div>
@@ -316,7 +316,7 @@ const form = reactive({
   waktu_custom: '',
   deadline_pekerjaan: '',
   catatan_pekerjaan: '',
-  target_cnc: 'Group CNC 2'
+  target_cnc: 'CNC 2'
 })
 
 watch(() => form.departemen_pemesan, (val) => {

@@ -59,11 +59,11 @@
         v-model="filterGroup" 
         class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
       >
-        <option value="">Semua Group CNC</option>
-        <option value="Group CNC 1">Group CNC 1</option>
-        <option value="Group CNC 2">Group CNC 2</option>
-        <option value="Group CNC 3">Group CNC 3</option>
-        <option value="Group CNC 4">Group CNC 4</option>
+        <option value="">Semua Mesin CNC</option>
+        <option value="CNC 1">CNC 1</option>
+        <option value="CNC 2">CNC 2</option>
+        <option value="CNC 3">CNC 3</option>
+        <option value="CNC 4">CNC 4</option>
       </select>
 
       <select 
@@ -96,7 +96,7 @@
               <th class="p-3.5">Proyek & Kapal</th>
               <th class="p-3.5">Material & Tebal</th>
               <th class="p-3.5">Grade & Heat</th>
-              <th class="p-3.5">Group CNC</th>
+              <th class="p-3.5">Mesin CNC</th>
               <th class="p-3.5">Pengambil</th>
               <th class="p-3.5">PIN</th>
               <th class="p-3.5">Status & Waktu</th>
@@ -128,7 +128,7 @@
                 <div class="text-[10px] font-mono text-slate-400 dark:text-slate-500">{{ o.plat_dipakai || '-' }}</div>
               </td>
               <td class="p-3.5">
-                <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{{ o.target_cnc }}</span>
+                <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{{ o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc }}</span>
               </td>
               <td class="p-3.5">
                 <div class="font-bold text-emerald-600 dark:text-emerald-400">{{ o.pengambil_akhir || o.nama_pemesan }}</div>
@@ -179,8 +179,12 @@ const filteredOrders = computed(() => {
   return store.orders.value.filter(o => {
     // Status filter
     if (filterStatus.value !== 'all' && o.status !== filterStatus.value) return false
-    // Group filter
-    if (filterGroup.value && o.target_cnc !== filterGroup.value) return false
+    // Mesin filter
+    if (filterGroup.value) {
+      const cleanFilter = filterGroup.value.replace(/^Gr(oup|up)\s*/i, '').trim().toLowerCase()
+      const cleanTarget = (o.target_cnc || '').replace(/^Gr(oup|up)\s*/i, '').trim().toLowerCase()
+      if (cleanFilter !== cleanTarget && o.target_cnc !== filterGroup.value) return false
+    }
     // Search query filter
     if (searchQuery.value) {
       const q = searchQuery.value.toLowerCase().trim()

@@ -77,7 +77,7 @@
             <tr v-for="o in filteredOrders" :key="o.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 align-top transition">
               <td class="p-3.5 font-mono font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap">
                 {{ o.no_order }}
-                <div class="text-[10px] font-sans font-normal text-slate-400 mt-0.5">{{ o.target_cnc }}</div>
+                <div class="text-[10px] font-sans font-normal text-slate-400 mt-0.5">{{ o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc }}</div>
               </td>
               <td class="p-3.5 min-w-[210px]">
                 <div class="font-bold text-slate-900 dark:text-white">{{ o.deskripsi_pekerjaan }}</div>

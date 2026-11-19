@@ -159,7 +159,7 @@
               <tr>
                 <th class="pb-2.5">No. Order</th>
                 <th class="pb-2.5">Proyek / Part</th>
-                <th class="pb-2.5">Group</th>
+                <th class="pb-2.5">Mesin CNC</th>
                 <th class="pb-2.5">Qty</th>
               </tr>
             </thead>
@@ -167,7 +167,7 @@
               <tr v-for="cut in recentCuts" :key="cut.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
                 <td class="py-2.5 font-mono font-bold text-blue-700 dark:text-blue-400">{{ cut.no_order }}</td>
                 <td class="py-2.5 font-semibold text-slate-800 dark:text-slate-200">{{ cut.nama_proyek }}</td>
-                <td class="py-2.5 text-cyan-700 dark:text-cyan-400 font-semibold">{{ cut.target_cnc }}</td>
+                <td class="py-2.5 text-cyan-700 dark:text-cyan-400 font-semibold">{{ cut.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || cut.target_cnc }}</td>
                 <td class="py-2.5 font-mono text-emerald-700 dark:text-emerald-400 font-bold">{{ cut.jumlah_pesanan }} {{ cut.satuan }}</td>
               </tr>
               <tr v-if="recentCuts.length === 0">

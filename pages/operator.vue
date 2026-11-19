@@ -81,7 +81,7 @@
               {{ o.status }}
             </span>
             <span v-if="o.target_cnc" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
-              {{ o.target_cnc }}
+              {{ o.target_cnc.replace(/^Gr(oup|up)\s*/i, '') }}
             </span>
           </div>
 
@@ -218,16 +218,23 @@ import { useSecurity } from '~/composables/useSecurity'
 const store = useCncStore()
 const { sanitizeUrl } = useSecurity()
 
-const groups = ['Group CNC 1', 'Group CNC 2', 'Group CNC 3', 'Group CNC 4']
-const activeGroup = ref('Group CNC 1')
+const groups = ['CNC 1', 'CNC 2', 'CNC 3', 'CNC 4']
+const activeGroup = ref('CNC 1')
 const toastMsg = ref<string | null>(null)
 
+function matchesGroup(targetCnc?: string, g?: string): boolean {
+  if (!targetCnc || !g) return false
+  const cleanTarget = targetCnc.replace(/^Gr(oup|up)\s*/i, '').trim()
+  const cleanG = g.replace(/^Gr(oup|up)\s*/i, '').trim()
+  return cleanTarget.toLowerCase() === cleanG.toLowerCase() || targetCnc === g
+}
+
 function getGroupCount(g: string): number {
-  return store.orders.value.filter(o => o.target_cnc === g && o.status !== 'Sudah Diambil').length
+  return store.orders.value.filter(o => matchesGroup(o.target_cnc, g) && o.status !== 'Sudah Diambil').length
 }
 
 const groupOrders = computed(() => {
-  return store.orders.value.filter(o => o.target_cnc === activeGroup.value)
+  return store.orders.value.filter(o => matchesGroup(o.target_cnc, activeGroup.value))
 })
 
 function getStatusBadgeClass(status: string) {
