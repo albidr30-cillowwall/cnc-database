@@ -7,9 +7,6 @@
           <i class="fa-solid fa-boxes-packing text-violet-500"></i>
           <span>Material Identification</span>
         </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Pencatatan lembar kerja nesting, spec material, heat number & verifikasi hasil pemotongan plat CNC.
-        </p>
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
