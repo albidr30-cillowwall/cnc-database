@@ -613,8 +613,8 @@ export function useCncStore() {
       ? (data.jenis_lainnya?.trim() || 'Lainnya')
       : data.jenis_pekerjaan_kategori
 
-    const waktuDiinginkan = data.waktu_pengambilan === 'Tanggal + Jam'
-      ? (data.waktu_custom || 'Tanggal + Jam belum diisi')
+    const waktuDiinginkan = (data.waktu_pengambilan === 'Lainnya' || data.waktu_pengambilan === 'Tanggal + Jam')
+      ? (data.waktu_custom?.trim() || 'Lainnya')
       : data.waktu_pengambilan
 
     // Generate unique order number (prevents NOT NULL and UNIQUE constraint violation in Supabase)

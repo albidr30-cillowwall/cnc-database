@@ -209,20 +209,28 @@
           <div class="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider pb-2 border-b border-slate-100 dark:border-slate-800">
             D. Waktu Pengambilan
           </div>
-          <div class="text-xs">
+          <div class="text-xs space-y-2">
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Pilihan Waktu *</label>
             <select 
               v-model="form.waktu_pengambilan" 
               required 
               class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100"
             >
-              <option>Sore Hari</option>
-              <option>Besok Pagi</option>
-              <option>Besok Sore</option>
-              <option>Lusa</option>
-              <option>Tanggal + Jam</option>
-              <option>Sesuai Jadwal Lapangan</option>
+              <option value="Hari Ini">Hari Ini</option>
+              <option value="Besok">Besok</option>
+              <option value="Lainnya">Lainnya (Isi Manual)</option>
             </select>
+
+            <div v-if="form.waktu_pengambilan === 'Lainnya'" class="pt-1">
+              <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Tulis Waktu Pengambilan *</label>
+              <input 
+                v-model="form.waktu_custom" 
+                type="text" 
+                required 
+                placeholder="Tuliskan waktu pengambilan manual..." 
+                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600 outline-none"
+              >
+            </div>
           </div>
         </div>
 
@@ -304,7 +312,7 @@ const form = reactive({
   ketebalan: '',
   jumlah_pesanan: 1,
   ukuran_part: '',
-  waktu_pengambilan: 'Besok Pagi',
+  waktu_pengambilan: 'Hari Ini',
   waktu_custom: '',
   deadline_pekerjaan: '',
   catatan_pekerjaan: '',
@@ -314,6 +322,12 @@ const form = reactive({
 watch(() => form.departemen_pemesan, (val) => {
   if (val !== 'Lainnya') {
     customDepartemen.value = ''
+  }
+})
+
+watch(() => form.waktu_pengambilan, (val) => {
+  if (val !== 'Lainnya') {
+    form.waktu_custom = ''
   }
 })
 
@@ -358,6 +372,10 @@ async function handleSubmit() {
     ? (customDepartemen.value?.trim() || 'Lainnya')
     : form.departemen_pemesan
 
+  const finalWaktu = form.waktu_pengambilan === 'Lainnya'
+    ? (form.waktu_custom?.trim() || 'Lainnya')
+    : form.waktu_pengambilan
+
   try {
     await createOrder({
       jenis_pekerjaan_kategori: form.jenis_pekerjaan_kategori,
@@ -373,7 +391,7 @@ async function handleSubmit() {
       ketebalan: form.ketebalan,
       jumlah_pesanan: form.jumlah_pesanan,
       ukuran_part: form.ukuran_part,
-      waktu_pengambilan: form.waktu_pengambilan,
+      waktu_pengambilan: finalWaktu,
       waktu_custom: form.waktu_custom,
       deadline_pekerjaan: form.deadline_pekerjaan,
       catatan_pekerjaan: form.catatan_pekerjaan,
