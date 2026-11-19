@@ -76,9 +76,6 @@
               {{ eligibleOrders.length }} menunggu
             </span>
           </div>
-          <p class="text-[11px] opacity-80 mt-1">
-            Pilih order masuk dari pemesan untuk identifikasi material nesting & verifikasi plat.
-          </p>
         </div>
       </button>
 
@@ -107,9 +104,6 @@
               Mandiri
             </span>
           </div>
-          <p class="text-[11px] opacity-80 mt-1">
-            Input langsung lembar kerja plat mandiri tanpa membuat order di aplikasi.
-          </p>
         </div>
       </button>
     </div>
@@ -280,9 +274,6 @@
                 <span>Mode Input Manual</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200">Aktif</span>
               </div>
-              <p class="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
-                Operator dapat langsung mengisi lembar kerja identifikasi plat & upload foto hasil pemotongan tanpa memilih order di aplikasi.
-              </p>
             </div>
           </div>
           <button 
