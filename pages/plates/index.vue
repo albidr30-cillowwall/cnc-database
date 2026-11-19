@@ -12,16 +12,9 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <NuxtLink 
-          to="/plates/remnants" 
-          class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-100 transition shadow-xs"
-        >
-          <i class="fa-solid fa-puzzle-piece"></i>
-          <span>Lihat Plat Remnant ({{ remnantCount }})</span>
-        </NuxtLink>
         <button 
           @click="isModalOpen = true" 
-          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 transition"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 transition cursor-pointer"
         >
           <i class="fa-solid fa-plus"></i>
           <span>Tambah Plat Baru</span>
@@ -82,7 +75,6 @@
           <option value="">Semua Status ({{ store.plates.value.length }} jenis)</option>
           <option value="Tersedia">Tersedia (Ada Stok)</option>
           <option value="Habis">Habis (Stok 0)</option>
-          <option value="Sisa Potongan / Remnant">Sisa Potongan / Remnant</option>
         </select>
         <span class="text-[11px] font-mono text-slate-400">
           Tampil: <b>{{ filteredPlates.length }}</b> jenis (<b>{{ totalLembar }}</b> lbr)
@@ -111,11 +103,8 @@
               :key="p.id"
               class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
             >
-              <td class="p-3.5 font-mono font-bold whitespace-nowrap" :class="p.is_remnant ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'">
+              <td class="p-3.5 font-mono font-bold whitespace-nowrap text-blue-600 dark:text-blue-400">
                 {{ p.no_plat }}
-                <span v-if="p.is_remnant" class="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-sans font-bold">
-                  REMNANT
-                </span>
               </td>
               <td class="p-3.5">
                 <div class="font-bold text-slate-900 dark:text-slate-100">{{ p.grade }}</div>
@@ -328,10 +317,6 @@ const newPlateForm = reactive({
   jumlah: 1
 })
 
-const remnantCount = computed(() => {
-  return store.plates.value.filter(p => p.is_remnant).length
-})
-
 const estimatedNewWeight = computed(() => {
   const p = newPlateForm.panjang_mm || 0
   const l = newPlateForm.lebar_mm || 0
@@ -346,8 +331,7 @@ const filteredPlates = computed(() => {
     const stok = p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)
     if (filterStatus.value === 'Tersedia' && (stok <= 0 || p.status !== 'Tersedia')) return false
     if (filterStatus.value === 'Habis' && stok > 0 && p.status !== 'Habis') return false
-    if (filterStatus.value === 'Sisa Potongan / Remnant' && !p.is_remnant) return false
-    if (filterStatus.value && !['Tersedia', 'Habis', 'Sisa Potongan / Remnant'].includes(filterStatus.value) && p.status !== filterStatus.value) return false
+    if (filterStatus.value && !['Tersedia', 'Habis'].includes(filterStatus.value) && p.status !== filterStatus.value) return false
     if (filterMinP.value && p.panjang_mm < filterMinP.value) return false
     if (filterMinL.value && p.lebar_mm < filterMinL.value) return false
     return true
@@ -371,8 +355,6 @@ function getStatusBadgeClass(p: any) {
   switch (p.status) {
     case 'Tersedia':
       return 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-    case 'Sisa Potongan / Remnant':
-      return 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800'
     case 'Diambil':
       return 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
     default:

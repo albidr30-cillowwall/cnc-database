@@ -72,8 +72,8 @@
       </div>
     </div>
 
-    <!-- KPI 4 Card Plat Yard -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+    <!-- KPI 3 Card Plat Yard -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex items-center justify-between">
         <div>
           <div class="text-xs font-bold text-emerald-700 dark:text-emerald-400">Plat Tersedia (Yard)</div>
@@ -82,17 +82,6 @@
         </div>
         <div class="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
           <i class="fa-solid fa-layer-group"></i>
-        </div>
-      </div>
-
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-        <div>
-          <div class="text-xs font-bold text-orange-700 dark:text-orange-400">Sisa Potongan (Remnant)</div>
-          <div class="text-2xl font-extrabold font-mono mt-1 text-orange-600 dark:text-orange-400">{{ remnantCount }} Pcs</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Bisa Dipakai Kembali</div>
-        </div>
-        <div class="w-11 h-11 rounded-2xl bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center text-lg">
-          <i class="fa-solid fa-puzzle-piece"></i>
         </div>
       </div>
 
@@ -251,7 +240,6 @@ const completedCount = computed(() => orders.value.filter(o => o.status === 'Sud
 const availPlates = computed(() => plates.value.filter(p => p.status === 'Tersedia' && (p.stok === undefined || p.stok > 0)))
 const availPlatesCount = computed(() => availPlates.value.reduce((acc, p) => acc + (p.stok !== undefined ? p.stok : 1), 0))
 const totalWeightTon = computed(() => availPlates.value.reduce((acc, p) => acc + (p.berat_kg * (p.stok !== undefined ? p.stok : 1)), 0) / 1000)
-const remnantCount = computed(() => plates.value.filter(p => p.is_remnant && p.status === 'Sisa Potongan / Remnant').length)
 const uncutPlatesCount = computed(() => plates.value.filter(p => ['Tersedia', 'Diambil'].includes(p.status)).length)
 const cutPlatesCount = computed(() => plates.value.filter(p => p.status === 'Sudah Dipotong').length)
 const lowStock = computed(() => plates.value.length > 0 && availPlatesCount.value < 5)

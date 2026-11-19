@@ -235,7 +235,7 @@
               <span>Reset Semua Data Operasional ke Nol Bersih</span>
             </div>
             <p class="text-rose-700 dark:text-rose-400 leading-relaxed text-[11px]">
-              Menghapus seluruh data <b>Order ({{ store.orders.value.length }})</b>, <b>Plat Yard & Remnant ({{ store.plates.value.length }})</b>, serta <b>Bon Pengambilan Yard ({{ store.yardPickups.value.length }})</b>. Akun pengguna <b>tetap aman</b> dipertahankan.
+              Menghapus seluruh data <b>Order ({{ store.orders.value.length }})</b>, <b>Stok Plat Yard ({{ store.plates.value.length }})</b>, serta <b>Bon Pengambilan Yard ({{ store.yardPickups.value.length }})</b>. Akun pengguna <b>tetap aman</b> dipertahankan.
             </p>
           </div>
 

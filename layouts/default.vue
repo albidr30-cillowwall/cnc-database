@@ -120,20 +120,6 @@
               </span>
             </NuxtLink>
             <NuxtLink 
-              to="/plates/remnants" 
-              class="flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition"
-              :class="$route.path === '/plates/remnants' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'"
-              @click="isMobileMenuOpen = false"
-            >
-              <span class="flex items-center gap-3">
-                <i class="fa-solid fa-puzzle-piece w-4 text-center" :class="$route.path === '/plates/remnants' ? 'text-white' : 'text-orange-400'"></i>
-                <span>Remnant Plat</span>
-              </span>
-              <span v-if="remnantsCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300">
-                {{ remnantsCount }}
-              </span>
-            </NuxtLink>
-            <NuxtLink 
               to="/estimation" 
               class="flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition"
               :class="$route.path === '/estimation' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'"
@@ -402,10 +388,6 @@ const operatorQueueCount = computed(() => {
   return orders.value.filter(o => ['Diterima', 'Diterima Operator', 'Plat Telah Diambil Yard', 'Sedang Dipotong'].includes(o.status)).length
 })
 
-const remnantsCount = computed(() => {
-  return plates.value.filter(p => p.is_remnant && p.status === 'Sisa Potongan / Remnant').length
-})
-
 const pageTitle = computed(() => {
   const p = route.path
   if (p === '/dashboard') return 'Dashboard Monitoring CNC'
@@ -413,7 +395,6 @@ const pageTitle = computed(() => {
   if (p === '/orders') return 'Daftar Order Pemotongan Plat CNC'
   if (p === '/estimation') return 'Material Identification - CNC'
   if (p === '/plates') return 'Stok Plat CNC'
-  if (p === '/plates/remnants') return 'Daftar Plat Remnant (Sisa Potongan)'
   if (p === '/yard-pickup') return 'Ambil Plat CNC'
   if (p === '/operator') return 'Workshop Operator CNC'
   if (p === '/pickup-verify') return 'Pengambilan Barang & Verifikasi PIN 6-Digit'
