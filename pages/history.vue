@@ -63,6 +63,7 @@
         <option value="Group CNC 1">Group CNC 1</option>
         <option value="Group CNC 2">Group CNC 2</option>
         <option value="Group CNC 3">Group CNC 3</option>
+        <option value="Group CNC 4">Group CNC 4</option>
       </select>
 
       <select 

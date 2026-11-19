@@ -218,7 +218,7 @@ import { useSecurity } from '~/composables/useSecurity'
 const store = useCncStore()
 const { sanitizeUrl } = useSecurity()
 
-const groups = ['Group CNC 1', 'Group CNC 2', 'Group CNC 3']
+const groups = ['Group CNC 1', 'Group CNC 2', 'Group CNC 3', 'Group CNC 4']
 const activeGroup = ref('Group CNC 1')
 const toastMsg = ref<string | null>(null)
 
