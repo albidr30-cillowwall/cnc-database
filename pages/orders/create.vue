@@ -96,15 +96,6 @@
             </div>
           </div>
           <div>
-            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">ID Karyawan / NIK (Opsional)</label>
-            <input 
-              v-model="form.nik_pemesan" 
-              type="text" 
-              placeholder="Isi NIK karyawan..." 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600"
-            >
-          </div>
-          <div>
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">No. HP Pemesan *</label>
             <input 
               v-model="form.no_hp_pemesan" 
@@ -143,13 +134,13 @@
             >
           </div>
           <div>
-            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Spec of Material (Material Pilihan) *</label>
+            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Jenis Material (Material Pilihan) *</label>
             <select 
               v-model="form.material" 
               required 
               class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 outline-none"
             >
-              <option value="">-- Pilih Spec of Material --</option>
+              <option value="">-- Pilih Jenis Material --</option>
               <option value="Baja">Baja</option>
               <option value="Alumunium">Alumunium</option>
               <option value="Bordes Baja">Bordes Baja</option>
