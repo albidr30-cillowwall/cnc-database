@@ -784,13 +784,15 @@ watch(selectedOrder, (order) => {
   isLocked.value = order.estimation?.status_approval === 'Disetujui'
   const est = order.estimation
 
-  form.project_name = est?.project_name || order.nama_proyek_kapal || order.nama_proyek || ''
-  form.nesting_no = est?.nesting_no || ''
-  form.block_item = est?.block_item || ''
-  form.spec_material = est?.spec_material || order.material || ''
-  form.dimension_material = est?.dimension_material || est?.ukuran_plat || (order.ketebalan ? `${order.ketebalan} x 1500 x 6000 mm` : '12 x 1500 x 6000 mm')
-  form.product_number = est?.product_number || order.ukuran_part || ''
-  form.heat_number = est?.heat_number || ''
+  const cleanVal = (v: any) => (v && typeof v === 'string' && v.trim() !== '-' ? v.trim() : (typeof v === 'string' ? '' : v || ''))
+
+  form.project_name = cleanVal(est?.project_name) || cleanVal(order.nama_proyek_kapal) || cleanVal(order.nama_proyek) || ''
+  form.nesting_no = cleanVal(est?.nesting_no)
+  form.block_item = cleanVal(est?.block_item)
+  form.spec_material = cleanVal(est?.spec_material) || cleanVal(order.material) || ''
+  form.dimension_material = cleanVal(est?.dimension_material) || cleanVal(est?.ukuran_plat) || (order.ketebalan ? `${order.ketebalan} x 1500 x 6000 mm` : '12 x 1500 x 6000 mm')
+  form.product_number = cleanVal(est?.product_number) || cleanVal(order.ukuran_part) || ''
+  form.heat_number = cleanVal(est?.heat_number)
   cuttingImagePreview.value = est?.cutting_image_url || ''
 })
 
@@ -850,7 +852,7 @@ async function handleSubmitEstimation() {
     block_item: form.block_item.trim(),
     spec_material: form.spec_material.trim(),
     dimension_material: form.dimension_material.trim(),
-    product_number: form.product_number.trim(),
+    product_number: form.product_number.trim() === '-' ? '' : form.product_number.trim(),
     heat_number: form.heat_number.trim(),
     cutting_image_url: cuttingImagePreview.value,
     status_approval: 'Disetujui'
@@ -894,13 +896,15 @@ function handleViewEstimation(item: any) {
     selectedOrderId.value = null
   }
 
-  form.project_name = item.project_name || item.order?.nama_proyek || 'Workshop CNC'
-  form.nesting_no = item.nesting_no || ''
-  form.block_item = item.block_item || ''
-  form.spec_material = item.spec_material || item.grade || ''
-  form.dimension_material = item.dimension_material || item.ukuran_plat || ''
-  form.product_number = item.product_number || ''
-  form.heat_number = item.heat_number || ''
+  const cleanVal = (v: any) => (v && typeof v === 'string' && v.trim() !== '-' ? v.trim() : (typeof v === 'string' ? '' : v || ''))
+
+  form.project_name = cleanVal(item.project_name) || cleanVal(item.order?.nama_proyek) || 'Workshop CNC'
+  form.nesting_no = cleanVal(item.nesting_no)
+  form.block_item = cleanVal(item.block_item)
+  form.spec_material = cleanVal(item.spec_material) || cleanVal(item.grade) || ''
+  form.dimension_material = cleanVal(item.dimension_material) || cleanVal(item.ukuran_plat) || ''
+  form.product_number = cleanVal(item.product_number) || cleanVal(item.order?.ukuran_part) || ''
+  form.heat_number = cleanVal(item.heat_number)
   cuttingImagePreview.value = item.cutting_image_url || ''
   selectedPlateHelper.value = null
 
