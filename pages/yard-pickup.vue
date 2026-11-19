@@ -87,7 +87,7 @@
         </div>
       </div>
 
-      <!-- Jumlah Ambil & Keperluan -->
+      <!-- Jumlah Ambil & Nama Pengambil -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
@@ -105,19 +105,6 @@
           />
         </div>
         <div>
-          <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Keperluan / Keterangan (Opsional)</label>
-          <input 
-            v-model="form.keperluan" 
-            type="text" 
-            placeholder="contoh: Pemotongan Part, Bracket, Repair, Kebutuhan Yard..." 
-            class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
-      </div>
-
-      <!-- Nama Pengambil & Petugas Yard -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
           <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Nama Pengambil / Operator CNC *</label>
           <input 
             v-model="form.pengambil" 
@@ -127,53 +114,17 @@
             class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
           />
         </div>
-        <div>
-          <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Petugas Yard / Rigger *</label>
-          <input 
-            v-model="form.petugas_yard" 
-            type="text" 
-            required 
-            placeholder="petugas rigger yard..." 
-            class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
       </div>
 
-      <!-- Checkbox Remnant -->
-      <div class="p-4 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/60 space-y-3">
-        <label class="flex items-center gap-2.5 cursor-pointer font-bold text-orange-800 dark:text-orange-300">
-          <input 
-            v-model="form.is_partial" 
-            type="checkbox" 
-            class="rounded border-orange-300 text-orange-600 focus:ring-orange-500 w-4 h-4"
-          />
-          <span>Plat diambil sebagian / ada sisa potongan (Otomatis Buat Remnant Baru)</span>
-        </label>
-        
-        <div v-if="form.is_partial" class="grid grid-cols-2 gap-3 pt-1">
-          <div>
-            <label class="block text-[11px] text-slate-600 dark:text-slate-400 font-semibold mb-1">Sisa Panjang (mm) *</label>
-            <input 
-              v-model.number="form.sisa_p" 
-              type="number" 
-              min="100" 
-              required 
-              placeholder="Sisa P (mm)" 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-orange-500 outline-none"
-            />
-          </div>
-          <div>
-            <label class="block text-[11px] text-slate-600 dark:text-slate-400 font-semibold mb-1">Sisa Lebar (mm) *</label>
-            <input 
-              v-model.number="form.sisa_l" 
-              type="number" 
-              min="100" 
-              required 
-              placeholder="Sisa L (mm)" 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-orange-500 outline-none"
-            />
-          </div>
-        </div>
+      <!-- Keperluan / Keterangan -->
+      <div>
+        <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Keperluan / Keterangan (Opsional)</label>
+        <input 
+          v-model="form.keperluan" 
+          type="text" 
+          placeholder="contoh: Pemotongan Part, Bracket, Repair, Kebutuhan Yard..." 
+          class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+        />
       </div>
 
       <button 
@@ -205,9 +156,7 @@
               <th class="p-3 text-center">Jumlah Diambil</th>
               <th class="p-3 text-center">Sisa Stok</th>
               <th class="p-3">Pengambil</th>
-              <th class="p-3">Petugas Yard</th>
               <th class="p-3">Keperluan</th>
-              <th class="p-3">Remnant</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -233,17 +182,11 @@
                 {{ yp.pengambil }}
               </td>
               <td class="p-3 text-slate-600 dark:text-slate-400">
-                {{ yp.petugas_yard }}
-              </td>
-              <td class="p-3 text-slate-600 dark:text-slate-400">
                 {{ yp.keperluan || '-' }}
-              </td>
-              <td class="p-3 font-mono" :class="yp.remnant_plate_id ? 'text-orange-600 dark:text-orange-400 font-bold' : 'text-slate-400'">
-                {{ yp.remnant_plate_id ? getPlateNo(yp.remnant_plate_id) : '-' }}
               </td>
             </tr>
             <tr v-if="store.yardPickups.value.length === 0">
-              <td colspan="8" class="p-8 text-center text-slate-400 dark:text-slate-500 italic">
+              <td colspan="6" class="p-8 text-center text-slate-400 dark:text-slate-500 italic">
                 Belum ada bon pengambilan plat dari stok.
               </td>
             </tr>
@@ -267,11 +210,7 @@ const form = reactive({
   plate_id: null as number | null,
   jumlah_ambil: 1,
   pengambil: '',
-  petugas_yard: 'Rigger Yard A',
-  keperluan: '',
-  is_partial: false,
-  sisa_p: 1800,
-  sisa_l: 1500
+  keperluan: ''
 })
 
 const availablePlates = computed(() => {
@@ -322,24 +261,20 @@ async function handlePickupSubmit() {
       plate_id: form.plate_id,
       jumlah_ambil: form.jumlah_ambil,
       pengambil: form.pengambil,
-      petugas_yard: form.petugas_yard,
+      petugas_yard: '-',
       keperluan: form.keperluan,
-      is_partial: form.is_partial,
-      sisa_p: form.sisa_p,
-      sisa_l: form.sisa_l
+      is_partial: false
     })
 
-    const remInfo = res.remnant ? ` Plat Remnant otomatis dibuat: ${res.remnant.no_plat}.` : ''
     alertMsg.value = {
       type: 'success',
-      text: `Pengambilan plat ${res.plate.no_plat} sebanyak ${res.jumlah_ambil} lembar berhasil! Sisa stok saat ini: ${res.sisa_stok} lembar.${remInfo}`
+      text: `Pengambilan plat ${res.plate.no_plat} sebanyak ${res.jumlah_ambil} lembar berhasil! Sisa stok saat ini: ${res.sisa_stok} lembar.`
     }
 
     // Reset form
     form.plate_id = null
     form.jumlah_ambil = 1
     form.keperluan = ''
-    form.is_partial = false
   } catch (err: any) {
     alertMsg.value = {
       type: 'error',

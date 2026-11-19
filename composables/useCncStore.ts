@@ -994,9 +994,9 @@ export function useCncStore() {
     plate_id: number
     jumlah_ambil?: number
     pengambil: string
-    petugas_yard: string
+    petugas_yard?: string
     keperluan?: string
-    is_partial: boolean
+    is_partial?: boolean
     sisa_p?: number
     sisa_l?: number
   }) {
