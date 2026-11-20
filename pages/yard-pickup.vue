@@ -141,7 +141,7 @@
           <i class="fa-solid fa-receipt text-blue-500"></i>
           <span>Riwayat Pengambilan</span>
         </h2>
-        <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">Total: {{ store.yardPickups.value.length }} pengambilan</span>
+        <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-bold">Total: {{ totalPlatDiambil }} lembar</span>
       </div>
 
       <div class="overflow-x-auto">
@@ -215,6 +215,10 @@ const availablePlates = computed(() => {
     const stok = p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)
     return stok > 0 && p.status !== 'Habis' && p.status !== 'Sudah Dipotong'
   })
+})
+
+const totalPlatDiambil = computed(() => {
+  return store.yardPickups.value.reduce((acc, yp) => acc + (Number(yp.jumlah_ambil) || 1), 0)
 })
 
 const selectedPlate = computed(() => {
