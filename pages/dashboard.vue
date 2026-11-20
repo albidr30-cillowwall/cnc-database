@@ -98,49 +98,17 @@
         </div>
       </div>
 
-      <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xs font-extrabold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
-              Distribusi Plat Menurut Grade Material
-            </h2>
-            <span class="text-[11px] font-mono font-semibold text-slate-400">Total {{ plates.length }} Plat</span>
-          </div>
-          <div class="h-56 relative flex items-center justify-center">
-            <canvas ref="gradeCanvas"></canvas>
-            <div v-if="plates.length === 0" class="absolute text-xs text-slate-400 italic">
-              Belum ada data plat untuk grafik
-            </div>
-          </div>
+      <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xs font-extrabold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
+            Distribusi Plat Menurut Grade Material
+          </h2>
+          <span class="text-[11px] font-mono font-semibold text-slate-400">Total {{ plates.length }} Plat</span>
         </div>
-
-        <!-- Keterangan Jumlah Plat & Ketebalan per Bagian (Setiap Item Berdiri Sendiri) -->
-        <div v-if="gradeBreakdown.length > 0" class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
-          <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Rincian per Bagian (Grade, Tebal & Jumlah):
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
-            <div 
-              v-for="item in gradeBreakdown" 
-              :key="item.id"
-              class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 text-xs"
-            >
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="w-3 h-3 rounded-full shrink-0" :style="{ backgroundColor: item.color }"></span>
-                <div class="truncate">
-                  <span class="font-extrabold text-slate-800 dark:text-slate-200 uppercase">{{ item.grade }}</span>
-                  <span v-if="item.no_plat" class="text-[10px] text-slate-400 font-mono ml-1 block sm:inline">({{ item.no_plat }})</span>
-                </div>
-              </div>
-              <div class="flex items-center gap-1.5 font-mono shrink-0">
-                <span class="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
-                  {{ item.tebal }}
-                </span>
-                <span class="font-bold text-slate-900 dark:text-white text-[11px]">
-                  {{ item.stok }} Plat
-                </span>
-              </div>
-            </div>
+        <div class="h-60 relative flex items-center justify-center">
+          <canvas ref="gradeCanvas"></canvas>
+          <div v-if="plates.length === 0" class="absolute text-xs text-slate-400 italic">
+            Belum ada data plat untuk grafik
           </div>
         </div>
       </div>
