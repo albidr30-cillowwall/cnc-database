@@ -38,33 +38,9 @@
 
     <!-- Filters Bar -->
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-      <div class="flex flex-wrap items-center gap-2.5">
-        <span class="text-blue-600 dark:text-blue-400 font-extrabold flex items-center gap-1.5">
-          <i class="fa-solid fa-ruler-combined"></i>
-          <span>Filter Min Dimensi:</span>
-        </span>
-        <div class="flex items-center gap-1.5">
-          <input 
-            v-model.number="filterMinP" 
-            type="number" 
-            placeholder="Min P (mm)" 
-            class="w-28 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-          <span class="text-slate-400 dark:text-slate-500">x</span>
-          <input 
-            v-model.number="filterMinL" 
-            type="number" 
-            placeholder="Min L (mm)" 
-            class="w-28 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
-        <button 
-          v-if="filterMinP || filterMinL" 
-          @click="resetDimensionFilter" 
-          class="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline"
-        >
-          Reset Dimensi
-        </button>
+      <div class="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-2">
+        <i class="fa-solid fa-boxes-stacked text-blue-500"></i>
+        <span>Katalog Persediaan Plat</span>
       </div>
 
       <div class="flex items-center gap-2.5">
@@ -487,8 +463,6 @@ const isModalOpen = ref(false)
 const editingPlate = ref<any>(null)
 const editStockInput = ref<number>(0)
 const isSavingStock = ref(false)
-const filterMinP = ref<number | null>(null)
-const filterMinL = ref<number | null>(null)
 const filterStatus = ref('')
 const feedbackMsg = ref<string | null>(null)
 
@@ -516,8 +490,6 @@ const filteredPlates = computed(() => {
     if (filterStatus.value === 'Tersedia' && (stok <= 0 || p.status !== 'Tersedia')) return false
     if (filterStatus.value === 'Habis' && stok > 0 && p.status !== 'Habis') return false
     if (filterStatus.value && !['Tersedia', 'Habis'].includes(filterStatus.value) && p.status !== filterStatus.value) return false
-    if (filterMinP.value && p.panjang_mm < filterMinP.value) return false
-    if (filterMinL.value && p.lebar_mm < filterMinL.value) return false
     return true
   })
 })
@@ -525,11 +497,6 @@ const filteredPlates = computed(() => {
 const totalLembar = computed(() => {
   return filteredPlates.value.reduce((acc, p) => acc + (p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)), 0)
 })
-
-function resetDimensionFilter() {
-  filterMinP.value = null
-  filterMinL.value = null
-}
 
 function getStatusBadgeClass(p: any) {
   const stok = p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)
