@@ -332,6 +332,9 @@
         <slot />
       </main>
     </div>
+
+    <!-- Global Image & Document Lightbox -->
+    <ImageLightbox />
   </div>
 </template>
 

@@ -189,26 +189,41 @@
 
             <!-- Preview Gambar / Dokumen -->
             <div v-if="fileDataUrl" class="mb-3 relative inline-block">
-              <img 
+              <div 
                 v-if="isImageFile"
-                :src="fileDataUrl" 
-                :alt="fileName || 'Preview Gambar Kerja'" 
-                class="max-h-56 rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs object-contain bg-slate-50 dark:bg-slate-900"
-              />
-              <div v-else class="p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center gap-3">
+                @click="openLightbox(fileDataUrl, fileName || 'Preview Gambar Kerja')"
+                class="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 shadow-xs"
+                title="Klik untuk membuka Lightbox"
+              >
+                <img 
+                  :src="fileDataUrl" 
+                  :alt="fileName || 'Preview Gambar Kerja'" 
+                  class="max-h-56 rounded-xl object-contain bg-slate-50 dark:bg-slate-900 group-hover:opacity-90 transition"
+                />
+                <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white font-bold text-xs transition backdrop-blur-2xs">
+                  <i class="fa-solid fa-expand"></i>
+                  <span>Perbesar Lightbox</span>
+                </div>
+              </div>
+              <div 
+                v-else 
+                @click="openLightbox(fileDataUrl, fileName || 'Preview Dokumen')"
+                class="p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center gap-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                title="Klik untuk membuka dokumen di Lightbox"
+              >
                 <i class="fa-solid fa-file-pdf text-rose-500 text-3xl"></i>
                 <div>
                   <p class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ fileName }}</p>
-                  <p class="text-[10px] text-slate-400">Dokumen PDF Terlampir</p>
+                  <p class="text-[10px] text-slate-400">Dokumen PDF (Klik untuk buka Lightbox)</p>
                 </div>
               </div>
 
               <!-- Tombol Hapus Preview -->
               <button 
                 type="button" 
-                @click="removeFile" 
-                class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center hover:bg-rose-600 cursor-pointer shadow-md transition hover:scale-110"
-                title="Hapus gambar kerja"
+                @click.stop="removeFile" 
+                class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center hover:bg-rose-600 cursor-pointer shadow-md transition hover:scale-110 z-10"
+                title="Hapus lampiran"
               >
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -322,10 +337,12 @@ import { ref, reactive, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
 import { useImageCompressor } from '~/composables/useImageCompressor'
+import { useLightbox } from '~/composables/useLightbox'
 
 const router = useRouter()
 const { createOrder, currentUser } = useCncStore()
 const { compressImage } = useImageCompressor()
+const { openLightbox } = useLightbox()
 
 const isSubmitting = ref(false)
 const fileName = ref('')

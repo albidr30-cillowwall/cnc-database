@@ -580,18 +580,22 @@
                 {{ item.heat_number || '-' }}
               </td>
               <td class="p-3.5">
-                <a 
+                <button 
                   v-if="item.cutting_image_url" 
-                  :href="sanitizeUrl(item.cutting_image_url)" 
-                  target="_blank"
-                  class="inline-block"
+                  type="button"
+                  @click="openLightbox(item.cutting_image_url, `Foto Hasil Potong - ${item.product_number || item.spec_material || 'CNC'}`)" 
+                  class="inline-block cursor-pointer group relative rounded-lg overflow-hidden"
+                  title="Klik untuk melihat foto di Lightbox"
                 >
                   <img 
                     :src="item.cutting_image_url" 
                     alt="Gambar pemotongan" 
-                    class="w-12 h-12 rounded-lg object-cover border border-slate-300 dark:border-slate-700 hover:opacity-80 transition"
+                    class="w-12 h-12 rounded-lg object-cover border border-slate-300 dark:border-slate-700 group-hover:scale-105 transition"
                   />
-                </a>
+                  <span class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] transition">
+                    <i class="fa-solid fa-expand"></i>
+                  </span>
+                </button>
                 <span v-else class="text-slate-400 text-[10px] italic">-</span>
               </td>
               <td class="p-3.5">
@@ -642,11 +646,13 @@ import { useRoute } from 'vue-router'
 import { useCncStore, type Plate } from '~/composables/useCncStore'
 import { useSecurity } from '~/composables/useSecurity'
 import { useImageCompressor } from '~/composables/useImageCompressor'
+import { useLightbox } from '~/composables/useLightbox'
 
 const route = useRoute()
 const store = useCncStore()
 const { sanitizeUrl } = useSecurity()
 const { compressImage } = useImageCompressor()
+const { openLightbox } = useLightbox()
 
 // 2 Mode Fitur: 'order' (Fitur 1) atau 'manual' (Fitur 2)
 const activeMode = ref<'order' | 'manual'>('order')

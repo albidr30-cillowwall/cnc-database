@@ -132,16 +132,15 @@
         <div class="pt-3.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <!-- Drawing link if any -->
           <div>
-            <a 
+            <button 
               v-if="o.drawing_data_url" 
-              :href="sanitizeUrl(o.drawing_data_url)" 
-              target="_blank" 
-              download="drawing.png" 
-              class="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+              type="button"
+              @click="openLightbox(o.drawing_data_url, o.drawing_file_name || 'Drawing ' + o.no_order)" 
+              class="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer group"
             >
-              <i class="fa-solid fa-paperclip"></i>
+              <i class="fa-solid fa-expand text-blue-500 group-hover:scale-110 transition"></i>
               <span>Lihat Gambar Kerja ({{ o.drawing_file_name || 'drawing' }})</span>
-            </a>
+            </button>
           </div>
 
           <!-- Operator State Buttons -->
@@ -214,9 +213,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useCncStore } from '~/composables/useCncStore'
 import { useSecurity } from '~/composables/useSecurity'
+import { useLightbox } from '~/composables/useLightbox'
 
 const store = useCncStore()
 const { sanitizeUrl } = useSecurity()
+const { openLightbox } = useLightbox()
 
 const groups = ['CNC 1', 'CNC 2', 'CNC 3', 'CNC 4']
 const activeGroup = ref('CNC 1')

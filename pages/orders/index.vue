@@ -104,9 +104,21 @@
                 <span class="inline-block px-2.5 py-1 rounded-lg border text-[10px] font-bold" :class="getTypeBadge(o.jenis_pekerjaan_kategori)">
                   {{ o.jenis_pekerjaan?.replace(' / Gambar Kerja', '') }}
                 </span>
-                <div v-if="o.drawing_file_name" class="mt-1 text-[10px] text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
-                  <i class="fa-solid fa-paperclip"></i>
-                  <span>{{ o.drawing_file_name }}</span>
+                <div v-if="o.drawing_file_name" class="mt-1">
+                  <button 
+                    v-if="o.drawing_data_url" 
+                    type="button"
+                    @click.stop="openLightbox(o.drawing_data_url, o.drawing_file_name || 'Drawing ' + o.no_order)"
+                    class="text-[10px] text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-semibold flex items-center gap-1 hover:underline cursor-pointer group"
+                    title="Buka gambar di Lightbox"
+                  >
+                    <i class="fa-solid fa-expand text-[9px] text-blue-500 group-hover:scale-110 transition"></i>
+                    <span class="truncate max-w-[140px]">{{ o.drawing_file_name }}</span>
+                  </button>
+                  <div v-else class="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-paperclip"></i>
+                    <span class="truncate max-w-[140px]">{{ o.drawing_file_name }}</span>
+                  </div>
                 </div>
               </td>
               <td class="p-3.5 min-w-[140px]">
@@ -377,25 +389,54 @@
               <i class="fa-solid fa-paperclip text-emerald-500"></i>
               <span>Lampiran & Serah Terima</span>
             </div>
-            <div class="space-y-1.5">
+            <div class="space-y-2">
               <div>
-                <span class="text-slate-500 dark:text-slate-400 block text-[10px]">File Drawing Nesting</span>
-                <div v-if="selectedDetailOrder.drawing_data_url" class="mt-1">
-                  <a 
-                    :href="selectedDetailOrder.drawing_data_url" 
-                    :download="selectedDetailOrder.drawing_file_name || 'drawing-cnc'" 
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition"
+                <span class="text-slate-500 dark:text-slate-400 block text-[10px] font-bold">File Drawing Nesting</span>
+                <div v-if="selectedDetailOrder.drawing_data_url" class="mt-2 space-y-2">
+                  <!-- Thumbnail preview with click to Lightbox -->
+                  <div 
+                    v-if="!selectedDetailOrder.drawing_data_url.startsWith('data:application/pdf') && !selectedDetailOrder.drawing_file_name?.toLowerCase().endsWith('.pdf')"
+                    class="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 cursor-pointer max-w-xs shadow-xs"
+                    @click="openLightbox(selectedDetailOrder.drawing_data_url, selectedDetailOrder.drawing_file_name || 'Drawing ' + selectedDetailOrder.no_order)"
+                    title="Klik untuk membuka di Lightbox"
                   >
-                    <i class="fa-solid fa-download"></i>
-                    <span>Unduh: {{ selectedDetailOrder.drawing_file_name || 'Drawing' }}</span>
-                  </a>
+                    <img 
+                      :src="selectedDetailOrder.drawing_data_url" 
+                      :alt="selectedDetailOrder.drawing_file_name || 'Drawing'" 
+                      class="max-h-36 w-full object-contain p-1.5 transition-transform duration-200 group-hover:scale-105"
+                    />
+                    <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-bold backdrop-blur-2xs">
+                      <i class="fa-solid fa-expand"></i>
+                      <span>Buka Lightbox</span>
+                    </div>
+                  </div>
+
+                  <!-- Buttons: Open in Lightbox & Download -->
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <button 
+                      type="button"
+                      @click="openLightbox(selectedDetailOrder.drawing_data_url, selectedDetailOrder.drawing_file_name || 'Drawing ' + selectedDetailOrder.no_order)" 
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                    >
+                      <i class="fa-solid fa-expand"></i>
+                      <span>Buka Lightbox</span>
+                    </button>
+                    <a 
+                      :href="selectedDetailOrder.drawing_data_url" 
+                      :download="selectedDetailOrder.drawing_file_name || 'drawing-cnc'" 
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs shadow-xs transition"
+                    >
+                      <i class="fa-solid fa-download"></i>
+                      <span>Unduh</span>
+                    </a>
+                  </div>
                 </div>
-                <div v-else class="text-slate-400 italic text-[11px]">
+                <div v-else class="text-slate-400 italic text-[11px] mt-0.5">
                   Tidak ada lampiran file.
                 </div>
               </div>
 
-              <div class="pt-1 border-t border-slate-200 dark:border-slate-700/60">
+              <div class="pt-2 border-t border-slate-200 dark:border-slate-700/60">
                 <span class="text-slate-500 dark:text-slate-400 block text-[10px]">PIN Pengambilan</span>
                 <div v-if="selectedDetailOrder.kode_pengambilan" class="font-mono text-sm font-extrabold text-emerald-600 dark:text-emerald-400 tracking-wider">
                   {{ selectedDetailOrder.kode_pengambilan }}
@@ -454,8 +495,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useCncStore, type Order } from '~/composables/useCncStore'
+import { useLightbox } from '~/composables/useLightbox'
 
 const { orders, approveEstimation, currentUser } = useCncStore()
+const { openLightbox } = useLightbox()
 
 const searchQuery = ref('')
 const selectedType = ref('')
