@@ -177,13 +177,29 @@
             <!-- 1. Jenis Material -->
             <div>
               <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Jenis Material *</label>
-              <input 
+              <select 
                 v-model="newPlateForm.material_type" 
-                type="text" 
                 required 
-                placeholder="contoh: Baja, Aluminium, Stainless..." 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
-              />
+              >
+                <option value="">-- Pilih Jenis Material --</option>
+                <option value="Baja">Baja</option>
+                <option value="Alumunium">Alumunium</option>
+                <option value="Bordes Baja">Bordes Baja</option>
+                <option value="Bordes Alumunium">Bordes Alumunium</option>
+                <option value="Lainnya">Lainnya (Input Sendiri)</option>
+              </select>
+
+              <!-- Input Manual Jika Memilih Material 'Lainnya' -->
+              <div v-if="newPlateForm.material_type === 'Lainnya'" class="mt-2">
+                <input 
+                  v-model="newPlateForm.material_type_custom" 
+                  type="text" 
+                  required 
+                  placeholder="Ketik jenis material (contoh: Kuningan, Stainless)..." 
+                  class="w-full bg-white dark:bg-slate-950 border-2 border-blue-500 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
             </div>
 
             <!-- 2. Spesifikasi Material -->
@@ -468,6 +484,7 @@ const feedbackMsg = ref<string | null>(null)
 
 const newPlateForm = reactive({
   material_type: '',
+  material_type_custom: '',
   grade: '',
   panjang_mm: 6000,
   lebar_mm: 1500,
@@ -475,11 +492,18 @@ const newPlateForm = reactive({
   jumlah: 1
 })
 
+const effectiveMaterialType = computed(() => {
+  if (newPlateForm.material_type === 'Lainnya') {
+    return newPlateForm.material_type_custom || ''
+  }
+  return newPlateForm.material_type || ''
+})
+
 const estimatedNewWeight = computed(() => {
   const p = newPlateForm.panjang_mm || 0
   const l = newPlateForm.lebar_mm || 0
   const t = newPlateForm.tebal_mm || 0
-  const mat = (newPlateForm.material_type || '').toLowerCase()
+  const mat = (effectiveMaterialType.value || '').toLowerCase()
   const density = mat.includes('alumin') ? 0.0000027 : (mat.includes('stainless') ? 0.0000080 : 0.00000785)
   return (p * l * t * density).toFixed(2)
 })
@@ -543,8 +567,14 @@ async function handleSaveEditStock() {
 }
 
 async function handleSubmitPlate() {
+  const mat = effectiveMaterialType.value.trim()
+  if (!mat) {
+    alert('Silakan pilih jenis material terlebih dahulu.')
+    return
+  }
+
   const p = await store.addPlate({
-    material_type: newPlateForm.material_type,
+    material_type: mat,
     grade: newPlateForm.grade,
     panjang_mm: newPlateForm.panjang_mm,
     lebar_mm: newPlateForm.lebar_mm,
@@ -557,6 +587,7 @@ async function handleSubmitPlate() {
 
   // Reset form
   newPlateForm.material_type = ''
+  newPlateForm.material_type_custom = ''
   newPlateForm.grade = ''
   newPlateForm.jumlah = 1
 }
