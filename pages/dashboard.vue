@@ -86,7 +86,7 @@
       <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-            Tren Order Pemotongan Plat per Minggu
+            Grafik Order per Minggu
           </h2>
           <span class="text-[11px] text-slate-400">4 Minggu Terakhir</span>
         </div>
