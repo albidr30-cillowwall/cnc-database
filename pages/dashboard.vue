@@ -70,41 +70,14 @@
         <div class="text-2xl font-extrabold font-mono mt-2 text-slate-700 dark:text-slate-200">{{ completedCount }}</div>
         <div class="text-[11px] text-slate-400 mt-0.5">Masuk History</div>
       </div>
-    </div>
 
-    <!-- KPI 3 Card Plat Yard -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-        <div>
-          <div class="text-xs font-bold text-emerald-700 dark:text-emerald-400">Plat Tersedia (Yard)</div>
-          <div class="text-2xl font-extrabold font-mono mt-1 text-slate-900 dark:text-white">{{ availPlatesCount }} Lembar</div>
-          <div class="text-xs font-bold font-mono text-cyan-700 dark:text-cyan-400 mt-0.5">{{ totalWeightTon.toFixed(2) }} Ton</div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:shadow-md transition">
+        <div class="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-400 font-bold">
+          <span>Plat Tersedia (Yard)</span>
+          <i class="fa-solid fa-layer-group text-emerald-500"></i>
         </div>
-        <div class="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
-          <i class="fa-solid fa-layer-group"></i>
-        </div>
-      </div>
-
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-        <div>
-          <div class="text-xs font-bold text-blue-700 dark:text-blue-400">Plat Belum Terpotong</div>
-          <div class="text-2xl font-extrabold font-mono mt-1 text-blue-600 dark:text-blue-400">{{ uncutPlatesCount }} Lembar</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Tersedia & Diambil</div>
-        </div>
-        <div class="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg">
-          <i class="fa-solid fa-cubes"></i>
-        </div>
-      </div>
-
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-        <div>
-          <div class="text-xs font-bold text-violet-700 dark:text-violet-400">Plat Sudah Terpotong</div>
-          <div class="text-2xl font-extrabold font-mono mt-1 text-violet-600 dark:text-violet-400">{{ cutPlatesCount }} Lembar</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Selesai Produksi</div>
-        </div>
-        <div class="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center text-lg">
-          <i class="fa-solid fa-check-double"></i>
-        </div>
+        <div class="text-2xl font-extrabold font-mono mt-2 text-slate-900 dark:text-white">{{ availPlatesCount }} Lembar</div>
+        <div class="text-[11px] font-bold font-mono text-cyan-600 dark:text-cyan-400 mt-0.5">{{ totalWeightTon.toFixed(2) }} Ton</div>
       </div>
     </div>
 
@@ -240,8 +213,6 @@ const completedCount = computed(() => orders.value.filter(o => o.status === 'Sud
 const availPlates = computed(() => plates.value.filter(p => p.status === 'Tersedia' && (p.stok === undefined || p.stok > 0)))
 const availPlatesCount = computed(() => availPlates.value.reduce((acc, p) => acc + (p.stok !== undefined ? p.stok : 1), 0))
 const totalWeightTon = computed(() => availPlates.value.reduce((acc, p) => acc + (p.berat_kg * (p.stok !== undefined ? p.stok : 1)), 0) / 1000)
-const uncutPlatesCount = computed(() => plates.value.filter(p => ['Tersedia', 'Diambil'].includes(p.status)).length)
-const cutPlatesCount = computed(() => plates.value.filter(p => p.status === 'Sudah Dipotong').length)
 const lowStock = computed(() => plates.value.length > 0 && availPlatesCount.value < 5)
 
 const recentCuts = computed(() => {
