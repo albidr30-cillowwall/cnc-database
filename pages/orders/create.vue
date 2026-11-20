@@ -179,15 +179,67 @@
             >
           </div>
           <div class="sm:col-span-2">
-            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Lampiran Drawing / Gambar Kerja (Opsional)</label>
-            <input 
-              type="file" 
-              accept=".pdf,.dxf,.dwg,.jpg,.jpeg,.png,.zip,.rar" 
-              @change="handleFileUpload" 
-              class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-700 dark:text-slate-300"
+            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-paperclip text-blue-500"></i>
+                <span>Lampiran Drawing / Gambar Kerja</span>
+              </span>
+              <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
+            </label>
+
+            <!-- Preview Gambar / Dokumen -->
+            <div v-if="fileDataUrl" class="mb-3 relative inline-block">
+              <img 
+                v-if="isImageFile"
+                :src="fileDataUrl" 
+                :alt="fileName || 'Preview Gambar Kerja'" 
+                class="max-h-56 rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs object-contain bg-slate-50 dark:bg-slate-900"
+              />
+              <div v-else class="p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center gap-3">
+                <i class="fa-solid fa-file-pdf text-rose-500 text-3xl"></i>
+                <div>
+                  <p class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ fileName }}</p>
+                  <p class="text-[10px] text-slate-400">Dokumen PDF Terlampir</p>
+                </div>
+              </div>
+
+              <!-- Tombol Hapus Preview -->
+              <button 
+                type="button" 
+                @click="removeFile" 
+                class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center hover:bg-rose-600 cursor-pointer shadow-md transition hover:scale-110"
+                title="Hapus gambar kerja"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <!-- Upload Dropzone Box -->
+            <div 
+              class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-5 text-center hover:border-blue-500 dark:hover:border-blue-500 transition cursor-pointer bg-slate-50/50 dark:bg-slate-950/40"
+              @click="triggerFileUpload"
+              @dragover.prevent
+              @drop.prevent="handleFileDrop"
             >
-            <p v-if="fileName" class="text-[11px] text-blue-600 dark:text-blue-400 mt-1">
-              <i class="fa-solid fa-paperclip"></i> Terpilih: {{ fileName }}
+              <input 
+                ref="fileInputRef" 
+                type="file" 
+                accept="image/*,application/pdf" 
+                class="hidden" 
+                @change="handleFileUpload"
+              />
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 dark:text-slate-500 mb-1.5 block"></i>
+              <p class="text-xs text-slate-600 dark:text-slate-300 font-semibold">
+                {{ fileDataUrl ? 'Klik untuk ganti gambar' : 'Klik atau seret gambar kerja ke sini' }}
+              </p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                PNG, JPG, JPEG (Otomatis dikompres) atau PDF (Maks. 10MB)
+              </p>
+            </div>
+
+            <p v-if="fileName" class="text-[11px] text-blue-600 dark:text-blue-400 mt-1.5 flex items-center gap-1 font-semibold">
+              <i class="fa-solid fa-paperclip"></i>
+              <span>File terpilih: {{ fileName }}</span>
             </p>
           </div>
           <div class="sm:col-span-2">
@@ -266,7 +318,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
 import { useImageCompressor } from '~/composables/useImageCompressor'
@@ -278,7 +330,74 @@ const { compressImage } = useImageCompressor()
 const isSubmitting = ref(false)
 const fileName = ref('')
 const fileDataUrl = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
 const customDepartemen = ref('')
+
+const isImageFile = computed(() => {
+  if (!fileDataUrl.value) return false
+  return fileDataUrl.value.startsWith('data:image/') || /\.(png|jpe?g|webp|gif)$/i.test(fileName.value)
+})
+
+function triggerFileUpload() {
+  fileInputRef.value?.click()
+}
+
+function removeFile() {
+  fileName.value = ''
+  fileDataUrl.value = ''
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
+}
+
+function handleFileDrop(e: DragEvent) {
+  const file = e.dataTransfer?.files?.[0]
+  if (file) {
+    processSelectedFile(file)
+  }
+}
+
+async function handleFileUpload(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  await processSelectedFile(file)
+}
+
+async function processSelectedFile(file: File) {
+  // Security validation: Allow only safe image formats or PDF, max 10MB
+  const safeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf']
+  if (!safeTypes.includes(file.type) && !file.type.startsWith('image/')) {
+    alert('File tidak didukung. Harap upload file gambar kerja (PNG, JPG, WEBP) atau PDF.')
+    if (fileInputRef.value) fileInputRef.value.value = ''
+    return
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Ukuran file melebihi batas maksimal 10MB!')
+    if (fileInputRef.value) fileInputRef.value.value = ''
+    return
+  }
+
+  fileName.value = file.name
+  if (file.type.startsWith('image/')) {
+    try {
+      fileDataUrl.value = await compressImage(file, 1200, 0.75)
+    } catch {
+      const reader = new FileReader()
+      reader.onload = () => {
+        fileDataUrl.value = reader.result as string
+      }
+      reader.readAsDataURL(file)
+    }
+  } else {
+    const reader = new FileReader()
+    reader.onload = () => {
+      fileDataUrl.value = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
 
 const departmentOptions = [
   'CNC',
@@ -329,37 +448,6 @@ watch(() => form.waktu_pengambilan, (val) => {
     form.waktu_custom = ''
   }
 })
-
-async function handleFileUpload(e: Event) {
-  const target = e.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-
-  // Security validation: Allow only safe image formats or PDF, max 10MB
-  const safeTypes = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf']
-  if (!safeTypes.includes(file.type) && !file.type.startsWith('image/')) {
-    alert('File tidak didukung. Harap upload file gambar kerja (PNG, JPG, WEBP) atau PDF.')
-    target.value = ''
-    return
-  }
-
-  if (file.size > 10 * 1024 * 1024) {
-    alert('Ukuran file melebihi batas maksimal 10MB!')
-    target.value = ''
-    return
-  }
-
-  fileName.value = file.name
-  try {
-    fileDataUrl.value = await compressImage(file, 1200, 0.75)
-  } catch {
-    const reader = new FileReader()
-    reader.onload = () => {
-      fileDataUrl.value = reader.result as string
-    }
-    reader.readAsDataURL(file)
-  }
-}
 
 async function handleSubmit() {
   isSubmitting.value = true
