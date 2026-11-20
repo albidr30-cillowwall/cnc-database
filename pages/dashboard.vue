@@ -114,22 +114,25 @@
           </div>
         </div>
 
-        <!-- Keterangan Jumlah Plat & Ketebalan per Bagian -->
+        <!-- Keterangan Jumlah Plat & Ketebalan per Bagian (Setiap Item Berdiri Sendiri) -->
         <div v-if="gradeBreakdown.length > 0" class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
           <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             Rincian per Bagian (Grade, Tebal & Jumlah):
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
             <div 
               v-for="item in gradeBreakdown" 
-              :key="item.grade"
+              :key="item.id"
               class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 text-xs"
             >
               <div class="flex items-center gap-2 min-w-0">
                 <span class="w-3 h-3 rounded-full shrink-0" :style="{ backgroundColor: item.color }"></span>
-                <span class="font-extrabold text-slate-800 dark:text-slate-200 truncate uppercase">{{ item.grade }}</span>
+                <div class="truncate">
+                  <span class="font-extrabold text-slate-800 dark:text-slate-200 uppercase">{{ item.grade }}</span>
+                  <span v-if="item.no_plat" class="text-[10px] text-slate-400 font-mono ml-1 block sm:inline">({{ item.no_plat }})</span>
+                </div>
               </div>
-              <div class="flex items-center gap-2 font-mono shrink-0">
+              <div class="flex items-center gap-1.5 font-mono shrink-0">
                 <span class="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
                   {{ item.tebal }}
                 </span>
@@ -244,34 +247,48 @@ const availPlatesCount = computed(() => availPlates.value.reduce((acc, p) => acc
 const totalWeightTon = computed(() => availPlates.value.reduce((acc, p) => acc + (p.berat_kg * (p.stok !== undefined ? p.stok : 1)), 0) / 1000)
 const lowStock = computed(() => plates.value.length > 0 && availPlatesCount.value < 5)
 
-const chartColors = ['#2563EB', '#059669', '#D97706', '#0891B2', '#7C3AED', '#475569']
+const chartColors = [
+  '#2563EB', '#059669', '#D97706', '#0891B2', '#7C3AED', 
+  '#DC2626', '#4F46E5', '#0D9488', '#EA580C', '#64748B'
+]
 
 const gradeBreakdown = computed(() => {
   if (!plates.value || plates.value.length === 0) return []
-  const stats: Record<string, { grade: string, count: number, stok: number, thicknesses: Set<number> }> = {}
-  
-  plates.value.forEach(p => {
-    const g = p.grade?.trim() || 'Tanpa Grade'
-    if (!stats[g]) {
-      stats[g] = { grade: g, count: 0, stok: 0, thicknesses: new Set() }
-    }
-    const qty = (p.stok !== undefined && p.stok !== null) ? Number(p.stok) : 1
-    stats[g].count += 1
-    stats[g].stok += qty
-    if (p.tebal_mm !== undefined && p.tebal_mm !== null && !isNaN(Number(p.tebal_mm))) {
-      stats[g].thicknesses.add(Number(p.tebal_mm))
+
+  // Setiap item / order plat berdiri sendiri sebagai satu bagian (tidak digabung meskipun grade & tebal sama)
+  const items = plates.value.map((p, idx) => {
+    const grade = p.grade?.trim() || 'Tanpa Grade'
+    const tebal = p.tebal_mm !== undefined && p.tebal_mm !== null && !isNaN(Number(p.tebal_mm))
+      ? `${Number(p.tebal_mm)}mm`
+      : '-'
+    const stok = (p.stok !== undefined && p.stok !== null) ? Number(p.stok) : 1
+    const noPlat = p.no_plat || `Plat #${idx + 1}`
+
+    return {
+      id: p.id || idx,
+      no_plat: noPlat,
+      grade,
+      tebal,
+      stok,
+      color: chartColors[idx % chartColors.length]
     }
   })
 
-  return Object.values(stats).map((s, idx) => {
-    const tebalArr = Array.from(s.thicknesses).sort((a, b) => a - b)
-    const tebalStr = tebalArr.length > 0 ? tebalArr.map(t => `${t}mm`).join(', ') : '-'
+  // Cek apakah ada kombinasi grade & tebal yang kembar untuk memberi pembeda No. Plat
+  const keyCounts: Record<string, number> = {}
+  items.forEach(it => {
+    const k = `${it.grade}-${it.tebal}`
+    keyCounts[k] = (keyCounts[k] || 0) + 1
+  })
+
+  return items.map(it => {
+    const isDup = keyCounts[`${it.grade}-${it.tebal}`] > 1
+    const label = isDup 
+      ? `${it.grade} (${it.tebal}) - ${it.stok} Plat (${it.no_plat})`
+      : `${it.grade} (${it.tebal}) - ${it.stok} Plat`
     return {
-      grade: s.grade,
-      count: s.count,
-      stok: s.stok,
-      tebal: tebalStr,
-      color: chartColors[idx % chartColors.length]
+      ...it,
+      label
     }
   })
 })
@@ -357,9 +374,9 @@ function renderCharts() {
       gradeChartInstance = new Chart(gradeCanvas.value, {
         type: 'doughnut',
         data: {
-          labels: items.map(it => `${it.grade} (${it.tebal}) - ${it.stok} Plat`),
+          labels: items.map(it => it.label),
           datasets: [{
-            data: items.map(it => it.count),
+            data: items.map(it => it.stok),
             backgroundColor: items.map(it => it.color),
             borderWidth: 2,
             borderColor: borderSurface
@@ -382,9 +399,10 @@ function renderCharts() {
                 label: function(context: any) {
                   const it = items[context.dataIndex]
                   if (!it) return ''
-                  const total = plates.value.length || 1
-                  const pct = ((it.count / total) * 100).toFixed(0)
+                  const totalStok = items.reduce((acc, curr) => acc + curr.stok, 0) || 1
+                  const pct = ((it.stok / totalStok) * 100).toFixed(0)
                   return [
+                    ` No. Plat: ${it.no_plat}`,
                     ` Grade: ${it.grade}`,
                     ` Ketebalan: ${it.tebal}`,
                     ` Jumlah: ${it.stok} Plat (${pct}%)`
