@@ -56,7 +56,7 @@
             :key="p.id" 
             :value="p.id"
           >
-            {{ p.no_plat }} | {{ p.grade }} ({{ p.material_type }}) | {{ p.panjang_mm }}x{{ p.lebar_mm }}x{{ p.tebal_mm }}mm | Stok: {{ p.stok !== undefined ? p.stok : 1 }} lbr - Lokasi: {{ p.lokasi_yard }}
+            {{ p.no_plat }} | {{ p.grade }} ({{ p.material_type }}) | {{ p.panjang_mm }}x{{ p.lebar_mm }}x{{ p.tebal_mm }}mm | Stok: {{ p.stok !== undefined ? p.stok : 1 }} lbr
           </option>
         </select>
         <p v-if="availablePlates.length === 0" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1 italic">
