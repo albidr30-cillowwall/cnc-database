@@ -122,8 +122,21 @@
             <div v-if="o.waktu_mulai" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
               Mulai: {{ new Date(o.waktu_mulai).toLocaleTimeString('id-ID') }}
             </div>
+            <!-- Stopwatch Saat Sedang Dipotong -->
+            <div v-if="o.status === 'Sedang Dipotong' && o.waktu_mulai" class="mt-1 flex items-center gap-1.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              <i class="fa-solid fa-stopwatch text-amber-500"></i>
+              <span>{{ formatStopwatch(o.waktu_mulai) }}</span>
+            </div>
+            <!-- Waktu Selesai & Durasi Total -->
             <div v-if="o.waktu_selesai" class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono font-semibold">
-              Selesai: {{ new Date(o.waktu_selesai).toLocaleTimeString('id-ID') }}
+              <div>Selesai: {{ new Date(o.waktu_selesai).toLocaleTimeString('id-ID') }}</div>
+              <div v-if="o.waktu_mulai" class="text-[10px] text-slate-500 dark:text-slate-400 font-sans font-normal">
+                Durasi: <b class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{{ formatStopwatch(o.waktu_mulai, o.waktu_selesai) }}</b> ({{ formatStopwatchVerbose(o.waktu_mulai, o.waktu_selesai) }})
+              </div>
             </div>
           </div>
         </div>
@@ -165,15 +178,34 @@
               <span>START PEMOTONGAN</span>
             </button>
 
-            <!-- Step 3: Finish Pemotongan (Auto PIN) -->
-            <button 
-              v-if="o.status === 'Sedang Dipotong'"
-              @click="handleFinish(o.id)" 
-              class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-lg shadow-emerald-600/30 transition flex items-center gap-2 animate-pulse"
-            >
-              <i class="fa-solid fa-flag-checkered"></i>
-              <span>FINISH POTONG (BUAT PIN 6-DIGIT)</span>
-            </button>
+            <!-- Step 3: Finish Pemotongan (Auto PIN) + Live Stopwatch -->
+            <div v-if="o.status === 'Sedang Dipotong'" class="flex flex-wrap items-center gap-2.5">
+              <!-- Widget Live Stopwatch -->
+              <div class="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700/80 px-3 py-1.5 rounded-xl text-amber-900 dark:text-amber-200 shadow-xs">
+                <div class="relative flex items-center justify-center">
+                  <span class="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-amber-400 opacity-75"></span>
+                  <i class="fa-solid fa-stopwatch text-sm text-amber-600 dark:text-amber-400 relative"></i>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 leading-none">
+                    Stopwatch (Jam:Mnt:Dtk)
+                  </span>
+                  <span class="font-mono text-sm font-black tracking-wider text-slate-900 dark:text-white leading-tight mt-0.5">
+                    {{ formatStopwatch(o.waktu_mulai) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Tombol Selesai Potong -->
+              <button 
+                @click="handleFinish(o.id)" 
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-lg shadow-emerald-600/30 transition flex items-center gap-2 cursor-pointer hover:scale-102"
+                title="Selesaikan pemotongan dan buat PIN Pengambilan"
+              >
+                <i class="fa-solid fa-flag-checkered"></i>
+                <span>FINISH POTONG (BUAT PIN 6-DIGIT)</span>
+              </button>
+            </div>
 
             <!-- Step 4: Siap Diambil / PIN Badge -->
             <div 
@@ -210,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCncStore } from '~/composables/useCncStore'
 import { useSecurity } from '~/composables/useSecurity'
 import { useLightbox } from '~/composables/useLightbox'
@@ -218,6 +250,50 @@ import { useLightbox } from '~/composables/useLightbox'
 const store = useCncStore()
 const { sanitizeUrl } = useSecurity()
 const { openLightbox } = useLightbox()
+
+const currentTime = ref(Date.now())
+let timerInterval: any = null
+
+function formatStopwatch(waktuMulai?: string | null, waktuSelesai?: string | null): string {
+  if (!waktuMulai) return '00:00:00'
+  const start = new Date(waktuMulai).getTime()
+  if (isNaN(start)) return '00:00:00'
+
+  const end = waktuSelesai ? new Date(waktuSelesai).getTime() : currentTime.value
+  const diffMs = Math.max(0, end - start)
+
+  const totalSec = Math.floor(diffMs / 1000)
+  const hours = Math.floor(totalSec / 3600)
+  const minutes = Math.floor((totalSec % 3600) / 60)
+  const seconds = totalSec % 60
+
+  const hh = String(hours).padStart(2, '0')
+  const mm = String(minutes).padStart(2, '0')
+  const ss = String(seconds).padStart(2, '0')
+
+  return `${hh}:${mm}:${ss}`
+}
+
+function formatStopwatchVerbose(waktuMulai?: string | null, waktuSelesai?: string | null): string {
+  if (!waktuMulai) return '0 dtk'
+  const start = new Date(waktuMulai).getTime()
+  if (isNaN(start)) return '0 dtk'
+
+  const end = waktuSelesai ? new Date(waktuSelesai).getTime() : currentTime.value
+  const diffMs = Math.max(0, end - start)
+
+  const totalSec = Math.floor(diffMs / 1000)
+  const hours = Math.floor(totalSec / 3600)
+  const minutes = Math.floor((totalSec % 3600) / 60)
+  const seconds = totalSec % 60
+
+  const parts: string[] = []
+  if (hours > 0) parts.push(`${hours} jam`)
+  if (minutes > 0 || hours > 0) parts.push(`${minutes} mnt`)
+  parts.push(`${seconds} dtk`)
+
+  return parts.join(' ')
+}
 
 const groups = ['CNC 1', 'CNC 2', 'CNC 3', 'CNC 4']
 const activeGroup = ref('CNC 1')
@@ -273,6 +349,13 @@ async function handleFinish(orderId: number) {
 
 onMounted(() => {
   store.initStore()
+  timerInterval = setInterval(() => {
+    currentTime.value = Date.now()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval)
 })
 </script>
 

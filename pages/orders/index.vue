@@ -326,6 +326,18 @@
                   <span class="font-mono">{{ formatOrderTime(selectedDetailOrder.created_at) }} WIB</span>
                 </span>
               </div>
+
+              <div v-if="selectedDetailOrder.waktu_mulai" class="pt-1 border-t border-slate-200 dark:border-slate-700/60">
+                <span class="text-slate-500 dark:text-slate-400 block text-[10px]">Waktu Pemotongan CNC</span>
+                <div class="text-[11px] font-mono mt-0.5 space-y-0.5">
+                  <div class="text-slate-700 dark:text-slate-300">
+                    Mulai: <b class="text-slate-900 dark:text-white">{{ new Date(selectedDetailOrder.waktu_mulai).toLocaleTimeString('id-ID') }}</b>
+                  </div>
+                  <div v-if="selectedDetailOrder.waktu_selesai" class="text-emerald-600 dark:text-emerald-400 font-semibold">
+                    Selesai: <b>{{ new Date(selectedDetailOrder.waktu_selesai).toLocaleTimeString('id-ID') }}</b>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
