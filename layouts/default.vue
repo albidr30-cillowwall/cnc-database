@@ -21,7 +21,7 @@
             <i class="fa-solid fa-anchor text-base"></i>
           </div>
           <div>
-            <div class="text-sm font-extrabold tracking-wide text-white">CNC DATABASE</div>
+            <div class="text-sm font-extrabold tracking-wide text-white">CNC BASED ORDER</div>
             <div class="text-[11px] flex items-center gap-1.5" :class="isConfigured ? 'text-emerald-400' : 'text-amber-400'">
               <span class="w-1.5 h-1.5 rounded-full" :class="isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
               <span>{{ isConfigured ? 'Supabase Terhubung' : 'Mode Offline (Lokal)' }}</span>
@@ -400,7 +400,7 @@ const pageTitle = computed(() => {
   if (p === '/pickup-verify') return 'Pengambilan Barang & Verifikasi PIN 6-Digit'
   if (p === '/history') return 'History & Traceability'
   if (p.startsWith('/admin')) return 'Manajemen Pengguna & Reset Database'
-  return 'CNC DATABASE'
+  return 'CNC BASED ORDER'
 })
 
 function handleLogout() {

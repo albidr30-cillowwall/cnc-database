@@ -26,7 +26,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'CNC DATABASE — Sistem Order & Pemotongan Plat CNC',
+      title: 'CNC BASED ORDER — Sistem Order & Pemotongan Plat CNC',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },

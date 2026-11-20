@@ -8,7 +8,7 @@
             <i class="fa-solid fa-anchor"></i>
           </div>
           <div>
-            <h1 class="text-lg font-extrabold tracking-wide">CNC DATABASE</h1>
+            <h1 class="text-lg font-extrabold tracking-wide">CNC BASED ORDER</h1>
             <p class="text-[11px] text-cyan-300 font-semibold">Sistem Order, Estimasi & Pemotongan Plat CNC</p>
           </div>
         </div>
