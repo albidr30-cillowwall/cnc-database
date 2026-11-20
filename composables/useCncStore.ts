@@ -124,6 +124,27 @@ function generateUuid(): string {
   })
 }
 
+// Helper to normalize plate code to PLT-CNC-XXX
+export function normalizePlateNo(raw?: string): string {
+  if (!raw) return 'PLT-CNC-001'
+  const trimmed = raw.trim()
+  if (/^PLT-CNC-\d+$/i.test(trimmed)) {
+    return trimmed.toUpperCase()
+  }
+  if (trimmed.startsWith('PLT-REM-')) {
+    return trimmed
+  }
+  // Matches e.g. PLT-KS-2026-005, PLT-AL-2026-002, PLT-2026-003, PLT-005, PLT-1
+  const match = trimmed.match(/PLT-(?:[A-Za-z]+-)?(?:\d{4}-)?(\d+)/i) || trimmed.match(/(\d+)$/)
+  if (match) {
+    const num = parseInt(match[1], 10)
+    if (!isNaN(num)) {
+      return `PLT-CNC-${String(num).padStart(3, '0')}`
+    }
+  }
+  return trimmed
+}
+
 // Global Shared State
 const defaultUsers: UserProfile[] = [
   { id: '1', name: 'Administrator CNC', username: 'admin', email: 'admin@gmail.com', role: 'admin', department: 'Supervisor', password_hash: '123' },
@@ -264,6 +285,9 @@ export function useCncStore() {
           if (!o.created_at) {
             o.created_at = new Date().toISOString()
           }
+          if (o.plat_dipakai) {
+            o.plat_dipakai = o.plat_dipakai.replace(/PLT-(?:[A-Za-z]+-)?(?:\d{4}-)?(\d{3})/g, 'PLT-CNC-$1')
+          }
           if (o.status === 'Estimasi Selesai') {
             if (o.waktu_diambil) o.status = 'Sudah Diambil'
             else if (o.kode_pengambilan) o.status = 'Siap Diambil'
@@ -274,7 +298,16 @@ export function useCncStore() {
     }
     const localPlates = localStorage.getItem('cnc_plates_v3')
     if (localPlates) {
-      try { plates.value = JSON.parse(localPlates) } catch { }
+      try { 
+        const parsed = JSON.parse(localPlates)
+        if (Array.isArray(parsed)) {
+          plates.value = parsed.map((p: Plate) => ({
+            ...p,
+            no_plat: normalizePlateNo(p.no_plat)
+          }))
+          saveToLocalStorage()
+        }
+      } catch { }
     }
     const localEst = localStorage.getItem('cnc_estimations_v3')
     if (localEst) {
@@ -323,7 +356,7 @@ export function useCncStore() {
       } else if (plateData && plateData.length > 0) {
         plates.value = plateData.map((p: any) => ({
           id: p.id,
-          no_plat: p.no_plat,
+          no_plat: normalizePlateNo(p.no_plat),
           heat_number: p.heat_number,
           grade: p.grade,
           material_type: p.material_type,
@@ -340,6 +373,15 @@ export function useCncStore() {
           order_id_pemakai: p.order_id_pemakai,
           created_at: p.created_at
         }))
+
+        // Sync back updated PLT-CNC-XXX codes to Supabase if any differed
+        for (const rawP of plateData) {
+          const norm = normalizePlateNo(rawP.no_plat)
+          if (norm !== rawP.no_plat) {
+            supabase.from('plates').update({ no_plat: norm }).eq('id', rawP.id).then(() => {}).catch(() => {})
+          }
+        }
+        saveToLocalStorage()
       }
       // If Supabase returned empty BUT we have local plates, push them to Supabase
       else if ((!plateData || plateData.length === 0) && plates.value.length > 0) {
@@ -967,14 +1009,12 @@ export function useCncStore() {
     jumlah?: number
   }): Promise<Plate> {
     const qty = Math.max(1, Number(data.jumlah) || 1)
-    const prefix = (data.material_type || '').toLowerCase().includes('alumin') ? 'AL' : 'KS'
-    const year = new Date().getFullYear()
     const weight = calculateWeight(data.panjang_mm, data.lebar_mm, data.tebal_mm, data.material_type)
     const baseHeat = data.heat_number?.trim() || '-'
     const loc = data.lokasi_yard?.trim() || 'Yard A - Bay 1'
     const cert = data.no_sertifikat_class?.trim() || 'Mill Test'
 
-    // Generate unique plate number (prevents NOT NULL and UNIQUE constraint violation in Supabase)
+    // Generate unique plate number (PLT-CNC-XXX)
     let maxPlateNum = 0
     plates.value.forEach(p => {
       const match = p.no_plat && p.no_plat.match(/(\d+)$/)
@@ -984,9 +1024,9 @@ export function useCncStore() {
       }
     })
     const plateSeq = maxPlateNum + 1
-    let generatedNoPlat = `PLT-${prefix}-${year}-${String(plateSeq).padStart(3, '0')}`
+    let generatedNoPlat = `PLT-CNC-${String(plateSeq).padStart(3, '0')}`
     if (plates.value.some(p => p.no_plat === generatedNoPlat)) {
-      generatedNoPlat = `PLT-${prefix}-${year}-${String(plateSeq).padStart(3, '0')}-${Date.now().toString().slice(-4)}`
+      generatedNoPlat = `PLT-CNC-${String(plateSeq).padStart(3, '0')}-${Date.now().toString().slice(-4)}`
     }
 
     // Build payload WITHOUT id — let Supabase BIGSERIAL auto-generate id
@@ -1548,6 +1588,7 @@ export function useCncStore() {
     addPlate,
     deletePlate,
     updatePlateStock,
+    normalizePlateNo,
     pickupPlateYard,
     operatorAccept,
     operatorStart,

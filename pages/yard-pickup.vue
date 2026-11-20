@@ -233,7 +233,7 @@ watch(() => form.plate_id, () => {
 
 function getPlateNo(plateId: number): string {
   const p = store.plates.value.find(item => item.id === plateId)
-  return p ? p.no_plat : `PLT-${plateId}`
+  return p ? p.no_plat : `PLT-CNC-${String(plateId).padStart(3, '0')}`
 }
 
 function getPlateDesc(plateId: number): string {
