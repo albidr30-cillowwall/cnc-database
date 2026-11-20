@@ -28,8 +28,7 @@
             >
               <option value="">-- Pilih Jenis Pekerjaan --</option>
               <option>Pemotongan Plat Baru</option>
-              <option>Pembuatan Part Baru</option>
-              <option>Cutting Nesting / Gambar Kerja</option>
+              <option>Cutting Nesting</option>
               <option value="Lainnya">Lainnya</option>
             </select>
           </div>

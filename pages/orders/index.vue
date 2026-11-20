@@ -30,8 +30,7 @@
       >
         <option value="">Semua Jenis Pekerjaan</option>
         <option>Pemotongan Plat Baru</option>
-        <option>Pembuatan Part Baru</option>
-        <option>Cutting Nesting / Gambar Kerja</option>
+        <option>Cutting Nesting</option>
         <option value="Lainnya">Lainnya</option>
       </select>
 
@@ -103,7 +102,7 @@
               </td>
               <td class="p-3.5 min-w-[180px]">
                 <span class="inline-block px-2.5 py-1 rounded-lg border text-[10px] font-bold" :class="getTypeBadge(o.jenis_pekerjaan_kategori)">
-                  {{ o.jenis_pekerjaan }}
+                  {{ o.jenis_pekerjaan?.replace(' / Gambar Kerja', '') }}
                 </span>
                 <div v-if="o.drawing_file_name" class="mt-1 text-[10px] text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
                   <i class="fa-solid fa-paperclip"></i>
@@ -281,8 +280,8 @@
             <div class="space-y-1.5">
               <div>
                 <span class="text-slate-500 dark:text-slate-400 block text-[10px]">Jenis Pekerjaan</span>
-                <span class="font-bold text-slate-900 dark:text-white">{{ selectedDetailOrder.jenis_pekerjaan }}</span>
-                <span class="text-[10px] text-slate-400 block">({{ selectedDetailOrder.jenis_pekerjaan_kategori }})</span>
+                <span class="font-bold text-slate-900 dark:text-white">{{ selectedDetailOrder.jenis_pekerjaan?.replace(' / Gambar Kerja', '') }}</span>
+                <span class="text-[10px] text-slate-400 block">({{ selectedDetailOrder.jenis_pekerjaan_kategori?.replace(' / Gambar Kerja', '') }})</span>
               </div>
               <div>
                 <span class="text-slate-500 dark:text-slate-400 block text-[10px]">Deskripsi Pekerjaan</span>
@@ -496,7 +495,9 @@ const filteredOrders = computed(() => {
       o.nama_pemesan.toLowerCase().includes(query) ||
       o.deskripsi_pekerjaan.toLowerCase().includes(query)
 
-    const matchType = !selectedType.value || o.jenis_pekerjaan_kategori === selectedType.value
+    const matchType = !selectedType.value || 
+      o.jenis_pekerjaan_kategori === selectedType.value ||
+      (selectedType.value === 'Cutting Nesting' && o.jenis_pekerjaan_kategori?.includes('Cutting Nesting'))
     
     let matchStatus = true
     if (selectedStatus.value) {
@@ -533,6 +534,7 @@ function getTypeBadge(cat: string): string {
     'Pemotongan Plat Remnant / Sisa': 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
     'Repair / Perbaikan': 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800',
     'Pembuatan Part Baru': 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800',
+    'Cutting Nesting': 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800',
     'Cutting Nesting / Gambar Kerja': 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800'
   }
   return map[cat] || 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
