@@ -261,6 +261,9 @@ export function useCncStore() {
       try { 
         orders.value = JSON.parse(localOrders) 
         orders.value.forEach(o => {
+          if (!o.created_at) {
+            o.created_at = new Date().toISOString()
+          }
           if (o.status === 'Estimasi Selesai') {
             if (o.waktu_diambil) o.status = 'Sudah Diambil'
             else if (o.kode_pengambilan) o.status = 'Siap Diambil'
@@ -757,7 +760,7 @@ export function useCncStore() {
       ...orderPayload,
       no_order: finalNoOrder,
       status: 'Diterima',
-      created_at: new Date().toISOString()
+      created_at: inserted?.created_at || new Date().toISOString()
     }
 
     orders.value.unshift(newOrder)

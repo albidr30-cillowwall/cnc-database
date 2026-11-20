@@ -63,6 +63,12 @@
           <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-extrabold text-left">
             <tr>
               <th class="p-3.5">No. Order</th>
+              <th class="p-3.5 whitespace-nowrap">
+                <div class="flex items-center gap-1">
+                  <i class="fa-regular fa-calendar-days text-blue-500"></i>
+                  <span>Tanggal & Jam</span>
+                </div>
+              </th>
               <th class="p-3.5">Pekerjaan / Jenis</th>
               <th class="p-3.5">Proyek</th>
               <th class="p-3.5">Pemesan</th>
@@ -99,6 +105,16 @@
                 </div>
                 <div class="text-[10px] font-sans font-normal text-slate-400 mt-0.5">
                   {{ o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc }}
+                </div>
+              </td>
+              <td class="p-3.5 whitespace-nowrap">
+                <div class="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                  <i class="fa-regular fa-calendar text-[11px] text-blue-600 dark:text-blue-400"></i>
+                  <span>{{ formatOrderDate(o.created_at) }}</span>
+                </div>
+                <div class="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                  <i class="fa-regular fa-clock text-[9px] text-slate-400"></i>
+                  <span>{{ formatOrderTime(o.created_at) }} WIB</span>
                 </div>
               </td>
               <td class="p-3.5 min-w-[210px]">
@@ -198,7 +214,7 @@
             </tr>
 
             <tr v-if="filteredOrders.length === 0">
-              <td colspan="9" class="p-10 text-center text-slate-400 text-xs italic">
+              <td colspan="10" class="p-10 text-center text-slate-400 text-xs italic">
                 <i class="fa-solid fa-inbox text-3xl mb-2 block text-slate-300 dark:text-slate-700"></i>
                 Belum ada order pemotongan plat. Silakan buat Order Baru.
               </td>
@@ -224,8 +240,15 @@
               <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                 Detail Item & Catatan Order
               </h3>
-              <div class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
-                {{ selectedDetailOrder.no_order }}
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
+                  {{ selectedDetailOrder.no_order }}
+                </span>
+                <span class="text-slate-300 dark:text-slate-700">•</span>
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <i class="fa-regular fa-clock text-[10px]"></i>
+                  {{ formatOrderDate(selectedDetailOrder.created_at) }} • {{ formatOrderTime(selectedDetailOrder.created_at) }} WIB
+                </span>
               </div>
             </div>
           </div>
@@ -531,6 +554,36 @@ function resetFilters() {
 
 async function handleApprove(orderId: number) {
   await approveEstimation(orderId)
+}
+
+function formatOrderDate(dateStr?: string): string {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return '-'
+    return d.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
+  } catch {
+    return '-'
+  }
+}
+
+function formatOrderTime(dateStr?: string): string {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return '-'
+    return d.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+  } catch {
+    return '-'
+  }
 }
 </script>
 
