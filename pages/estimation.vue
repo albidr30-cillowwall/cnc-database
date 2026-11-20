@@ -288,32 +288,6 @@
       </div>
 
       <!-- ======================================================== -->
-      <!-- HELPER STOK PLAT YARD (BISA DIGUNAKAN DI KEDUA MODE)     -->
-      <!-- ======================================================== -->
-      <div 
-        v-if="(activeMode === 'manual' || selectedOrder || viewingEstId) && !isLocked" 
-        class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800"
-      >
-        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-          <span class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-extrabold uppercase">
-            <i class="fa-solid fa-layer-group"></i>
-            <span>Helper: Ambil dari Stok Plat Yard (Opsional)</span>
-          </span>
-          <span class="text-[10px] text-blue-500 font-normal">Auto-fill Spec, Dimensi & Heat No.</span>
-        </label>
-        <select 
-          v-model="selectedPlateHelper" 
-          @change="applyPlateHelper"
-          class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option :value="null">-- Ketik Manual atau Pilih dari Stok Plat Yard --</option>
-          <option v-for="plt in store.plates.value" :key="plt.id" :value="plt">
-            {{ plt.no_plat }} ({{ plt.grade }} {{ plt.material_type }} - {{ plt.tebal_mm }}mm) - Heat: {{ plt.heat_number }}
-          </option>
-        </select>
-      </div>
-
-      <!-- ======================================================== -->
       <!-- FORMULIR 7 KOLOM MATERIAL IDENTIFICATION                -->
       <!-- Tampil langsung jika mode manual ATAU order telah dipilih -->
       <!-- ======================================================== -->
@@ -682,7 +656,6 @@ const showAllOrders = ref(false)
 const selectedOrderId = ref<number | null>(null)
 const viewingEstId = ref<number | null>(null)
 const isLocked = ref(false)
-const selectedPlateHelper = ref<Plate | null>(null)
 const feedbackMsg = ref<{ text: string; type: 'success' | 'error' } | null>(null)
 
 // Form state with 7 standard cutting plan fields + image
@@ -744,7 +717,6 @@ function setMode(mode: 'order' | 'manual') {
 }
 
 function resetFormFields() {
-  selectedPlateHelper.value = null
   form.project_name = ''
   form.nesting_no = ''
   form.block_item = ''
@@ -760,14 +732,6 @@ function resetFormFields() {
 
 function resetToNewManual() {
   setMode('manual')
-}
-
-function applyPlateHelper() {
-  if (!selectedPlateHelper.value) return
-  const plt = selectedPlateHelper.value
-  form.spec_material = plt.grade && plt.grade !== '-' ? plt.grade : plt.material_type
-  form.dimension_material = `${plt.tebal_mm} x ${plt.lebar_mm} x ${plt.panjang_mm} mm`
-  form.heat_number = plt.heat_number && plt.heat_number !== '-' ? plt.heat_number : ''
 }
 
 // Populate form when selectedOrder changes in order mode
@@ -906,7 +870,6 @@ function handleViewEstimation(item: any) {
   form.product_number = cleanVal(item.product_number) || cleanVal(item.order?.ukuran_part) || ''
   form.heat_number = cleanVal(item.heat_number)
   cuttingImagePreview.value = item.cutting_image_url || ''
-  selectedPlateHelper.value = null
 
   // Scroll ke formulir atas agar operator langsung melihat detailnya
   window.scrollTo({ top: 0, behavior: 'smooth' })
