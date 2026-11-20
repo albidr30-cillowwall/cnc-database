@@ -114,20 +114,23 @@
                 {{ p.panjang_mm }} x {{ p.lebar_mm }} x <b class="text-slate-900 dark:text-white">{{ p.tebal_mm }}mm</b>
               </td>
               <td class="p-3.5 text-center whitespace-nowrap">
-                <span 
-                  v-if="(p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)) > 0"
-                  class="inline-flex items-center gap-1 font-mono font-extrabold text-sm px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                <button 
+                  type="button"
+                  @click="openEditStockModal(p)"
+                  class="group inline-flex items-center gap-1.5 font-mono font-extrabold text-sm px-2.5 py-1 rounded-xl transition cursor-pointer"
+                  :class="(p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)) > 0
+                    ? 'bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
+                    : 'bg-rose-50 hover:bg-rose-100/80 dark:bg-rose-950/50 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:border-rose-400'"
+                  title="Klik untuk ubah stok plat ini"
                 >
                   <i class="fa-solid fa-boxes-stacked text-xs"></i>
-                  <span>{{ p.stok !== undefined ? p.stok : 1 }}</span>
+                  <span v-if="(p.stok !== undefined ? p.stok : (p.status === 'Diambil' || p.status === 'Habis' ? 0 : 1)) > 0">
+                    {{ p.stok !== undefined ? p.stok : 1 }}
+                  </span>
+                  <span v-else>0</span>
                   <span class="text-[10px] font-sans font-semibold text-slate-400">lbr</span>
-                </span>
-                <span 
-                  v-else
-                  class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-                >
-                  Habis (0 lbr)
-                </span>
+                  <i class="fa-solid fa-pen-to-square text-[10px] opacity-60 group-hover:opacity-100 text-blue-600 dark:text-blue-400 ml-0.5"></i>
+                </button>
               </td>
               <td class="p-3.5 font-mono">
                 <div class="font-bold text-slate-800 dark:text-slate-200">
@@ -145,14 +148,25 @@
                   {{ (p.stok !== undefined && p.stok <= 0) ? 'Habis' : p.status }}
                 </span>
               </td>
-              <td class="p-3.5 text-center">
-                <button 
-                  @click="handleDeletePlate(p)" 
-                  class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-700 transition cursor-pointer"
-                  title="Hapus Plat"
-                >
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
+              <td class="p-3.5 text-center whitespace-nowrap">
+                <div class="flex items-center justify-center gap-1">
+                  <button 
+                    type="button"
+                    @click="openEditStockModal(p)" 
+                    class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-700 transition cursor-pointer"
+                    title="Edit Stok Plat"
+                  >
+                    <i class="fa-solid fa-pen-to-square text-sm"></i>
+                  </button>
+                  <button 
+                    type="button"
+                    @click="handleDeletePlate(p)" 
+                    class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-700 transition cursor-pointer"
+                    title="Hapus Plat"
+                  >
+                    <i class="fa-solid fa-trash-can text-sm"></i>
+                  </button>
+                </div>
               </td>
             </tr>
             <tr v-if="filteredPlates.length === 0">
@@ -293,6 +307,173 @@
         </form>
       </div>
     </div>
+
+    <!-- Modal Edit Stok Plat -->
+    <div 
+      v-if="editingPlate" 
+      class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+    >
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <h3 class="text-sm font-extrabold uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Edit Stok Plat</span>
+          </h3>
+          <button 
+            type="button"
+            @click="closeEditStockModal" 
+            class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl leading-none cursor-pointer"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Info Plat yang Sedang Diedit -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm">{{ editingPlate.no_plat }}</span>
+            <span 
+              class="px-2 py-0.5 rounded-md font-bold text-[10px] uppercase border"
+              :class="getStatusBadgeClass(editingPlate)"
+            >
+              {{ editingPlate.status }}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-400">
+            <div>
+              <span class="block text-[10px] text-slate-400 uppercase font-semibold">Material & Grade</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ editingPlate.grade }} ({{ editingPlate.material_type }})</span>
+            </div>
+            <div>
+              <span class="block text-[10px] text-slate-400 uppercase font-semibold">Dimensi (P x L x T)</span>
+              <span class="font-mono font-semibold text-slate-800 dark:text-slate-200">{{ editingPlate.panjang_mm }} x {{ editingPlate.lebar_mm }} x {{ editingPlate.tebal_mm }}mm</span>
+            </div>
+          </div>
+        </div>
+
+        <form @submit.prevent="handleSaveEditStock" class="space-y-4">
+          <div>
+            <label class="block text-slate-700 dark:text-slate-300 font-bold text-xs mb-1.5 flex items-center justify-between">
+              <span>Jumlah Stok (Lembar) *</span>
+              <span class="text-[11px] font-normal text-slate-400">Stok saat ini: <b class="font-mono text-slate-600 dark:text-slate-300">{{ editingPlate.stok !== undefined ? editingPlate.stok : (editingPlate.status === 'Habis' ? 0 : 1) }} lbr</b></span>
+            </label>
+            
+            <!-- Counter Controls -->
+            <div class="flex items-center gap-2">
+              <button 
+                type="button" 
+                @click="adjustStock(-1)"
+                :disabled="editStockInput <= 0"
+                class="w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-lg flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                title="Kurangi 1 lembar"
+              >
+                <i class="fa-solid fa-minus text-xs"></i>
+              </button>
+              
+              <input 
+                v-model.number="editStockInput" 
+                type="number" 
+                min="0" 
+                required 
+                class="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl py-2 px-3 text-center text-slate-800 dark:text-slate-200 font-mono font-extrabold text-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+
+              <button 
+                type="button" 
+                @click="adjustStock(1)"
+                class="w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-lg flex items-center justify-center transition cursor-pointer"
+                title="Tambah 1 lembar"
+              >
+                <i class="fa-solid fa-plus text-xs"></i>
+              </button>
+            </div>
+
+            <!-- Quick Adjustments -->
+            <div class="flex flex-wrap items-center gap-1.5 mt-2">
+              <button 
+                type="button" 
+                @click="editStockInput = 0"
+                class="px-2 py-1 rounded-lg text-[10px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 cursor-pointer transition"
+              >
+                Set 0 (Habis)
+              </button>
+              <button 
+                type="button" 
+                @click="adjustStock(1)"
+                class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer transition"
+              >
+                +1
+              </button>
+              <button 
+                type="button" 
+                @click="adjustStock(5)"
+                class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer transition"
+              >
+                +5
+              </button>
+              <button 
+                type="button" 
+                @click="adjustStock(10)"
+                class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer transition"
+              >
+                +10
+              </button>
+              <button 
+                type="button" 
+                @click="adjustStock(20)"
+                class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer transition"
+              >
+                +20
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview Status & Total Berat Baru -->
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 dark:text-slate-400">Status baru:</span>
+              <span 
+                v-if="editStockInput > 0"
+                class="inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+              >
+                <i class="fa-solid fa-circle-check text-[9px]"></i> Tersedia
+              </span>
+              <span 
+                v-else
+                class="inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+              >
+                <i class="fa-solid fa-circle-xmark text-[9px]"></i> Habis (0 lbr)
+              </span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <span>Perkiraan total berat:</span>
+              <span class="font-mono font-bold text-slate-800 dark:text-slate-200">
+                {{ ((Number(editingPlate.berat_kg) || 0) * (editStockInput || 0)).toLocaleString('id-ID', { minimumFractionDigits: 1 }) }} kg
+              </span>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button 
+              type="button" 
+              @click="closeEditStockModal" 
+              class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer"
+            >
+              Batal
+            </button>
+            <button 
+              type="submit" 
+              :disabled="isSavingStock"
+              class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+            >
+              <i v-if="isSavingStock" class="fa-solid fa-spinner fa-spin"></i>
+              <i v-else class="fa-solid fa-check"></i>
+              <span>{{ isSavingStock ? 'Menyimpan...' : 'Simpan Perubahan Stok' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -303,6 +484,9 @@ import { useCncStore } from '~/composables/useCncStore'
 const store = useCncStore()
 
 const isModalOpen = ref(false)
+const editingPlate = ref<any>(null)
+const editStockInput = ref<number>(0)
+const isSavingStock = ref(false)
 const filterMinP = ref<number | null>(null)
 const filterMinL = ref<number | null>(null)
 const filterStatus = ref('')
@@ -359,6 +543,35 @@ function getStatusBadgeClass(p: any) {
       return 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
     default:
       return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+  }
+}
+
+function openEditStockModal(plate: any) {
+  editingPlate.value = plate
+  editStockInput.value = plate.stok !== undefined ? plate.stok : (plate.status === 'Diambil' || plate.status === 'Habis' ? 0 : 1)
+}
+
+function closeEditStockModal() {
+  editingPlate.value = null
+  editStockInput.value = 0
+}
+
+function adjustStock(delta: number) {
+  editStockInput.value = Math.max(0, (editStockInput.value || 0) + delta)
+}
+
+async function handleSaveEditStock() {
+  if (!editingPlate.value) return
+  isSavingStock.value = true
+  try {
+    const newStock = Math.max(0, Math.floor(Number(editStockInput.value) || 0))
+    await store.updatePlateStock(editingPlate.value.id, newStock)
+    feedbackMsg.value = `Stok plat ${editingPlate.value.no_plat} berhasil diperbarui menjadi ${newStock} lembar!`
+    closeEditStockModal()
+  } catch (err: any) {
+    alert('Gagal menyimpan perubahan stok plat: ' + (err?.message || err))
+  } finally {
+    isSavingStock.value = false
   }
 }
 

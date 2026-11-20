@@ -1056,6 +1056,36 @@ export function useCncStore() {
     return false
   }
 
+  async function updatePlateStock(plateId: number, newStock: number) {
+    const idx = plates.value.findIndex(p => p.id === plateId)
+    if (idx >= 0) {
+      const validStock = Math.max(0, Math.floor(Number(newStock) || 0))
+      const currentPlate = plates.value[idx]
+      let newStatus = currentPlate.status
+      if (validStock <= 0) {
+        newStatus = 'Habis'
+      } else if (currentPlate.status === 'Habis') {
+        newStatus = 'Tersedia'
+      }
+
+      plates.value[idx].stok = validStock
+      plates.value[idx].status = newStatus
+      saveToLocalStorage()
+
+      if (isConfigured && supabase) {
+        const { error } = await supabase
+          .from('plates')
+          .update({ stok: validStock, status: newStatus })
+          .eq('id', plateId)
+        if (error) {
+          console.error('Supabase updatePlateStock error:', error.message)
+        }
+      }
+      return plates.value[idx]
+    }
+    return null
+  }
+
   // ==========================================
   // FIX #2 & #4: pickupPlateYard — check Supabase errors, let Supabase generate IDs
   // ==========================================
@@ -1514,6 +1544,7 @@ export function useCncStore() {
     deleteEstimation,
     addPlate,
     deletePlate,
+    updatePlateStock,
     pickupPlateYard,
     operatorAccept,
     operatorStart,
