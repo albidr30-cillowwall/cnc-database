@@ -1,25 +1,36 @@
 <template>
   <div class="min-h-screen bg-slate-100 dark:bg-slate-950 cnc-grid-bg flex items-center justify-center p-4 transition-colors">
     <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 transition-colors">
-      <!-- Top Brand Header -->
-      <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white px-7 py-6 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3.5">
-          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 text-lg shrink-0">
-            <i class="fa-solid fa-anchor"></i>
-          </div>
-          <div>
-            <h1 class="text-lg font-extrabold tracking-wide">CNC BASED ORDER</h1>
-            <p class="text-[11px] text-cyan-300 font-semibold">Sistem Order, Estimasi & Pemotongan Plat CNC</p>
-          </div>
+      <!-- Top Brand Header: Logo Orela di Kiri, Tulisan CNC BASED ORDER di Kanan -->
+      <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 text-white px-6 py-5 flex items-center justify-between gap-4 border-b border-slate-800/80">
+        <!-- Logo Orela Shipyard (Kiri) -->
+        <div class="flex items-center shrink-0">
+          <img 
+            src="/images/logo-orela.png" 
+            alt="Orela Shipyard" 
+            class="h-10 sm:h-11 w-auto object-contain filter drop-shadow-md"
+          />
         </div>
-        <button 
-          type="button" 
-          @click="toggleTheme" 
-          class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs transition shrink-0 cursor-pointer" 
-          title="Ganti Tema Light / Dark"
-        >
-          <i class="fa-solid" :class="isDark ? 'fa-sun text-amber-400' : 'fa-moon text-slate-200'"></i>
-        </button>
+
+        <!-- Tulisan CNC BASED ORDER (Kanan) -->
+        <div class="flex items-center gap-3 text-right">
+          <div>
+            <h1 class="text-sm sm:text-base font-black tracking-wider text-white uppercase drop-shadow-xs">
+              CNC BASED ORDER
+            </h1>
+            <p class="text-[10px] text-cyan-300 font-semibold tracking-wide">
+              Sistem Order & Pemotongan Plat
+            </p>
+          </div>
+          <button 
+            type="button" 
+            @click="toggleTheme" 
+            class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs transition shrink-0 cursor-pointer" 
+            title="Ganti Tema Light / Dark"
+          >
+            <i class="fa-solid" :class="isDark ? 'fa-sun text-amber-400' : 'fa-moon text-slate-200'"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Login Form -->

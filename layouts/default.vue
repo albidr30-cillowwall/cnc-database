@@ -17,14 +17,16 @@
       <!-- Brand Header -->
       <div class="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/90">
         <NuxtLink :to="isFullAccess ? '/dashboard' : '/orders/create'" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-105 transition">
-            <i class="fa-solid fa-anchor text-base"></i>
-          </div>
-          <div>
-            <div class="text-sm font-extrabold tracking-wide text-white">CNC BASED ORDER</div>
-            <div class="text-[11px] flex items-center gap-1.5" :class="isConfigured ? 'text-emerald-400' : 'text-amber-400'">
+          <img 
+            src="/images/logo-orela.png" 
+            alt="Orela Shipyard" 
+            class="h-8 w-auto object-contain group-hover:scale-105 transition"
+          />
+          <div class="border-l border-slate-800 pl-3">
+            <div class="text-xs font-black tracking-wide text-white uppercase">CNC BASED ORDER</div>
+            <div class="text-[10px] flex items-center gap-1.5" :class="isConfigured ? 'text-emerald-400' : 'text-amber-400'">
               <span class="w-1.5 h-1.5 rounded-full" :class="isConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
-              <span>{{ isConfigured ? 'Supabase Terhubung' : 'Mode Offline (Lokal)' }}</span>
+              <span>{{ isConfigured ? 'Supabase Terhubung' : 'Mode Offline' }}</span>
             </div>
           </div>
         </NuxtLink>
