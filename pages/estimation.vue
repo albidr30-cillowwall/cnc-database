@@ -418,7 +418,7 @@
                 <i class="fa-solid fa-fire text-rose-500"></i>
                 <span>Heat Number / Nomor Leburan Plat *</span>
               </span>
-              <span class="text-[10px] text-rose-500 font-bold">Wajib untuk Traceability</span>
+              <span class="text-[10px] text-slate-400 font-normal">Wajib</span>
             </label>
             <input 
               v-model="form.heat_number" 
@@ -753,7 +753,7 @@ watch(selectedOrder, (order) => {
   form.project_name = cleanVal(est?.project_name) || cleanVal(order.nama_proyek_kapal) || cleanVal(order.nama_proyek) || ''
   form.nesting_no = cleanVal(est?.nesting_no)
   form.block_item = cleanVal(est?.block_item)
-  form.spec_material = cleanVal(est?.spec_material) || cleanVal(order.material) || ''
+  form.spec_material = cleanVal(est?.spec_material) || ''
   form.dimension_material = cleanVal(est?.dimension_material) || cleanVal(est?.ukuran_plat) || (order.ketebalan ? `${order.ketebalan} x 1500 x 6000 mm` : '12 x 1500 x 6000 mm')
   form.product_number = cleanVal(est?.product_number) || cleanVal(order.ukuran_part) || ''
   form.heat_number = cleanVal(est?.heat_number)
