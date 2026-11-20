@@ -98,17 +98,46 @@
         </div>
       </div>
 
-      <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xs font-extrabold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
-            Distribusi Plat Menurut Grade Material
-          </h2>
-          <span class="text-[11px] text-slate-400">Total {{ plates.length }} Plat</span>
+      <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
+              Distribusi Plat Menurut Grade Material
+            </h2>
+            <span class="text-[11px] font-mono font-semibold text-slate-400">Total {{ plates.length }} Plat</span>
+          </div>
+          <div class="h-56 relative flex items-center justify-center">
+            <canvas ref="gradeCanvas"></canvas>
+            <div v-if="plates.length === 0" class="absolute text-xs text-slate-400 italic">
+              Belum ada data plat untuk grafik
+            </div>
+          </div>
         </div>
-        <div class="h-60 relative flex items-center justify-center">
-          <canvas ref="gradeCanvas"></canvas>
-          <div v-if="plates.length === 0" class="absolute text-xs text-slate-400 italic">
-            Belum ada data plat untuk grafik
+
+        <!-- Keterangan Jumlah Plat & Ketebalan per Bagian -->
+        <div v-if="gradeBreakdown.length > 0" class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Rincian per Bagian (Grade, Tebal & Jumlah):
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div 
+              v-for="item in gradeBreakdown" 
+              :key="item.grade"
+              class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 text-xs"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-3 h-3 rounded-full shrink-0" :style="{ backgroundColor: item.color }"></span>
+                <span class="font-extrabold text-slate-800 dark:text-slate-200 truncate uppercase">{{ item.grade }}</span>
+              </div>
+              <div class="flex items-center gap-2 font-mono shrink-0">
+                <span class="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
+                  {{ item.tebal }}
+                </span>
+                <span class="font-bold text-slate-900 dark:text-white text-[11px]">
+                  {{ item.stok }} Plat
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -215,6 +244,38 @@ const availPlatesCount = computed(() => availPlates.value.reduce((acc, p) => acc
 const totalWeightTon = computed(() => availPlates.value.reduce((acc, p) => acc + (p.berat_kg * (p.stok !== undefined ? p.stok : 1)), 0) / 1000)
 const lowStock = computed(() => plates.value.length > 0 && availPlatesCount.value < 5)
 
+const chartColors = ['#2563EB', '#059669', '#D97706', '#0891B2', '#7C3AED', '#475569']
+
+const gradeBreakdown = computed(() => {
+  if (!plates.value || plates.value.length === 0) return []
+  const stats: Record<string, { grade: string, count: number, stok: number, thicknesses: Set<number> }> = {}
+  
+  plates.value.forEach(p => {
+    const g = p.grade?.trim() || 'Tanpa Grade'
+    if (!stats[g]) {
+      stats[g] = { grade: g, count: 0, stok: 0, thicknesses: new Set() }
+    }
+    const qty = (p.stok !== undefined && p.stok !== null) ? Number(p.stok) : 1
+    stats[g].count += 1
+    stats[g].stok += qty
+    if (p.tebal_mm !== undefined && p.tebal_mm !== null && !isNaN(Number(p.tebal_mm))) {
+      stats[g].thicknesses.add(Number(p.tebal_mm))
+    }
+  })
+
+  return Object.values(stats).map((s, idx) => {
+    const tebalArr = Array.from(s.thicknesses).sort((a, b) => a - b)
+    const tebalStr = tebalArr.length > 0 ? tebalArr.map(t => `${t}mm`).join(', ') : '-'
+    return {
+      grade: s.grade,
+      count: s.count,
+      stok: s.stok,
+      tebal: tebalStr,
+      color: chartColors[idx % chartColors.length]
+    }
+  })
+})
+
 const recentCuts = computed(() => {
   return orders.value
     .filter(o => ['Siap Diambil', 'Sudah Diambil'].includes(o.status))
@@ -283,26 +344,23 @@ function renderCharts() {
     }
   }
 
-  // Grade Doughnut Chart
+  // Grade Doughnut Chart (Menampilkan Grade, Ketebalan, dan Jumlah Plat)
   if (gradeCanvas.value) {
     if (gradeChartInstance) {
       gradeChartInstance.destroy()
       gradeChartInstance = null
     }
 
-    if (plates.value.length > 0) {
-      const gradeCounts: Record<string, number> = {}
-      plates.value.forEach(p => {
-        gradeCounts[p.grade] = (gradeCounts[p.grade] || 0) + 1
-      })
+    if (gradeBreakdown.value.length > 0) {
+      const items = gradeBreakdown.value
 
       gradeChartInstance = new Chart(gradeCanvas.value, {
         type: 'doughnut',
         data: {
-          labels: Object.keys(gradeCounts),
+          labels: items.map(it => `${it.grade} (${it.tebal}) - ${it.stok} Plat`),
           datasets: [{
-            data: Object.values(gradeCounts),
-            backgroundColor: ['#2563EB', '#059669', '#D97706', '#0891B2', '#7C3AED', '#475569'],
+            data: items.map(it => it.count),
+            backgroundColor: items.map(it => it.color),
             borderWidth: 2,
             borderColor: borderSurface
           }]
@@ -311,7 +369,29 @@ function renderCharts() {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'right', labels: { color: tickColor, font: { size: 11 } } }
+            legend: { 
+              position: 'right', 
+              labels: { 
+                color: tickColor, 
+                font: { size: 11, weight: 'bold' },
+                padding: 12
+              } 
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context: any) {
+                  const it = items[context.dataIndex]
+                  if (!it) return ''
+                  const total = plates.value.length || 1
+                  const pct = ((it.count / total) * 100).toFixed(0)
+                  return [
+                    ` Grade: ${it.grade}`,
+                    ` Ketebalan: ${it.tebal}`,
+                    ` Jumlah: ${it.stok} Plat (${pct}%)`
+                  ]
+                }
+              }
+            }
           }
         }
       })
