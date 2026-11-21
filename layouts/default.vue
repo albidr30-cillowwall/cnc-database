@@ -206,7 +206,7 @@
             >
               <span class="flex items-center gap-3">
                 <i class="fa-solid fa-list-check w-4 text-center" :class="$route.path === '/orders' ? 'text-white' : 'text-sky-400'"></i>
-                <span>Order Plat</span>
+                <span>Daftar Order</span>
               </span>
               <span v-if="activeOrdersCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-800 text-sky-300">
                 {{ activeOrdersCount }}
@@ -232,7 +232,7 @@
             <div class="font-bold text-emerald-400 flex items-center gap-1.5">
               <i class="fa-solid fa-shield-halved"></i> Hak Akses Role User
             </div>
-            <p class="leading-relaxed text-[11px]">Anda dapat membuat Order Pekerjaan, memantau status Order Plat, dan melihat PIN pengambilan barang.</p>
+            <p class="leading-relaxed text-[11px]">Anda dapat membuat Order Pekerjaan, memantau status Daftar Order, dan melihat PIN pengambilan barang.</p>
           </div>
         </template>
       </nav>
