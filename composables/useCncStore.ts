@@ -1587,7 +1587,8 @@ export function useCncStore() {
       'PRODUCT NUMBER',
       'MESIN CNC',
       'DIMENSI',
-      'WAKTU SELESAI'
+      'WAKTU SELESAI',
+      'STATUS'
     ]
 
     const escapeCsv = (val: any) => {
@@ -1634,7 +1635,8 @@ export function useCncStore() {
         prodNum,
         mesinCnc,
         dimensi,
-        waktuSelesai
+        waktuSelesai,
+        o.status
       ].map(escapeCsv).join(',')
     })
 

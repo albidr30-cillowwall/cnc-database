@@ -134,6 +134,7 @@
               <th class="p-2.5 text-center">MESIN CNC</th>
               <th class="p-2.5 text-left">DIMENSI</th>
               <th class="p-2.5 text-center">WAKTU SELESAI</th>
+              <th class="p-2.5 text-center">STATUS</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-[11px]">
@@ -178,9 +179,17 @@
               <td class="p-2.5 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                 {{ formatWaktuSelesai(o) }}
               </td>
+              <td class="p-2.5 text-center whitespace-nowrap">
+                <span 
+                  class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border print:border-0 print:p-0 print:text-black"
+                  :class="getStatusBadgeClass(o.status)"
+                >
+                  {{ o.status }}
+                </span>
+              </td>
             </tr>
             <tr v-if="filteredOrders.length === 0">
-              <td colspan="12" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
+              <td colspan="13" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
                 <i class="fa-solid fa-clock-rotate-left text-3xl mb-2 block text-slate-300 dark:text-slate-700"></i>
                 Tidak ada riwayat pemotongan yang cocok dengan filter pencarian.
               </td>
@@ -254,10 +263,11 @@ const filteredOrders = computed(() => {
       const matchHeat = (o.estimation?.heat_number || '').toLowerCase().includes(q)
       const matchProd = (o.estimation?.product_number || '').toLowerCase().includes(q)
       const matchSpec = (o.estimation?.spec_material || '').toLowerCase().includes(q)
+      const matchStatus = (o.status || '').toLowerCase().includes(q)
       if (
         !matchNo && !matchProyek && !matchKapal && !matchPemesan && 
         !matchDept && !matchPin && !matchPlat && !matchEstProject && 
-        !matchHeat && !matchProd && !matchSpec
+        !matchHeat && !matchProd && !matchSpec && !matchStatus
       ) {
         return false
       }
@@ -265,6 +275,21 @@ const filteredOrders = computed(() => {
     return true
   })
 })
+
+function getStatusBadgeClass(status: string) {
+  switch (status) {
+    case 'Sudah Diambil':
+      return 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+    case 'Siap Diambil':
+      return 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+    case 'Sedang Dipotong':
+      return 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+    case 'Diterima':
+      return 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+    default:
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+  }
+}
 
 function formatWaktuSelesai(o: any): string {
   const t = o.waktu_selesai || o.waktu_diambil
