@@ -1569,21 +1569,95 @@ export function useCncStore() {
     }
   }
 
-  // EXPORT CSV
-  function exportHistoryCsv(): boolean {
-    const completed = orders.value.filter(o => o.status === 'Sudah Diambil')
-    if (completed.length === 0) return false
+  // EXPORT CSV / EXCEL RAPI
+  function exportHistoryCsv(customList?: Order[]): boolean {
+    const list = customList && customList.length > 0 ? customList : orders.value
+    if (!list || list.length === 0) return false
 
-    let csv = '\uFEFFNo. Order,Pemesan,Departemen,Proyek,Kapal/Hull,Material,Tebal,Grade,Jumlah,Target CNC,Pengambil,PIN,Waktu Diambil\n'
-    completed.forEach(o => {
-      csv += `"${o.no_order}","${o.nama_pemesan}","${o.departemen_pemesan}","${o.nama_proyek}","${o.nama_proyek_kapal || '-'}","${o.material}","${o.ketebalan}","${o.estimation?.spec_material || o.estimation?.grade || '-'}","${o.jumlah_pesanan} ${o.satuan}","${o.target_cnc}","${o.pengambil_akhir || o.nama_pemesan}","${o.kode_pengambilan || '-'}","${o.waktu_diambil ? new Date(o.waktu_diambil).toLocaleString('id-ID') : '-'}"\n`
+    const headers = [
+      'No',
+      'No. Order',
+      'Status Order',
+      'Mesin Target',
+      'Nama Pemesan',
+      'Departemen Pemesan',
+      'No. HP Pemesan',
+      'Nama Proyek',
+      'Nama Kapal / Blok',
+      'Jenis Pekerjaan',
+      'Material Order',
+      'Ketebalan (mm)',
+      'Dimensi Part (P x L)',
+      'Jumlah Pesanan',
+      'Spec Material (Grade)',
+      'No. Heat Plat',
+      'Plat Terpakai (Yard)',
+      'Waktu Masuk Order',
+      'Waktu Mulai Potong',
+      'Waktu Selesai Potong',
+      'Durasi Pemotongan',
+      'PIN Pengambilan',
+      'Pengambil Akhir',
+      'Departemen Pengambil',
+      'Waktu Diambil',
+      'Catatan Pekerjaan'
+    ]
+
+    const escapeCsv = (val: any) => {
+      if (val === null || val === undefined) return '""'
+      const str = String(val).replace(/"/g, '""')
+      return `"${str}"`
+    }
+
+    const rows = list.map((o, idx) => {
+      // Calculate duration if available
+      let durasi = '-'
+      if (o.waktu_mulai && o.waktu_selesai) {
+        const diffMs = Math.max(0, new Date(o.waktu_selesai).getTime() - new Date(o.waktu_mulai).getTime())
+        const totalSec = Math.floor(diffMs / 1000)
+        const h = Math.floor(totalSec / 3600)
+        const m = Math.floor((totalSec % 3600) / 60)
+        const s = totalSec % 60
+        durasi = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+      }
+
+      return [
+        idx + 1,
+        o.no_order,
+        o.status,
+        o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc,
+        o.nama_pemesan,
+        o.departemen_pemesan,
+        o.no_hp_pemesan || '-',
+        o.nama_proyek,
+        o.nama_proyek_kapal || '-',
+        o.jenis_pekerjaan || '-',
+        o.material,
+        o.ketebalan,
+        o.ukuran_part || '-',
+        `${o.jumlah_pesanan} ${o.satuan || 'pcs'}`,
+        o.estimation?.spec_material || o.estimation?.grade || '-',
+        o.estimation?.heat_number || '-',
+        o.plat_dipakai || '-',
+        o.created_at ? new Date(o.created_at).toLocaleString('id-ID') : '-',
+        o.waktu_mulai ? new Date(o.waktu_mulai).toLocaleString('id-ID') : '-',
+        o.waktu_selesai ? new Date(o.waktu_selesai).toLocaleString('id-ID') : '-',
+        durasi,
+        o.kode_pengambilan || '-',
+        o.pengambil_akhir || o.nama_pemesan,
+        o.departemen_pengambil || o.departemen_pemesan,
+        o.waktu_diambil ? new Date(o.waktu_diambil).toLocaleString('id-ID') : '-',
+        o.catatan_pekerjaan || '-'
+      ].map(escapeCsv).join(',')
     })
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const csvContent = '\uFEFF' + headers.map(h => `"${h}"`).join(',') + '\n' + rows.join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'History_Pemotongan_Plat_CNC.csv'
+    const dateStr = new Date().toISOString().split('T')[0]
+    a.download = `Rekap_History_Pemotongan_CNC_${dateStr}.csv`
     a.click()
     URL.revokeObjectURL(url)
     return true
