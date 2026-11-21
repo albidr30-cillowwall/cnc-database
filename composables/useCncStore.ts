@@ -1569,38 +1569,25 @@ export function useCncStore() {
     }
   }
 
-  // EXPORT CSV / EXCEL RAPI
+  // EXPORT CSV / EXCEL SESUAI TEMPLATE
   function exportHistoryCsv(customList?: Order[]): boolean {
     const list = customList && customList.length > 0 ? customList : orders.value
     if (!list || list.length === 0) return false
 
+    // 12 Kolom persis template spreadsheet galangan
     const headers = [
-      'No',
-      'No. Order',
-      'Status Order',
-      'Mesin Target',
-      'Nama Pemesan',
-      'Departemen Pemesan',
-      'No. HP Pemesan',
-      'Nama Proyek',
-      'Nama Kapal / Blok',
-      'Jenis Pekerjaan',
-      'Material Order',
-      'Ketebalan (mm)',
-      'Dimensi Part (P x L)',
-      'Jumlah Pesanan',
-      'Spec Material (Grade)',
-      'No. Heat Plat',
-      'Plat Terpakai (Yard)',
-      'Waktu Masuk Order',
-      'Waktu Mulai Potong',
-      'Waktu Selesai Potong',
-      'Durasi Pemotongan',
-      'PIN Pengambilan',
-      'Pengambil Akhir',
-      'Departemen Pengambil',
-      'Waktu Diambil',
-      'Catatan Pekerjaan'
+      'NO',
+      'NO. ORDER',
+      'PEMESAN',
+      'DEPARTEMEN',
+      'PROJECT NAME',
+      'NO. KAPAL',
+      'SPEC. OF MATERIAL',
+      'HEAT NUMBER',
+      'PRODUCT NUMBER',
+      'MESIN CNC',
+      'DIMENSI',
+      'WAKTU SELESAI'
     ]
 
     const escapeCsv = (val: any) => {
@@ -1609,45 +1596,45 @@ export function useCncStore() {
       return `"${str}"`
     }
 
-    const rows = list.map((o, idx) => {
-      // Calculate duration if available
-      let durasi = '-'
-      if (o.waktu_mulai && o.waktu_selesai) {
-        const diffMs = Math.max(0, new Date(o.waktu_selesai).getTime() - new Date(o.waktu_mulai).getTime())
-        const totalSec = Math.floor(diffMs / 1000)
-        const h = Math.floor(totalSec / 3600)
-        const m = Math.floor((totalSec % 3600) / 60)
-        const s = totalSec % 60
-        durasi = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    const formatWaktu = (t?: string | null) => {
+      if (!t) return '-'
+      try {
+        const d = new Date(t)
+        if (isNaN(d.getTime())) return '-'
+        const day = String(d.getDate()).padStart(2, '0')
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const year = d.getFullYear()
+        const hours = String(d.getHours()).padStart(2, '0')
+        const mins = String(d.getMinutes()).padStart(2, '0')
+        return `${day}/${month}/${year} ${hours}:${mins}`
+      } catch {
+        return '-'
       }
+    }
+
+    const rows = list.map((o, idx) => {
+      const projName = o.estimation?.project_name || o.nama_proyek || '-'
+      const noKapal = o.nama_proyek_kapal || o.estimation?.block_item || '-'
+      const specMat = o.estimation?.spec_material || o.estimation?.grade || o.material || '-'
+      const heatNum = o.estimation?.heat_number || '-'
+      const prodNum = o.estimation?.product_number || o.ukuran_part || '-'
+      const mesinCnc = o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc || '-'
+      const dimensi = o.estimation?.dimension_material || o.ukuran_part || (o.ketebalan ? `${o.ketebalan} mm` : '-')
+      const waktuSelesai = formatWaktu(o.waktu_selesai || o.waktu_diambil)
 
       return [
         idx + 1,
         o.no_order,
-        o.status,
-        o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc,
         o.nama_pemesan,
         o.departemen_pemesan,
-        o.no_hp_pemesan || '-',
-        o.nama_proyek,
-        o.nama_proyek_kapal || '-',
-        o.jenis_pekerjaan || '-',
-        o.material,
-        o.ketebalan,
-        o.ukuran_part || '-',
-        `${o.jumlah_pesanan} ${o.satuan || 'pcs'}`,
-        o.estimation?.spec_material || o.estimation?.grade || '-',
-        o.estimation?.heat_number || '-',
-        o.plat_dipakai || '-',
-        o.created_at ? new Date(o.created_at).toLocaleString('id-ID') : '-',
-        o.waktu_mulai ? new Date(o.waktu_mulai).toLocaleString('id-ID') : '-',
-        o.waktu_selesai ? new Date(o.waktu_selesai).toLocaleString('id-ID') : '-',
-        durasi,
-        o.kode_pengambilan || '-',
-        o.pengambil_akhir || o.nama_pemesan,
-        o.departemen_pengambil || o.departemen_pemesan,
-        o.waktu_diambil ? new Date(o.waktu_diambil).toLocaleString('id-ID') : '-',
-        o.catatan_pekerjaan || '-'
+        projName,
+        noKapal,
+        specMat,
+        heatNum,
+        prodNum,
+        mesinCnc,
+        dimensi,
+        waktuSelesai
       ].map(escapeCsv).join(',')
     })
 

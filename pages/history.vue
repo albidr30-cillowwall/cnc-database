@@ -120,74 +120,67 @@
 
       <div class="overflow-x-auto print:overflow-visible">
         <table class="w-full text-xs print-table">
-          <thead class="bg-slate-50 dark:bg-slate-950/70 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-extrabold text-left">
+          <thead class="bg-slate-50 dark:bg-slate-950/70 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-black">
             <tr>
-              <th class="p-3 text-center w-8">#</th>
-              <th class="p-3">No. Order</th>
-              <th class="p-3">Pemesan</th>
-              <th class="p-3">Proyek & Kapal</th>
-              <th class="p-3">Material & Tebal</th>
-              <th class="p-3">Grade & Heat</th>
-              <th class="p-3">Mesin CNC</th>
-              <th class="p-3">Pengambil</th>
-              <th class="p-3">PIN</th>
-              <th class="p-3">Status & Waktu</th>
+              <th class="p-2.5 text-center w-8">NO</th>
+              <th class="p-2.5 text-center">NO. ORDER</th>
+              <th class="p-2.5 text-left">PEMESAN</th>
+              <th class="p-2.5 text-center">DEPARTEMEN</th>
+              <th class="p-2.5 text-left">PROJECT NAME</th>
+              <th class="p-2.5 text-center">NO. KAPAL</th>
+              <th class="p-2.5 text-left">SPEC. OF MATERIAL</th>
+              <th class="p-2.5 text-center">HEAT NUMBER</th>
+              <th class="p-2.5 text-center">PRODUCT NUMBER</th>
+              <th class="p-2.5 text-center">MESIN CNC</th>
+              <th class="p-2.5 text-left">DIMENSI</th>
+              <th class="p-2.5 text-center">WAKTU SELESAI</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-[11px]">
             <tr 
               v-for="(o, idx) in filteredOrders" 
               :key="o.id"
               class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
             >
-              <td class="p-3 text-center font-mono text-[11px] text-slate-400 font-bold">
+              <td class="p-2.5 text-center font-mono font-bold text-slate-500 dark:text-slate-400">
                 {{ idx + 1 }}
               </td>
-              <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+              <td class="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap text-center">
                 {{ o.no_order }}
               </td>
-              <td class="p-3">
-                <div class="font-bold text-slate-900 dark:text-slate-100">{{ o.nama_pemesan }}</div>
-                <div class="text-[10px] text-slate-500 dark:text-slate-400">{{ o.departemen_pemesan }}</div>
+              <td class="p-2.5 font-bold text-slate-900 dark:text-slate-100">
+                {{ o.nama_pemesan }}
               </td>
-              <td class="p-3">
-                <div class="font-bold text-slate-900 dark:text-slate-100">{{ o.nama_proyek }}</div>
-                <div class="text-[10px] text-slate-500 dark:text-slate-400">{{ o.nama_proyek_kapal || '-' }}</div>
+              <td class="p-2.5 text-center font-semibold text-slate-600 dark:text-slate-300">
+                {{ o.departemen_pemesan }}
               </td>
-              <td class="p-3">
-                <div class="font-bold text-slate-800 dark:text-slate-200">{{ o.material }} ({{ o.ketebalan }})</div>
-                <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{{ o.jumlah_pesanan }} {{ o.satuan }}</div>
+              <td class="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                {{ o.estimation?.project_name || o.nama_proyek || '-' }}
               </td>
-              <td class="p-3">
-                <div class="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{{ o.estimation?.spec_material || o.estimation?.grade || '-' }}</div>
-                <div class="text-[10px] font-mono text-slate-500 dark:text-slate-400">{{ o.plat_dipakai || '-' }}</div>
+              <td class="p-2.5 text-center font-mono text-slate-600 dark:text-slate-300">
+                {{ o.nama_proyek_kapal || o.estimation?.block_item || '-' }}
               </td>
-              <td class="p-3">
-                <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{{ o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc }}</span>
+              <td class="p-2.5 font-bold text-cyan-700 dark:text-cyan-400">
+                {{ o.estimation?.spec_material || o.estimation?.grade || o.material || '-' }}
               </td>
-              <td class="p-3">
-                <div class="font-bold text-emerald-600 dark:text-emerald-400">{{ o.pengambil_akhir || o.nama_pemesan }}</div>
-                <div class="text-[10px] text-slate-500 dark:text-slate-400">{{ o.departemen_pengambil || o.departemen_pemesan }}</div>
+              <td class="p-2.5 text-center font-mono text-slate-700 dark:text-slate-300">
+                {{ o.estimation?.heat_number || '-' }}
               </td>
-              <td class="p-3 font-mono font-black text-orange-600 dark:text-orange-400">
-                {{ o.kode_pengambilan || '-' }}
+              <td class="p-2.5 text-center font-mono text-slate-700 dark:text-slate-300">
+                {{ o.estimation?.product_number || o.ukuran_part || '-' }}
               </td>
-              <td class="p-3">
-                <span 
-                  class="inline-block px-2 py-0.5 rounded text-[10px] font-bold border mb-1"
-                  :class="o.status === 'Sudah Diambil' 
-                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' 
-                    : 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'"
-                >
-                  {{ o.status }}
-                </span>
-                <div class="font-mono text-slate-500 dark:text-slate-400 text-[10px]">
-                  {{ o.waktu_diambil ? new Date(o.waktu_diambil).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-' }}
-                </div>
+              <td class="p-2.5 text-center font-bold text-slate-800 dark:text-slate-200">
+                {{ o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc || '-' }}
+              </td>
+              <td class="p-2.5 font-mono text-slate-700 dark:text-slate-300 text-[10.5px]">
+                {{ o.estimation?.dimension_material || o.ukuran_part || (o.ketebalan ? o.ketebalan + ' mm' : '-') }}
+              </td>
+              <td class="p-2.5 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                {{ formatWaktuSelesai(o) }}
               </td>
             </tr>
             <tr v-if="filteredOrders.length === 0">
-              <td colspan="10" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
+              <td colspan="12" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
                 <i class="fa-solid fa-clock-rotate-left text-3xl mb-2 block text-slate-300 dark:text-slate-700"></i>
                 Tidak ada riwayat pemotongan yang cocok dengan filter pencarian.
               </td>
@@ -254,15 +247,41 @@ const filteredOrders = computed(() => {
       const matchProyek = o.nama_proyek.toLowerCase().includes(q)
       const matchKapal = (o.nama_proyek_kapal || '').toLowerCase().includes(q)
       const matchPemesan = o.nama_pemesan.toLowerCase().includes(q)
+      const matchDept = (o.departemen_pemesan || '').toLowerCase().includes(q)
       const matchPin = (o.kode_pengambilan || '').toLowerCase().includes(q)
       const matchPlat = (o.plat_dipakai || '').toLowerCase().includes(q)
-      if (!matchNo && !matchProyek && !matchKapal && !matchPemesan && !matchPin && !matchPlat) {
+      const matchEstProject = (o.estimation?.project_name || '').toLowerCase().includes(q)
+      const matchHeat = (o.estimation?.heat_number || '').toLowerCase().includes(q)
+      const matchProd = (o.estimation?.product_number || '').toLowerCase().includes(q)
+      const matchSpec = (o.estimation?.spec_material || '').toLowerCase().includes(q)
+      if (
+        !matchNo && !matchProyek && !matchKapal && !matchPemesan && 
+        !matchDept && !matchPin && !matchPlat && !matchEstProject && 
+        !matchHeat && !matchProd && !matchSpec
+      ) {
         return false
       }
     }
     return true
   })
 })
+
+function formatWaktuSelesai(o: any): string {
+  const t = o.waktu_selesai || o.waktu_diambil
+  if (!t) return '-'
+  try {
+    const d = new Date(t)
+    if (isNaN(d.getTime())) return '-'
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    const hours = String(d.getHours()).padStart(2, '0')
+    const mins = String(d.getMinutes()).padStart(2, '0')
+    return `${day}/${month}/${year} ${hours}:${mins}`
+  } catch {
+    return '-'
+  }
+}
 
 const printDateTime = computed(() => new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }))
 const printDateOnly = computed(() => new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }))
