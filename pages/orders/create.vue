@@ -170,12 +170,15 @@
             >
           </div>
           <div>
-            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">Ukuran Part (P x L mm) (Opsional)</label>
+            <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
+              <span>Ukuran Part (Panjang x Lebar mm)</span>
+              <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
+            </label>
             <input 
               v-model="form.ukuran_part" 
               type="text" 
-              placeholder="Contoh: 1800 x 400 mm..." 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-blue-600"
+              placeholder="Contoh: 9000 x 2000 mm atau 1800 x 400 mm..." 
+              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 font-mono focus:border-blue-600 outline-none"
             >
           </div>
           <div class="sm:col-span-2">

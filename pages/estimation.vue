@@ -386,7 +386,7 @@
               type="text" 
               required
               :disabled="isLocked"
-              placeholder="contoh: 12 x 1500 x 6000 mm, 8 x 2000 x 9000 mm..." 
+              placeholder="contoh: 6000 x 1500 x 12 mm, 9000 x 2000 x 4 mm..." 
               :class="isLocked ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
               class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
             />
@@ -571,10 +571,10 @@
                 <span class="font-bold text-cyan-600 dark:text-cyan-400">{{ item.spec_material || item.grade || '-' }}</span>
               </td>
               <td class="p-3.5 font-mono text-slate-700 dark:text-slate-300">
-                {{ item.dimension_material || item.ukuran_plat || item.order?.ketebalan || '-' }}
+                {{ item.dimension_material || item.ukuran_plat || (item.order ? computeOrderDimension(item.order, item) : '-') }}
               </td>
               <td class="p-3.5 font-mono font-bold text-amber-600 dark:text-amber-400">
-                {{ item.product_number || item.order?.ukuran_part || '-' }}
+                {{ (item.product_number && item.product_number !== item.order?.ukuran_part) ? item.product_number : (item.product_number || '-') }}
               </td>
               <td class="p-3.5 font-mono font-bold text-rose-600 dark:text-rose-400">
                 {{ item.heat_number || '-' }}
@@ -740,6 +740,48 @@ function resetToNewManual() {
   setMode('manual')
 }
 
+// Helper untuk menghitung dimensi material dengan struktur: Panjang x Lebar x Tebal mm
+function computeOrderDimension(order: any, est?: any): string {
+  const cleanVal = (v: any) => (v && typeof v === 'string' && v.trim() !== '-' ? v.trim() : (typeof v === 'string' ? '' : v || ''))
+  const savedDim = cleanVal(est?.dimension_material) || cleanVal(est?.ukuran_plat)
+  const isOldHardcoded = savedDim && /\d+\s*x\s*1500\s*x\s*6000\s*mm/i.test(savedDim)
+
+  // Parse panjang dan lebar dari order.ukuran_part
+  const ukuranPart = (order.ukuran_part || '').trim()
+  const rawTebal = (order.ketebalan || '').trim().replace(/\s*mm$/i, '').trim()
+  const matches = ukuranPart.match(/\d+(?:[.,]\d+)?/g)
+
+  // Jika order memiliki panjang dan lebar pada ukuran_part, gunakan struktur: Panjang x Lebar x Tebal mm
+  if (matches && matches.length >= 2) {
+    const panjang = matches[0]
+    const lebar = matches[1]
+    const tebal = matches[2] || rawTebal || '12'
+    if (!savedDim || isOldHardcoded) {
+      return `${panjang} x ${lebar} x ${tebal} mm`
+    }
+  }
+
+  // Jika sudah tersimpan nilai kustom yang bukan bug format lama
+  if (savedDim && !isOldHardcoded) {
+    return savedDim
+  }
+
+  // Jika order terhubung dengan plat yard
+  if (order.plate_id) {
+    const p = store.plates.value.find(plt => plt.id === order.plate_id)
+    if (p) {
+      return `${p.panjang_mm} x ${p.lebar_mm} x ${p.tebal_mm} mm`
+    }
+  }
+
+  // Fallback: Panjang x Lebar x Tebal
+  if (rawTebal) {
+    return `6000 x 1500 x ${rawTebal} mm`
+  }
+
+  return '6000 x 1500 x 12 mm'
+}
+
 // Populate form when selectedOrder changes in order mode
 watch(selectedOrder, (order) => {
   if (activeMode.value !== 'order') return
@@ -760,8 +802,9 @@ watch(selectedOrder, (order) => {
   form.nesting_no = cleanVal(est?.nesting_no)
   form.block_item = cleanVal(est?.block_item)
   form.spec_material = cleanVal(est?.spec_material) || ''
-  form.dimension_material = cleanVal(est?.dimension_material) || cleanVal(est?.ukuran_plat) || (order.ketebalan ? `${order.ketebalan} x 1500 x 6000 mm` : '12 x 1500 x 6000 mm')
-  form.product_number = cleanVal(est?.product_number) || cleanVal(order.ukuran_part) || ''
+  form.dimension_material = computeOrderDimension(order, est)
+  const rawProductNum = cleanVal(est?.product_number)
+  form.product_number = (rawProductNum && rawProductNum !== cleanVal(order.ukuran_part)) ? rawProductNum : ''
   form.heat_number = cleanVal(est?.heat_number)
   cuttingImagePreview.value = est?.cutting_image_url || ''
 })
