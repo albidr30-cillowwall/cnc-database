@@ -361,15 +361,35 @@
               </span>
               <span class="text-[10px] text-slate-400 font-normal">Wajib</span>
             </label>
-            <input 
-              v-model="form.spec_material" 
-              type="text" 
-              required
-              :disabled="isLocked"
-              placeholder="contoh: AH36, DH36, Grade A, SS400, Al 5083..." 
-              :class="isLocked ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
-              class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
-            />
+            
+            <div class="space-y-2">
+              <select 
+                v-model="specDropdownChoice"
+                @change="handleSpecDropdownChange"
+                required
+                :disabled="isLocked"
+                :class="isLocked ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
+              >
+                <option value="">-- Pilih Spec of Material --</option>
+                <option value="Baja RI">Baja RI</option>
+                <option value="Baja KI">Baja KI</option>
+                <option value="Aluminium 5083">Aluminium 5083</option>
+                <option value="Lainnya">Lainnya (Bisa Isi Sendiri)</option>
+              </select>
+
+              <!-- Input manual jika opsi Lainnya dipilih -->
+              <input 
+                v-if="specDropdownChoice === 'Lainnya'"
+                v-model="form.spec_material" 
+                type="text" 
+                required
+                :disabled="isLocked"
+                placeholder="Ketik spesifikasi material sendiri (contoh: AH36, DH36, SS400, dll)..." 
+                :class="isLocked ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
+              />
+            </div>
           </div>
 
           <!-- 5. Dimension of Material -->
@@ -677,6 +697,38 @@ const form = reactive({
 
 const cuttingImagePreview = ref<string>('')
 const cuttingImageInput = ref<HTMLInputElement | null>(null)
+const specDropdownChoice = ref('')
+
+function handleSpecDropdownChange() {
+  if (specDropdownChoice.value === 'Lainnya') {
+    if (['Baja RI', 'Baja KI', 'Aluminium 5083'].includes(form.spec_material)) {
+      form.spec_material = ''
+    }
+  } else {
+    form.spec_material = specDropdownChoice.value
+  }
+}
+
+function syncSpecDropdownChoice(val: string) {
+  const v = (val || '').trim()
+  if (!v) {
+    specDropdownChoice.value = ''
+  } else if (v === 'Baja RI') {
+    specDropdownChoice.value = 'Baja RI'
+  } else if (v === 'Baja KI') {
+    specDropdownChoice.value = 'Baja KI'
+  } else if (
+    v.toLowerCase() === 'aluminium 5083' || 
+    v.toLowerCase() === 'alumunium 5083' || 
+    v.toLowerCase() === 'al 5083' || 
+    v.toLowerCase() === 'al5083'
+  ) {
+    specDropdownChoice.value = 'Aluminium 5083'
+    form.spec_material = 'Aluminium 5083'
+  } else {
+    specDropdownChoice.value = 'Lainnya'
+  }
+}
 
 // Orders waiting for estimation
 const eligibleOrders = computed(() => {
@@ -727,6 +779,7 @@ function resetFormFields() {
   form.nesting_no = ''
   form.block_item = ''
   form.spec_material = ''
+  specDropdownChoice.value = ''
   form.dimension_material = ''
   form.product_number = ''
   form.heat_number = ''
@@ -802,6 +855,7 @@ watch(selectedOrder, (order) => {
   form.nesting_no = cleanVal(est?.nesting_no)
   form.block_item = cleanVal(est?.block_item) || cleanVal(order.nama_proyek_kapal) || ''
   form.spec_material = cleanVal(est?.spec_material) || ''
+  syncSpecDropdownChoice(form.spec_material)
   form.dimension_material = computeOrderDimension(order, est)
   const rawProductNum = cleanVal(est?.product_number)
   form.product_number = (rawProductNum && rawProductNum !== cleanVal(order.ukuran_part)) ? rawProductNum : ''
@@ -853,6 +907,11 @@ function removeCuttingImage() {
 // Handle Submit Material Identification (Order ataupun Manual)
 async function handleSubmitEstimation() {
   if (isLocked.value) return
+
+  if (!form.spec_material.trim()) {
+    feedbackMsg.value = { type: 'error', text: 'Spec of Material wajib dipilih atau diisi!' }
+    return
+  }
 
   const isFromOrder = activeMode.value === 'order' && Boolean(selectedOrderId.value)
   const orderIdToSave = isFromOrder ? selectedOrderId.value : null
@@ -915,6 +974,7 @@ function handleViewEstimation(item: any) {
   form.nesting_no = cleanVal(item.nesting_no)
   form.block_item = cleanVal(item.block_item) || cleanVal(item.order?.nama_proyek_kapal) || ''
   form.spec_material = cleanVal(item.spec_material) || cleanVal(item.grade) || ''
+  syncSpecDropdownChoice(form.spec_material)
   form.dimension_material = cleanVal(item.dimension_material) || cleanVal(item.ukuran_plat) || ''
   form.product_number = cleanVal(item.product_number) || cleanVal(item.order?.ukuran_part) || ''
   form.heat_number = cleanVal(item.heat_number)
