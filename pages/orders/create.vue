@@ -505,8 +505,9 @@ async function handleSubmit() {
     })
 
     router.push('/orders?created=1')
-  } catch (err) {
-    alert('Terjadi kesalahan saat menyimpan order.')
+  } catch (err: any) {
+    console.error('Submit order error:', err)
+    alert('Terjadi kesalahan saat menyimpan order: ' + (err?.message || err || 'Silakan coba beberapa saat lagi.'))
   } finally {
     isSubmitting.value = false
   }

@@ -758,39 +758,62 @@ export function useCncStore() {
 
     let finalId: number
     let finalNoOrder: string = generatedNoOrder
+    let insertedData: any = null
 
     if (isConfigured && supabase) {
-      // Insert to Supabase FIRST, get auto-generated id back
-      let { data: inserted, error } = await supabase
-        .from('orders')
-        .insert([orderPayload])
-        .select('*')
-        .single()
-
-      // Auto-retry jika terjadi collision/race condition dengan nomor order yang sama
-      if (error && (error.code === '23505' || error.message?.toLowerCase().includes('unique') || error.message?.toLowerCase().includes('orders_no_order_key'))) {
-        console.warn('Terdeteksi duplikasi no_order (race condition), melakukan retry otomatis dengan suffix unik...')
-        const uniqueSuffix = Date.now().toString().slice(-4) + Math.random().toString(36).substring(2, 5).toUpperCase()
-        generatedNoOrder = `ORD-CNC-${String(orderSeq).padStart(3, '0')}-${uniqueSuffix}`
-        orderPayload.no_order = generatedNoOrder
-
-        const retryResult = await supabase
+      try {
+        // Insert to Supabase FIRST, get auto-generated id back
+        let { data: inserted, error } = await supabase
           .from('orders')
           .insert([orderPayload])
           .select('*')
           .single()
 
-        inserted = retryResult.data
-        error = retryResult.error
-      }
+        // Auto-retry jika terjadi collision/race condition dengan nomor order yang sama
+        if (error && (error.code === '23505' || error.message?.toLowerCase().includes('unique') || error.message?.toLowerCase().includes('orders_no_order_key'))) {
+          console.warn('Terdeteksi duplikasi no_order (race condition), melakukan retry otomatis dengan suffix unik...')
+          const uniqueSuffix = Date.now().toString().slice(-4) + Math.random().toString(36).substring(2, 5).toUpperCase()
+          generatedNoOrder = `ORD-CNC-${String(orderSeq).padStart(3, '0')}-${uniqueSuffix}`
+          orderPayload.no_order = generatedNoOrder
 
-      if (error) {
-        console.error('Supabase createOrder error:', error.message, error.details, error.code)
-        // Fallback: generate local ID
+          const retryResult = await supabase
+            .from('orders')
+            .insert([orderPayload])
+            .select('*')
+            .single()
+
+          inserted = retryResult.data
+          error = retryResult.error
+        }
+
+        // Jika error karena payload gambar terlalu besar (HTTP 413 / Request entity too large), coba insert tanpa drawing_data_url ke Supabase (drawing tetap disimpan di lokal)
+        if (error && (error.message?.includes('413') || error.message?.toLowerCase().includes('payload') || error.code === '413')) {
+          console.warn('Ukuran lampiran terlalu besar untuk cloud, menyimpan order tanpa lampiran di cloud...')
+          const lightPayload = { ...orderPayload, drawing_data_url: null }
+          const retryLight = await supabase
+            .from('orders')
+            .insert([lightPayload])
+            .select('*')
+            .single()
+
+          inserted = retryLight.data
+          error = retryLight.error
+        }
+
+        if (error) {
+          console.error('Supabase createOrder error:', error.message, error.details, error.code)
+          // Fallback: generate local ID
+          finalId = orders.value.length > 0 ? Math.max(...orders.value.map(o => o.id)) + 1 : 1
+        } else if (inserted) {
+          insertedData = inserted
+          finalId = inserted.id
+          finalNoOrder = inserted.no_order || generatedNoOrder
+        } else {
+          finalId = orders.value.length > 0 ? Math.max(...orders.value.map(o => o.id)) + 1 : 1
+        }
+      } catch (supaEx: any) {
+        console.warn('Supabase exception saat createOrder, fallback ke penyimpanan lokal:', supaEx?.message || supaEx)
         finalId = orders.value.length > 0 ? Math.max(...orders.value.map(o => o.id)) + 1 : 1
-      } else {
-        finalId = inserted.id
-        finalNoOrder = inserted.no_order || generatedNoOrder
       }
     } else {
       // No Supabase: generate local ID
@@ -802,11 +825,15 @@ export function useCncStore() {
       ...orderPayload,
       no_order: finalNoOrder,
       status: 'Diterima',
-      created_at: inserted?.created_at || new Date().toISOString()
+      created_at: insertedData?.created_at || new Date().toISOString()
     }
 
     orders.value.unshift(newOrder)
-    saveToLocalStorage()
+    try {
+      saveToLocalStorage()
+    } catch (saveErr) {
+      console.warn('Gagal menyimpan ke localStorage:', saveErr)
+    }
 
     return newOrder
   }
