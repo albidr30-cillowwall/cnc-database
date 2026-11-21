@@ -71,9 +71,10 @@
         class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
       >
         <option value="all">Semua Riwayat ({{ store.orders.value.length }})</option>
-        <option value="Sudah Diambil">Khusus Sudah Selesai & Diambil</option>
-        <option value="Siap Diambil">Siap Diambil (Menunggu PIN)</option>
+        <option value="Diterima">Diterima</option>
         <option value="Sedang Dipotong">Sedang Dipotong</option>
+        <option value="Siap Diambil">Siap Diambil (Menunggu PIN)</option>
+        <option value="Sudah Diambil">Khusus Sudah Selesai & Diambil</option>
       </select>
     </div>
 
@@ -242,7 +243,13 @@ const toast = ref<string | null>(null)
 const filteredOrders = computed(() => {
   return store.orders.value.filter(o => {
     // Status filter
-    if (filterStatus.value !== 'all' && o.status !== filterStatus.value) return false
+    if (filterStatus.value !== 'all') {
+      if (filterStatus.value === 'Diterima') {
+        if (o.status !== 'Diterima' && !o.status.startsWith('Diterima')) return false
+      } else if (o.status !== filterStatus.value) {
+        return false
+      }
+    }
     // Mesin filter
     if (filterGroup.value) {
       const cleanFilter = filterGroup.value.replace(/^Gr(oup|up)\s*/i, '').trim().toLowerCase()
