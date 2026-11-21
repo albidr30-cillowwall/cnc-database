@@ -220,7 +220,7 @@
             >
               <span class="flex items-center gap-3">
                 <i class="fa-solid fa-key w-4 text-center" :class="$route.path === '/pickup-verify' ? 'text-white' : 'text-emerald-400'"></i>
-                <span>Pengambilan Plat</span>
+                <span>Pengambilan Barang (PIN)</span>
               </span>
               <span v-if="readyPickupCount > 0" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
                 {{ readyPickupCount }}
