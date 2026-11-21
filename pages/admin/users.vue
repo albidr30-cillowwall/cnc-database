@@ -229,14 +229,11 @@
 
         <!-- Reset Database ke Nol Card -->
         <div class="bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div class="text-xs space-y-1.5">
+          <div class="text-xs">
             <div class="font-extrabold text-rose-800 dark:text-rose-300 uppercase tracking-wide flex items-center gap-2">
               <i class="fa-solid fa-rotate-left text-rose-600 text-sm"></i>
               <span>Reset Semua Data Operasional ke Nol Bersih</span>
             </div>
-            <p class="text-rose-700 dark:text-rose-400 leading-relaxed text-[11px]">
-              Menghapus seluruh data <b>Order ({{ store.orders.value.length }})</b>, <b>Stok Plat Yard ({{ store.plates.value.length }})</b>, serta <b>Bon Pengambilan Yard ({{ store.yardPickups.value.length }})</b>. Akun pengguna <b>tetap aman</b> dipertahankan.
-            </p>
           </div>
 
           <button 
