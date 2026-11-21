@@ -1613,7 +1613,7 @@ export function useCncStore() {
     }
 
     const rows = list.map((o, idx) => {
-      const projName = o.estimation?.project_name || o.nama_proyek || '-'
+      const projName = o.nama_proyek || o.estimation?.project_name || '-'
       const noKapal = o.nama_proyek_kapal || o.estimation?.block_item || '-'
       const specMat = o.estimation?.spec_material || o.estimation?.grade || o.material || '-'
       const heatNum = o.estimation?.heat_number || '-'

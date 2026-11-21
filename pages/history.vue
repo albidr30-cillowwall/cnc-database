@@ -155,7 +155,7 @@
                 {{ o.departemen_pemesan }}
               </td>
               <td class="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
-                {{ o.estimation?.project_name || o.nama_proyek || '-' }}
+                {{ o.nama_proyek || o.estimation?.project_name || '-' }}
               </td>
               <td class="p-2.5 text-center font-mono text-slate-600 dark:text-slate-300">
                 {{ o.nama_proyek_kapal || o.estimation?.block_item || '-' }}

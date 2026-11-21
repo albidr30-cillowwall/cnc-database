@@ -798,9 +798,9 @@ watch(selectedOrder, (order) => {
 
   const cleanVal = (v: any) => (v && typeof v === 'string' && v.trim() !== '-' ? v.trim() : (typeof v === 'string' ? '' : v || ''))
 
-  form.project_name = cleanVal(est?.project_name) || cleanVal(order.nama_proyek_kapal) || cleanVal(order.nama_proyek) || ''
+  form.project_name = cleanVal(order.nama_proyek) || cleanVal(est?.project_name) || ''
   form.nesting_no = cleanVal(est?.nesting_no)
-  form.block_item = cleanVal(est?.block_item)
+  form.block_item = cleanVal(est?.block_item) || cleanVal(order.nama_proyek_kapal) || ''
   form.spec_material = cleanVal(est?.spec_material) || ''
   form.dimension_material = computeOrderDimension(order, est)
   const rawProductNum = cleanVal(est?.product_number)
@@ -911,9 +911,9 @@ function handleViewEstimation(item: any) {
 
   const cleanVal = (v: any) => (v && typeof v === 'string' && v.trim() !== '-' ? v.trim() : (typeof v === 'string' ? '' : v || ''))
 
-  form.project_name = cleanVal(item.project_name) || cleanVal(item.order?.nama_proyek) || 'Workshop CNC'
+  form.project_name = cleanVal(item.order?.nama_proyek) || cleanVal(item.project_name) || 'Workshop CNC'
   form.nesting_no = cleanVal(item.nesting_no)
-  form.block_item = cleanVal(item.block_item)
+  form.block_item = cleanVal(item.block_item) || cleanVal(item.order?.nama_proyek_kapal) || ''
   form.spec_material = cleanVal(item.spec_material) || cleanVal(item.grade) || ''
   form.dimension_material = cleanVal(item.dimension_material) || cleanVal(item.ukuran_plat) || ''
   form.product_number = cleanVal(item.product_number) || cleanVal(item.order?.ukuran_part) || ''
