@@ -295,7 +295,7 @@
                 required 
                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
               >
-                <option value="user">User (Hanya Order Pekerjaan & PIN)</option>
+                <option value="user">User (Hanya Order Baru & PIN)</option>
                 <option value="operator">Operator (Full Menu Operasional CNC)</option>
                 <option value="mandor">Mandor (Full Menu Operasional)</option>
                 <option value="admin">Admin (Full Akses + Manajemen User)</option>

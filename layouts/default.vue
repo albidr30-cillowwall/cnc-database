@@ -195,7 +195,7 @@
             >
               <span class="flex items-center gap-3">
                 <i class="fa-solid fa-circle-plus w-4 text-center" :class="$route.path === '/orders/create' ? 'text-white' : 'text-emerald-400'"></i>
-                <span>Buat Order Pekerjaan</span>
+                <span>Buat Order Baru</span>
               </span>
             </NuxtLink>
             <NuxtLink 
@@ -232,7 +232,7 @@
             <div class="font-bold text-emerald-400 flex items-center gap-1.5">
               <i class="fa-solid fa-shield-halved"></i> Hak Akses Role User
             </div>
-            <p class="leading-relaxed text-[11px]">Anda dapat membuat Order Pekerjaan, memantau status Daftar Order, dan melihat PIN pengambilan barang.</p>
+            <p class="leading-relaxed text-[11px]">Anda dapat membuat Order Baru, memantau status Daftar Order, dan melihat PIN pengambilan barang.</p>
           </div>
         </template>
       </nav>
