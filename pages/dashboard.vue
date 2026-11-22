@@ -84,7 +84,7 @@
     <!-- Charts Row -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4">
+        <div class="flex items-center justify-between mb-4">
           <div>
             <h2 class="text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-2">
               <i class="fa-solid fa-chart-line text-blue-500"></i>
@@ -93,26 +93,6 @@
             <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
               Bulan {{ currentPeriodLabel }}
             </span>
-          </div>
-
-          <!-- Mode Toggle: Akumulasi vs Per Minggu -->
-          <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[11px] font-bold self-start sm:self-auto">
-            <button 
-              type="button"
-              @click="setTrendMode('cumulative')" 
-              :class="trendMode === 'cumulative' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
-              class="px-2.5 py-1 rounded-lg transition cursor-pointer"
-            >
-              Akumulasi
-            </button>
-            <button 
-              type="button"
-              @click="setTrendMode('weekly')" 
-              :class="trendMode === 'weekly' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
-              class="px-2.5 py-1 rounded-lg transition cursor-pointer"
-            >
-              Per Minggu
-            </button>
           </div>
         </div>
         <div class="h-60 relative flex items-center justify-center">
@@ -307,8 +287,6 @@ function formatTime(val?: string | null) {
   }
 }
 
-const trendMode = ref<'cumulative' | 'weekly'>('cumulative')
-
 const monthNamesIndo = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -385,13 +363,6 @@ const weeklyOrderStats = computed(() => {
   })
 
   const weekly = [w1Orders.length, w2Orders.length, w3Orders.length, w4Orders.length]
-  const cumulative = [
-    weekly[0],
-    weekly[0] + weekly[1],
-    weekly[0] + weekly[1] + weekly[2],
-    weekly[0] + weekly[1] + weekly[2] + weekly[3]
-  ]
-
   const monthName = monthNamesIndo[targetMonth] || 'Bulan Ini'
 
   return {
@@ -400,7 +371,6 @@ const weeklyOrderStats = computed(() => {
     monthName,
     totalOrders: targetOrders.length,
     weekly,
-    cumulative,
     labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4']
   }
 })
@@ -409,11 +379,6 @@ const currentPeriodLabel = computed(() => {
   const stats = weeklyOrderStats.value
   return `${stats.monthName} ${stats.year} • Total ${stats.totalOrders} Order`
 })
-
-function setTrendMode(mode: 'cumulative' | 'weekly') {
-  trendMode.value = mode
-  renderWeeklyChart()
-}
 
 function renderWeeklyChart() {
   if (!trendCanvas.value) return
@@ -428,9 +393,7 @@ function renderWeeklyChart() {
   const tickColor = dark ? '#94a3b8' : '#475569'
   const gridColor = dark ? 'rgba(148, 163, 184, 0.14)' : 'rgba(148, 163, 184, 0.25)'
   const stats = weeklyOrderStats.value
-  const isCum = trendMode.value === 'cumulative'
-  const chartData = isCum ? stats.cumulative : stats.weekly
-  const datasetLabel = isCum ? 'Akumulasi Order' : 'Order per Minggu'
+  const chartData = stats.weekly
 
   const maxVal = Math.max(...chartData, 5)
 
@@ -439,7 +402,7 @@ function renderWeeklyChart() {
     data: {
       labels: stats.labels,
       datasets: [{
-        label: datasetLabel,
+        label: 'Order per Minggu',
         data: chartData,
         borderColor: dark ? '#60A5FA' : '#2563EB',
         backgroundColor: dark ? 'rgba(96, 165, 250, 0.18)' : 'rgba(37, 99, 235, 0.14)',
@@ -479,18 +442,7 @@ function renderWeeklyChart() {
             label: function(context: any) {
               const idx = context.dataIndex
               const wVal = stats.weekly[idx]
-              const cVal = stats.cumulative[idx]
-              if (isCum) {
-                return [
-                  ` Akumulasi Total: ${cVal} order`,
-                  ` Order Minggu Ini: ${wVal} order`
-                ]
-              } else {
-                return [
-                  ` Order Minggu Ini: ${wVal} order`,
-                  ` Akumulasi Total: ${cVal} order`
-                ]
-              }
+              return ` Jumlah Order: ${wVal} order`
             }
           }
         }
