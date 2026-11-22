@@ -93,9 +93,6 @@
             <h1 class="text-sm font-black uppercase tracking-tight text-slate-900 leading-tight">
               PT ORELA SHIPYARD
             </h1>
-            <p class="text-[9.5px] font-bold text-slate-700">
-              Bengkel Pemotongan Plat CNC — Laporan Riwayat & Traceability Material
-            </p>
           </div>
         </div>
         <div class="text-right text-[9px] text-slate-600 font-mono">
