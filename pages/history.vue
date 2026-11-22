@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-5">
     <!-- Header Page -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
       <div>
         <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
           <i class="fa-solid fa-clock-rotate-left text-blue-500"></i>
@@ -78,30 +78,34 @@
       </select>
     </div>
 
-    <!-- Print-only Official Report Header (Kop Dokumen Resmi Galangan) -->
-    <div class="print-only mb-3 pb-2.5 border-b-2 border-slate-900">
+    <!-- Print-only Official Report Header (Kop Dokumen Resmi Orela Shipyard) -->
+    <div class="print-only mb-3 pb-2 border-b-2 border-slate-900">
       <div class="flex items-center justify-between gap-4">
+        <!-- Logo Orela di Pojok Kiri Atas + Tulisan PT Orela Shipyard -->
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm tracking-wider">
-            CNC
-          </div>
+          <img 
+            src="/images/logo-orela-transparent.png" 
+            alt="Orela Shipyard" 
+            class="h-9 w-auto object-contain shrink-0"
+            @error="(e: any) => e.target.src = '/images/logo-orela.png'"
+          />
           <div>
             <h1 class="text-sm font-black uppercase tracking-tight text-slate-900 leading-tight">
-              PT DOK DAN PERKAPALAN SURABAYA (PERSERO)
+              PT ORELA SHIPYARD
             </h1>
-            <p class="text-[11px] font-bold text-slate-800">
+            <p class="text-[9.5px] font-bold text-slate-700">
               Bengkel Pemotongan Plat CNC — Laporan Riwayat & Traceability Material
             </p>
           </div>
         </div>
-        <div class="text-right text-[9.5px] text-slate-600 font-mono">
+        <div class="text-right text-[9px] text-slate-600 font-mono">
           <div>No. Dok: REKAP-HIST-CNC</div>
           <div>Tanggal Cetak: {{ printDateTime }}</div>
         </div>
       </div>
 
       <!-- Filter & Metadata Box in Print -->
-      <div class="mt-2 pt-2 border-t border-slate-200 grid grid-cols-4 gap-2 text-[9.5px] text-slate-800 bg-slate-50 p-2 rounded">
+      <div class="mt-2 pt-1.5 border-t border-slate-200 grid grid-cols-4 gap-2 text-[9px] text-slate-800 bg-slate-50 p-1.5 rounded">
         <div><span class="text-slate-500">Filter Mesin:</span> <b>{{ filterGroup || 'Semua Mesin CNC' }}</b></div>
         <div><span class="text-slate-500">Filter Status:</span> <b>{{ filterStatus === 'all' ? 'Semua Riwayat' : filterStatus }}</b></div>
         <div><span class="text-slate-500">Total Data:</span> <b>{{ filteredOrders.length }} Order</b></div>
@@ -110,7 +114,7 @@
     </div>
 
     <!-- History Table Card -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden print:border-0 print:shadow-none">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden print:border-0 print:shadow-none print:overflow-visible print:w-full print:rounded-none">
       <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between no-print">
         <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
           <i class="fa-solid fa-list-check text-blue-500"></i>
@@ -119,7 +123,7 @@
         <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">Total: {{ filteredOrders.length }} data</span>
       </div>
 
-      <div class="overflow-x-auto print:overflow-visible">
+      <div class="overflow-x-auto print:overflow-visible print:w-full">
         <table class="w-full text-xs print-table">
           <thead class="bg-slate-50 dark:bg-slate-950/70 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-black">
             <tr>
@@ -148,7 +152,7 @@
               <td class="p-2.5 text-center font-mono font-bold text-slate-500 dark:text-slate-400">
                 {{ idx + 1 }}
               </td>
-              <td class="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap text-center">
+              <td class="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap print:whitespace-normal text-center">
                 {{ o.no_order }}
               </td>
               <td class="p-2.5 font-bold text-slate-900 dark:text-slate-100">
@@ -163,7 +167,7 @@
               <td class="p-2.5 text-center font-mono text-slate-600 dark:text-slate-300">
                 {{ o.nama_proyek_kapal || o.estimation?.block_item || '-' }}
               </td>
-              <td class="p-2.5 font-bold text-cyan-700 dark:text-cyan-400">
+              <td class="p-2.5 font-bold text-cyan-700 dark:text-cyan-400 print:text-black">
                 {{ o.estimation?.spec_material || o.estimation?.grade || o.material || '-' }}
               </td>
               <td class="p-2.5 text-center font-mono text-slate-700 dark:text-slate-300">
@@ -180,17 +184,17 @@
               </td>
               <td class="p-2.5 text-left">
                 <div v-if="o.pengambil_akhir">
-                  <div class="font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{{ o.pengambil_akhir }}</div>
+                  <div class="font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap print:whitespace-normal">{{ o.pengambil_akhir }}</div>
                   <div v-if="o.departemen_pengambil" class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                     {{ o.departemen_pengambil }}
                   </div>
                 </div>
                 <span v-else class="text-slate-400 dark:text-slate-500 font-medium">-</span>
               </td>
-              <td class="p-2.5 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
+              <td class="p-2.5 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap print:whitespace-normal">
                 {{ formatWaktuSelesai(o) }}
               </td>
-              <td class="p-2.5 text-center whitespace-nowrap">
+              <td class="p-2.5 text-center whitespace-nowrap print:whitespace-normal">
                 <span 
                   class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border print:border-0 print:p-0 print:text-black"
                   :class="getStatusBadgeClass(o.status)"
@@ -207,33 +211,6 @@
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- Print-only Signature Footer (Lembar Pengesahan Resmi) -->
-    <div class="print-only mt-6 pt-3 border-t border-slate-300">
-      <div class="text-[10px] text-slate-600 mb-5 text-right font-mono">
-        Surabaya, {{ printDateOnly }}
-      </div>
-      <div class="grid grid-cols-3 gap-6 text-center text-[10px]">
-        <div>
-          <p class="text-slate-700 font-bold mb-12">Disiapkan Oleh (Operator CNC)</p>
-          <div class="border-t border-slate-900 mx-auto w-40 pt-1 font-bold text-slate-900">
-            ( ..................................... )
-          </div>
-        </div>
-        <div>
-          <p class="text-slate-700 font-bold mb-12">Diperiksa Oleh (Quality Control / Yard)</p>
-          <div class="border-t border-slate-900 mx-auto w-40 pt-1 font-bold text-slate-900">
-            ( ..................................... )
-          </div>
-        </div>
-        <div>
-          <p class="text-slate-700 font-bold mb-12">Disetujui Oleh (Supervisor CNC)</p>
-          <div class="border-t border-slate-900 mx-auto w-40 pt-1 font-bold text-slate-900">
-            ( ..................................... )
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -351,4 +328,13 @@ onMounted(() => {
   store.initStore()
 })
 </script>
+
+<style>
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 6mm 8mm;
+  }
+}
+</style>
 
