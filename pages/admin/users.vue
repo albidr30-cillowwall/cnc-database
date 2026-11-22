@@ -237,11 +237,13 @@
           </div>
 
           <button 
+            type="button"
             @click="handleResetDatabase" 
-            class="bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-black px-5 py-3 rounded-2xl shadow-lg shadow-rose-600/25 transition shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+            :disabled="isResetting"
+            class="bg-rose-600 hover:bg-rose-700 active:scale-95 disabled:opacity-50 text-white text-xs font-black px-5 py-3 rounded-2xl shadow-lg shadow-rose-600/25 transition shrink-0 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <span>Reset Nol Database</span>
+            <i class="fa-solid" :class="isResetting ? 'fa-spinner fa-spin' : 'fa-triangle-exclamation'"></i>
+            <span>{{ isResetting ? 'Sedang Mereset...' : 'Reset Nol Database' }}</span>
           </button>
         </div>
       </div>
@@ -493,17 +495,36 @@ async function handleCreateUser() {
   newUser.password = '123'
 }
 
+const isResetting = ref(false)
+
 async function handleResetDatabase() {
-  const confirm1 = confirm('PERINGATAN KRUSIAL: Apakah Anda yakin ingin MENGHAPUS SEMUA DATA Order, Plat Yard, dan History Pemotongan?')
+  const confirm1 = confirm('PERINGATAN KRUSIAL: Apakah Anda yakin ingin MENGHAPUS SELURUH DATA OPERASIONAL (Daftar Order, Stok Plat Yard, Ambil Plat & Riwayat Pemotongan)?\n\nAkun pengguna (Kelola User) TETAP AMAN DIPERTAHANKAN.')
   if (!confirm1) return
 
-  const confirm2 = confirm('KONFIRMASI TERAKHIR: Data yang dihapus tidak dapat dipulihkan. Lanjutkan reset ke nol?')
+  const confirm2 = confirm('KONFIRMASI TERAKHIR: Seluruh data transaksi akan dihapus permanen ke nol bersih. Lanjutkan?')
   if (!confirm2) return
 
-  await store.resetDataToZero()
-  toast.value = {
-    type: 'success',
-    text: 'DATABASE TELAH DIRESET KE KONDISI NOL BERSIH. Semua order dan stok plat telah dikosongkan.'
+  isResetting.value = true
+  try {
+    const res = await store.resetDataToZero()
+    if (res && res.success === false) {
+      toast.value = {
+        type: 'error',
+        text: res.message || 'Gagal mereset sebagian data di database.'
+      }
+    } else {
+      toast.value = {
+        type: 'success',
+        text: 'SELURUH DATA OPERASIONAL TELAH DIRESET KE NOL BERSIH! (Daftar Order, Stok Plat Yard, Ambil Plat, dan Riwayat telah dikosongkan. Akun pengguna tetap aman).'
+      }
+    }
+  } catch (err: any) {
+    toast.value = {
+      type: 'error',
+      text: err?.message || 'Terjadi kesalahan saat memproses reset database.'
+    }
+  } finally {
+    isResetting.value = false
   }
 }
 

@@ -349,11 +349,11 @@ export function useCncStore() {
         }))
       }
 
-      // Fetch plates — FIX: only overwrite if Supabase has data
+      // Fetch plates — Sinkronisasi dengan Supabase
       const { data: plateData, error: plateErr } = await supabase.from('plates').select('*').order('id', { ascending: false })
       if (plateErr) {
         console.error('Supabase sync plates error:', plateErr.message)
-      } else if (plateData && plateData.length > 0) {
+      } else if (plateData) {
         plates.value = plateData.map((p: any) => ({
           id: p.id,
           no_plat: normalizePlateNo(p.no_plat),
@@ -383,20 +383,12 @@ export function useCncStore() {
         }
         saveToLocalStorage()
       }
-      // If Supabase returned empty BUT we have local plates, push them to Supabase
-      else if ((!plateData || plateData.length === 0) && plates.value.length > 0) {
-        console.info('Supabase plates empty but local has data — pushing local plates to Supabase')
-        for (const p of plates.value) {
-          const { id: _ignoreId, ...plateWithoutId } = p as any
-          await supabase.from('plates').upsert([p], { onConflict: 'id' })
-        }
-      }
 
       // Fetch estimations — FIX #5: add cutting_image_url
       const { data: estData, error: estErr } = await supabase.from('order_estimations').select('*')
       if (estErr) {
         console.error('Supabase sync estimations error:', estErr.message)
-      } else if (estData && estData.length > 0) {
+      } else if (estData) {
         estimations.value = estData.map((e: any) => ({
           id: e.id,
           order_id: e.order_id,
@@ -421,11 +413,11 @@ export function useCncStore() {
         }))
       }
 
-      // Fetch orders — FIX: only overwrite if Supabase has data
+      // Fetch orders — Sinkronisasi dengan Supabase
       const { data: orderData, error: orderErr } = await supabase.from('orders').select('*').order('id', { ascending: false })
       if (orderErr) {
         console.error('Supabase sync orders error:', orderErr.message)
-      } else if (orderData && orderData.length > 0) {
+      } else if (orderData) {
         orders.value = orderData.map((o: any) => {
           const est = estimations.value.find(e => e.order_id === o.id) || null
           return {
@@ -468,11 +460,11 @@ export function useCncStore() {
         })
       }
 
-      // Fetch pickups — FIX: only overwrite if Supabase has data
+      // Fetch pickups — Sinkronisasi dengan Supabase
       const { data: pickupData, error: pickupErr } = await supabase.from('yard_pickups').select('*').order('id', { ascending: false })
       if (pickupErr) {
         console.error('Supabase sync pickups error:', pickupErr.message)
-      } else if (pickupData && pickupData.length > 0) {
+      } else if (pickupData) {
         yardPickups.value = pickupData.map((yp: any) => ({
           id: yp.id,
           order_id: yp.order_id || null,
@@ -1547,26 +1539,90 @@ export function useCncStore() {
     return { success: true }
   }
 
-  async function resetDataToZero() {
+  async function resetDataToZero(): Promise<{ success: boolean; message?: string }> {
     if (currentUser.value?.role !== 'admin') {
       console.warn('Akses ditolak: Hanya Administrator yang dapat mereset database.')
-      return
+      return { success: false, message: 'Akses ditolak: Hanya Administrator yang dapat mereset database.' }
     }
+
+    // 1. Kosongkan state lokal di memori secara langsung
     orders.value = []
     plates.value = []
     estimations.value = []
     yardPickups.value = []
     saveToLocalStorage()
+
+    // 2. Jika Supabase terhubung, bersihkan seluruh tabel operasional secara tuntas
     if (isConfigured && supabase) {
-      const { error: e1 } = await supabase.from('yard_pickups').delete().neq('id', 0)
-      if (e1) console.error('Reset yard_pickups error:', e1.message)
-      const { error: e2 } = await supabase.from('order_estimations').delete().neq('id', 0)
-      if (e2) console.error('Reset order_estimations error:', e2.message)
-      const { error: e3 } = await supabase.from('orders').delete().neq('id', 0)
-      if (e3) console.error('Reset orders error:', e3.message)
-      const { error: e4 } = await supabase.from('plates').delete().neq('id', 0)
-      if (e4) console.error('Reset plates error:', e4.message)
+      try {
+        // A. Putuskan semua referensi foreign key antar tabel terlebih dahulu
+        // agar tidak terkena Foreign Key Constraint Violation di PostgreSQL
+        await supabase.from('orders').update({ plate_id: null }).gte('id', 0)
+        await supabase.from('yard_pickups').update({ remnant_plate_id: null, order_id: null }).gte('id', 0)
+        await supabase.from('plates').update({ parent_plate_id: null, order_id_pemakai: null }).gte('id', 0)
+        await supabase.from('order_estimations').update({ order_id: null }).gte('id', 0)
+
+        // B. Hapus tabel transaksi anak terlebih dahulu:
+        // 1) yard_pickups (Ambil Plat & Bon Pengambilan)
+        const { data: ypList } = await supabase.from('yard_pickups').select('id')
+        if (ypList && ypList.length > 0) {
+          await supabase.from('yard_pickups').delete().in('id', ypList.map((y: any) => y.id))
+        }
+        await supabase.from('yard_pickups').delete().gte('id', 0)
+        await supabase.from('yard_pickups').delete().neq('id', 0)
+
+        // 2) order_estimations (Estimasi & Rencana Potong)
+        const { data: estList } = await supabase.from('order_estimations').select('id')
+        if (estList && estList.length > 0) {
+          await supabase.from('order_estimations').delete().in('id', estList.map((e: any) => e.id))
+        }
+        await supabase.from('order_estimations').delete().gte('id', 0)
+        await supabase.from('order_estimations').delete().neq('id', 0)
+
+        // 3) orders (Daftar Order Pemotongan)
+        const { data: ordList } = await supabase.from('orders').select('id')
+        if (ordList && ordList.length > 0) {
+          await supabase.from('orders').delete().in('id', ordList.map((o: any) => o.id))
+        }
+        await supabase.from('orders').delete().gte('id', 0)
+        await supabase.from('orders').delete().neq('id', 0)
+
+        // C. Hapus data master plates (Stok Plat Yard & Remnant Sisa Potongan)
+        const { data: pltList } = await supabase.from('plates').select('id')
+        if (pltList && pltList.length > 0) {
+          await supabase.from('plates').delete().in('id', pltList.map((p: any) => p.id))
+        }
+        await supabase.from('plates').delete().gte('id', 0)
+        await supabase.from('plates').delete().neq('id', 0)
+
+        // D. Verifikasi akhir dan pembersihan sisa jika masih ada
+        const { data: leftPlates } = await supabase.from('plates').select('id')
+        if (leftPlates && leftPlates.length > 0) {
+          await supabase.from('plates').delete().in('id', leftPlates.map((p: any) => p.id))
+        }
+        const { data: leftPickups } = await supabase.from('yard_pickups').select('id')
+        if (leftPickups && leftPickups.length > 0) {
+          await supabase.from('yard_pickups').delete().in('id', leftPickups.map((y: any) => y.id))
+        }
+        const { data: leftOrders } = await supabase.from('orders').select('id')
+        if (leftOrders && leftOrders.length > 0) {
+          await supabase.from('orders').delete().in('id', leftOrders.map((o: any) => o.id))
+        }
+      } catch (err: any) {
+        console.error('Reset database exception:', err)
+        return { success: false, message: err?.message || 'Terjadi kesalahan saat menghapus data di Supabase.' }
+      }
     }
+
+    // 3. Pastikan localStorage bersih secara eksplisit (KECUALI USERS & KREDENSIAL)
+    if (import.meta.client) {
+      localStorage.setItem('cnc_orders_v3', '[]')
+      localStorage.setItem('cnc_plates_v3', '[]')
+      localStorage.setItem('cnc_pickups_v3', '[]')
+      localStorage.setItem('cnc_estimations_v3', '[]')
+    }
+
+    return { success: true }
   }
 
   // EXPORT CSV / EXCEL SESUAI TEMPLATE
