@@ -84,11 +84,36 @@
     <!-- Charts Row -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-            Grafik Order per Minggu
-          </h2>
-          <span class="text-[11px] text-slate-400">4 Minggu Terakhir</span>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4">
+          <div>
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-blue-500"></i>
+              <span>Grafik Order per Minggu</span>
+            </h2>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              Bulan {{ currentPeriodLabel }}
+            </span>
+          </div>
+
+          <!-- Mode Toggle: Akumulasi vs Per Minggu -->
+          <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[11px] font-bold self-start sm:self-auto">
+            <button 
+              type="button"
+              @click="setTrendMode('cumulative')" 
+              :class="trendMode === 'cumulative' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+              class="px-2.5 py-1 rounded-lg transition cursor-pointer"
+            >
+              Akumulasi
+            </button>
+            <button 
+              type="button"
+              @click="setTrendMode('weekly')" 
+              :class="trendMode === 'weekly' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+              class="px-2.5 py-1 rounded-lg transition cursor-pointer"
+            >
+              Per Minggu
+            </button>
+          </div>
         </div>
         <div class="h-60 relative flex items-center justify-center">
           <canvas ref="trendCanvas"></canvas>
@@ -282,54 +307,220 @@ function formatTime(val?: string | null) {
   }
 }
 
-function renderCharts() {
-  const dark = isDark.value
-  const tickColor = dark ? '#94a3b8' : '#475569'
-  const gridColor = dark ? 'rgba(148, 163, 184, 0.14)' : 'rgba(148, 163, 184, 0.25)'
-  const borderSurface = dark ? '#0f172a' : '#FFFFFF'
+const trendMode = ref<'cumulative' | 'weekly'>('cumulative')
 
-  // Weekly Trend Chart
-  if (trendCanvas.value) {
-    if (trendChartInstance) {
-      trendChartInstance.destroy()
-      trendChartInstance = null
-    }
+const monthNamesIndo = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+]
 
-    if (orders.value.length > 0) {
-      const labels = ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4']
-      const count = orders.value.length
-      const data = [Math.max(0, count - 3), Math.max(0, count - 2), Math.max(0, count - 1), count]
+// Menghitung statistik order mingguan secara riil dari database (created_at)
+const weeklyOrderStats = computed(() => {
+  const allOrders = orders.value || []
+  const now = new Date()
+  let targetYear = now.getFullYear()
+  let targetMonth = now.getMonth()
 
-      trendChartInstance = new Chart(trendCanvas.value, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Order',
-            data,
-            borderColor: dark ? '#60A5FA' : '#2563EB',
-            backgroundColor: dark ? 'rgba(96, 165, 250, 0.16)' : 'rgba(37, 99, 235, 0.12)',
-            borderWidth: 2.5,
-            fill: true,
-            tension: 0.35,
-            pointRadius: 4,
-            pointBackgroundColor: dark ? '#60A5FA' : '#2563EB'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: tickColor }, grid: { color: gridColor } },
-            y: { beginAtZero: true, ticks: { precision: 0, color: tickColor }, grid: { color: gridColor } }
-          }
-        }
+  // Cek apakah ada order di bulan berjalan
+  const currentMonthOrders = allOrders.filter(o => {
+    const raw = o.created_at || (o as any).waktu_masuk || (o as any).waktu_mulai
+    if (!raw) return false
+    const d = new Date(raw)
+    return !isNaN(d.getTime()) && d.getFullYear() === targetYear && d.getMonth() === targetMonth
+  })
+
+  // Jika di bulan sekarang belum ada order tapi di riwayat ada order, tampilkan bulan dari order terakhir
+  if (currentMonthOrders.length === 0 && allOrders.length > 0) {
+    const sorted = [...allOrders]
+      .filter(o => {
+        const raw = o.created_at || (o as any).waktu_masuk || (o as any).waktu_mulai
+        return raw && !isNaN(new Date(raw).getTime())
       })
+      .sort((a, b) => {
+        const tA = new Date(a.created_at || (a as any).waktu_masuk || (a as any).waktu_mulai).getTime()
+        const tB = new Date(b.created_at || (b as any).waktu_masuk || (b as any).waktu_mulai).getTime()
+        return tB - tA
+      })
+    if (sorted.length > 0) {
+      const raw = sorted[0].created_at || (sorted[0] as any).waktu_masuk || (sorted[0] as any).waktu_mulai
+      const latestDate = new Date(raw)
+      targetYear = latestDate.getFullYear()
+      targetMonth = latestDate.getMonth()
     }
   }
 
-  // Grade Doughnut Chart (Menampilkan Grade, Ketebalan, dan Jumlah Plat)
+  // Filter order sesuai tahun dan bulan target
+  const targetOrders = allOrders.filter(o => {
+    const raw = o.created_at || (o as any).waktu_masuk || (o as any).waktu_mulai
+    if (!raw) return true
+    const d = new Date(raw)
+    if (isNaN(d.getTime())) return true
+    return d.getFullYear() === targetYear && d.getMonth() === targetMonth
+  })
+
+  // Pengelompokan 4 Minggu dalam sebulan:
+  // Minggu 1: Tgl 1 - 7
+  // Minggu 2: Tgl 8 - 14
+  // Minggu 3: Tgl 15 - 21
+  // Minggu 4: Tgl 22 - akhir bulan (tgl 28/29/30/31)
+  const w1Orders = targetOrders.filter(o => {
+    const raw = o.created_at || (o as any).waktu_masuk || (o as any).waktu_mulai
+    const d = raw ? new Date(raw).getDate() : 1
+    return d >= 1 && d <= 7
+  })
+  const w2Orders = targetOrders.filter(o => {
+    const raw = o.created_at || (o as any).waktu_masuk || (o as any).waktu_mulai
+    const d = raw ? new Date(raw).getDate() : 1
+    return d >= 8 && d <= 14
+  })
+  const w3Orders = targetOrders.filter(o => {
+    const raw = o.created_at || (o as any).waktu_masuk || (o as any).waktu_mulai
+    const d = raw ? new Date(raw).getDate() : 1
+    return d >= 15 && d <= 21
+  })
+  const w4Orders = targetOrders.filter(o => {
+    const raw = o.created_at || (o as any).waktu_masuk || (o as any).waktu_mulai
+    const d = raw ? new Date(raw).getDate() : 1
+    return d >= 22
+  })
+
+  const weekly = [w1Orders.length, w2Orders.length, w3Orders.length, w4Orders.length]
+  const cumulative = [
+    weekly[0],
+    weekly[0] + weekly[1],
+    weekly[0] + weekly[1] + weekly[2],
+    weekly[0] + weekly[1] + weekly[2] + weekly[3]
+  ]
+
+  const monthName = monthNamesIndo[targetMonth] || 'Bulan Ini'
+
+  return {
+    year: targetYear,
+    month: targetMonth,
+    monthName,
+    totalOrders: targetOrders.length,
+    weekly,
+    cumulative,
+    labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4']
+  }
+})
+
+const currentPeriodLabel = computed(() => {
+  const stats = weeklyOrderStats.value
+  return `${stats.monthName} ${stats.year} • Total ${stats.totalOrders} Order`
+})
+
+function setTrendMode(mode: 'cumulative' | 'weekly') {
+  trendMode.value = mode
+  renderWeeklyChart()
+}
+
+function renderWeeklyChart() {
+  if (!trendCanvas.value) return
+  if (trendChartInstance) {
+    trendChartInstance.destroy()
+    trendChartInstance = null
+  }
+
+  if (orders.value.length === 0) return
+
+  const dark = isDark.value
+  const tickColor = dark ? '#94a3b8' : '#475569'
+  const gridColor = dark ? 'rgba(148, 163, 184, 0.14)' : 'rgba(148, 163, 184, 0.25)'
+  const stats = weeklyOrderStats.value
+  const isCum = trendMode.value === 'cumulative'
+  const chartData = isCum ? stats.cumulative : stats.weekly
+  const datasetLabel = isCum ? 'Akumulasi Order' : 'Order per Minggu'
+
+  const maxVal = Math.max(...chartData, 5)
+
+  trendChartInstance = new Chart(trendCanvas.value, {
+    type: 'line',
+    data: {
+      labels: stats.labels,
+      datasets: [{
+        label: datasetLabel,
+        data: chartData,
+        borderColor: dark ? '#60A5FA' : '#2563EB',
+        backgroundColor: dark ? 'rgba(96, 165, 250, 0.18)' : 'rgba(37, 99, 235, 0.14)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: dark ? '#60A5FA' : '#2563EB',
+        pointBorderColor: dark ? '#0f172a' : '#ffffff',
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: dark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+          titleColor: dark ? '#f8fafc' : '#0f172a',
+          bodyColor: dark ? '#cbd5e1' : '#334155',
+          borderColor: dark ? '#334155' : '#e2e8f0',
+          borderWidth: 1,
+          padding: 10,
+          boxPadding: 4,
+          callbacks: {
+            title: function(context: any) {
+              const idx = context[0].dataIndex
+              const ranges = ['Tgl 1 - 7', 'Tgl 8 - 14', 'Tgl 15 - 21', 'Tgl 22 - akhir bulan']
+              return `Minggu ${idx + 1} (${ranges[idx]} ${stats.monthName})`
+            },
+            label: function(context: any) {
+              const idx = context.dataIndex
+              const wVal = stats.weekly[idx]
+              const cVal = stats.cumulative[idx]
+              if (isCum) {
+                return [
+                  ` Akumulasi Total: ${cVal} order`,
+                  ` Order Minggu Ini: ${wVal} order`
+                ]
+              } else {
+                return [
+                  ` Order Minggu Ini: ${wVal} order`,
+                  ` Akumulasi Total: ${cVal} order`
+                ]
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: { 
+          ticks: { color: tickColor, font: { weight: 'bold', size: 11 } }, 
+          grid: { color: gridColor } 
+        },
+        y: { 
+          beginAtZero: true, 
+          suggestedMax: maxVal,
+          ticks: { 
+            precision: 0, 
+            stepSize: 1,
+            color: tickColor,
+            font: { size: 11 } 
+          }, 
+          grid: { color: gridColor } 
+        }
+      }
+    }
+  })
+}
+
+function renderGradeChart() {
+  const dark = isDark.value
+  const tickColor = dark ? '#94a3b8' : '#475569'
+  const borderSurface = dark ? '#0f172a' : '#FFFFFF'
+
   if (gradeCanvas.value) {
     if (gradeChartInstance) {
       gradeChartInstance.destroy()
@@ -383,6 +574,11 @@ function renderCharts() {
       })
     }
   }
+}
+
+function renderCharts() {
+  renderWeeklyChart()
+  renderGradeChart()
 }
 
 onMounted(() => {
