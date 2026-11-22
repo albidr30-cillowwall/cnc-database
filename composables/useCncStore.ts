@@ -1574,7 +1574,7 @@ export function useCncStore() {
     const list = customList && customList.length > 0 ? customList : orders.value
     if (!list || list.length === 0) return false
 
-    // 12 Kolom persis template spreadsheet galangan
+    // Kolom persis template spreadsheet galangan
     const headers = [
       'NO',
       'NO. ORDER',
@@ -1587,6 +1587,7 @@ export function useCncStore() {
       'PRODUCT NUMBER',
       'MESIN CNC',
       'DIMENSI',
+      'PENGAMBIL',
       'WAKTU SELESAI',
       'STATUS'
     ]
@@ -1621,6 +1622,7 @@ export function useCncStore() {
       const prodNum = o.estimation?.product_number || o.ukuran_part || '-'
       const mesinCnc = o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc || '-'
       const dimensi = o.estimation?.dimension_material || o.ukuran_part || (o.ketebalan ? `${o.ketebalan} mm` : '-')
+      const pengambil = o.pengambil_akhir ? `${o.pengambil_akhir}${o.departemen_pengambil ? ' (' + o.departemen_pengambil + ')' : ''}` : '-'
       const waktuSelesai = formatWaktu(o.waktu_selesai || o.waktu_diambil)
 
       return [
@@ -1635,6 +1637,7 @@ export function useCncStore() {
         prodNum,
         mesinCnc,
         dimensi,
+        pengambil,
         waktuSelesai,
         o.status
       ].map(escapeCsv).join(',')

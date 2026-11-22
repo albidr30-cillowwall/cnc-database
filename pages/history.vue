@@ -50,7 +50,7 @@
         <input 
           v-model="searchQuery" 
           type="text" 
-          placeholder="Lacak No. Order, Nama Proyek, Heat Number, atau PIN..." 
+          placeholder="Lacak No. Order, Nama Proyek, Heat Number, Pengambil, atau PIN..." 
           class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
         />
       </div>
@@ -134,6 +134,7 @@
               <th class="p-2.5 text-center">PRODUCT NUMBER</th>
               <th class="p-2.5 text-center">MESIN CNC</th>
               <th class="p-2.5 text-left">DIMENSI</th>
+              <th class="p-2.5 text-left">PENGAMBIL</th>
               <th class="p-2.5 text-center">WAKTU SELESAI</th>
               <th class="p-2.5 text-center">STATUS</th>
             </tr>
@@ -177,6 +178,15 @@
               <td class="p-2.5 font-mono text-slate-700 dark:text-slate-300 text-[10.5px]">
                 {{ o.estimation?.dimension_material || o.ukuran_part || (o.ketebalan ? o.ketebalan + ' mm' : '-') }}
               </td>
+              <td class="p-2.5 text-left">
+                <div v-if="o.pengambil_akhir">
+                  <div class="font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{{ o.pengambil_akhir }}</div>
+                  <div v-if="o.departemen_pengambil" class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                    {{ o.departemen_pengambil }}
+                  </div>
+                </div>
+                <span v-else class="text-slate-400 dark:text-slate-500 font-medium">-</span>
+              </td>
               <td class="p-2.5 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                 {{ formatWaktuSelesai(o) }}
               </td>
@@ -190,7 +200,7 @@
               </td>
             </tr>
             <tr v-if="filteredOrders.length === 0">
-              <td colspan="13" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
+              <td colspan="14" class="p-10 text-center text-slate-400 dark:text-slate-500 text-xs italic">
                 <i class="fa-solid fa-clock-rotate-left text-3xl mb-2 block text-slate-300 dark:text-slate-700"></i>
                 Tidak ada riwayat pemotongan yang cocok dengan filter pencarian.
               </td>
@@ -264,6 +274,8 @@ const filteredOrders = computed(() => {
       const matchKapal = (o.nama_proyek_kapal || '').toLowerCase().includes(q)
       const matchPemesan = o.nama_pemesan.toLowerCase().includes(q)
       const matchDept = (o.departemen_pemesan || '').toLowerCase().includes(q)
+      const matchPengambil = (o.pengambil_akhir || '').toLowerCase().includes(q)
+      const matchDeptPengambil = (o.departemen_pengambil || '').toLowerCase().includes(q)
       const matchPin = (o.kode_pengambilan || '').toLowerCase().includes(q)
       const matchPlat = (o.plat_dipakai || '').toLowerCase().includes(q)
       const matchEstProject = (o.estimation?.project_name || '').toLowerCase().includes(q)
@@ -274,7 +286,8 @@ const filteredOrders = computed(() => {
       if (
         !matchNo && !matchProyek && !matchKapal && !matchPemesan && 
         !matchDept && !matchPin && !matchPlat && !matchEstProject && 
-        !matchHeat && !matchProd && !matchSpec && !matchStatus
+        !matchHeat && !matchProd && !matchSpec && !matchStatus &&
+        !matchPengambil && !matchDeptPengambil
       ) {
         return false
       }
