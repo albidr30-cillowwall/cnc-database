@@ -169,17 +169,132 @@
               class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 font-mono focus:border-blue-600"
             >
           </div>
-          <div>
+          <!-- Dropdown Ukuran Part (Editable Combobox + Preset + Tambah Opsi) -->
+          <div class="relative" ref="ukuranContainerRef">
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
-              <span>Ukuran Part (Panjang x Lebar mm)</span>
-              <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-ruler-combined text-blue-500"></i>
+                <span>Ukuran Part (Panjang x Lebar mm)</span>
+              </span>
+              <span class="text-[10px] text-slate-400 font-normal">Opsional (Pilih / Edit Manual)</span>
             </label>
-            <input 
-              v-model="form.ukuran_part" 
-              type="text" 
-              placeholder="Contoh: 9000 x 2000 mm atau 1800 x 400 mm..." 
-              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 font-mono focus:border-blue-600 outline-none"
+
+            <div class="relative">
+              <input 
+                v-model="form.ukuran_part" 
+                type="text" 
+                list="ukuran-part-datalist"
+                placeholder="Pilih dropdown atau ketik (contoh: 9000 x 2000)..." 
+                @focus="isUkuranDropdownOpen = true"
+                @keydown.down.prevent="isUkuranDropdownOpen = true"
+                class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 pr-10 text-slate-800 dark:text-slate-100 font-mono focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 outline-none"
+              >
+              <!-- Tombol toggle dropdown icon panah -->
+              <button 
+                type="button"
+                @click.stop="isUkuranDropdownOpen = !isUkuranDropdownOpen"
+                tabindex="-1"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer"
+                title="Buka pilihan ukuran"
+              >
+                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="{ 'rotate-180': isUkuranDropdownOpen }"></i>
+              </button>
+            </div>
+
+            <!-- Native Datalist untuk fallback autocomplete browser -->
+            <datalist id="ukuran-part-datalist">
+              <option v-for="item in availableUkuranList" :key="item" :value="item" />
+            </datalist>
+
+            <!-- Floating Dropdown Menu -->
+            <div 
+              v-if="isUkuranDropdownOpen"
+              class="absolute z-30 left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden py-1.5 text-xs animate-in fade-in"
             >
+              <div class="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                <span>Daftar Pilihan Ukuran</span>
+                <span class="text-[9px] text-blue-500">Klik untuk memilih</span>
+              </div>
+
+              <!-- List Options -->
+              <div class="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div 
+                  v-for="item in availableUkuranList" 
+                  :key="item"
+                  @click="selectUkuran(item)"
+                  class="px-3.5 py-2.5 flex items-center justify-between hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition group"
+                  :class="form.ukuran_part === item ? 'bg-blue-50/70 dark:bg-blue-950/50 font-bold text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'"
+                >
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-ruler text-slate-400 group-hover:text-blue-500 text-xs"></i>
+                    <span class="font-mono text-xs">{{ item }}</span>
+                    <span v-if="defaultUkuranList.includes(item)" class="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded font-normal">Standar</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <i v-if="form.ukuran_part === item" class="fa-solid fa-check text-blue-600 dark:text-blue-400 text-xs"></i>
+                    <!-- Hapus jika custom item -->
+                    <button 
+                      v-if="!defaultUkuranList.includes(item)" 
+                      type="button"
+                      @click.stop="removeCustomUkuran(item)"
+                      class="text-slate-400 hover:text-rose-500 p-1 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                      title="Hapus dari daftar pilihan"
+                    >
+                      <i class="fa-solid fa-trash-can text-[11px]"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tambah input ke opsi jika belum ada di list -->
+              <div class="p-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 space-y-2">
+                <div v-if="canAddCurrentInput">
+                  <button 
+                    type="button"
+                    @click.stop="addCurrentInputToOptions"
+                    class="w-full py-2 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 text-blue-600 dark:text-blue-300 font-bold flex items-center justify-center gap-1.5 transition text-[11px] border border-blue-200 dark:border-blue-800 cursor-pointer"
+                  >
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Tambahkan "{{ form.ukuran_part.trim() }}" ke Dropdown</span>
+                  </button>
+                </div>
+
+                <!-- Input cepat tambah ukuran baru ke dropdown -->
+                <div class="flex items-center gap-1.5">
+                  <input 
+                    v-model="newCustomUkuranInput"
+                    type="text"
+                    placeholder="Tambah ukuran lain (cth: 3000 x 1200)..."
+                    @keydown.enter.prevent="addCustomUkuran"
+                    class="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500"
+                  />
+                  <button 
+                    type="button"
+                    @click.stop="addCustomUkuran"
+                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs transition shrink-0 cursor-pointer"
+                  >
+                    + Tambah
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tombol Quick Select (Pilihan Cepat 1-Klik) -->
+            <div class="flex flex-wrap items-center gap-1.5 mt-2">
+              <span class="text-[10px] text-slate-400 font-semibold">Pilihan Cepat:</span>
+              <button 
+                v-for="item in availableUkuranList" 
+                :key="'badge-' + item"
+                type="button"
+                @click="selectUkuran(item)"
+                class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-medium transition cursor-pointer"
+                :class="form.ukuran_part === item 
+                  ? 'bg-blue-600 text-white shadow-xs' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'"
+              >
+                {{ item }}
+              </button>
+            </div>
           </div>
           <div class="sm:col-span-2">
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
@@ -336,7 +451,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, reactive, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCncStore } from '~/composables/useCncStore'
 import { useImageCompressor } from '~/composables/useImageCompressor'
@@ -466,6 +581,99 @@ watch(() => form.departemen_pemesan, (val) => {
 watch(() => form.waktu_pengambilan, (val) => {
   if (val !== 'Lainnya') {
     form.waktu_custom = ''
+  }
+})
+
+// Dropdown Ukuran Part (Editable Combobox + Preset + Tambah Opsi)
+const ukuranContainerRef = ref<HTMLElement | null>(null)
+const isUkuranDropdownOpen = ref(false)
+const defaultUkuranList = ['9000 x 2000', '6000 x 1500']
+const customUkuranList = ref<string[]>([])
+const newCustomUkuranInput = ref('')
+
+const availableUkuranList = computed(() => {
+  const merged = [...defaultUkuranList, ...customUkuranList.value]
+  return Array.from(new Set(merged.map(s => s.trim()))).filter(Boolean)
+})
+
+const canAddCurrentInput = computed(() => {
+  const val = form.ukuran_part?.trim() || ''
+  return val.length > 0 && !availableUkuranList.value.includes(val)
+})
+
+function selectUkuran(val: string) {
+  form.ukuran_part = val
+  isUkuranDropdownOpen.value = false
+}
+
+function addCustomUkuran() {
+  const val = newCustomUkuranInput.value.trim()
+  if (!val) return
+  if (!availableUkuranList.value.includes(val)) {
+    customUkuranList.value.push(val)
+    saveCustomUkuranToStorage()
+  }
+  form.ukuran_part = val
+  newCustomUkuranInput.value = ''
+  isUkuranDropdownOpen.value = false
+}
+
+function addCurrentInputToOptions() {
+  const val = form.ukuran_part?.trim() || ''
+  if (!val) return
+  if (!availableUkuranList.value.includes(val)) {
+    customUkuranList.value.push(val)
+    saveCustomUkuranToStorage()
+  }
+}
+
+function removeCustomUkuran(item: string) {
+  customUkuranList.value = customUkuranList.value.filter(s => s !== item)
+  saveCustomUkuranToStorage()
+}
+
+function loadCustomUkuran() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const saved = localStorage.getItem('cnc_custom_ukuran_options')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          customUkuranList.value = parsed
+        }
+      }
+    } catch (e) {
+      console.warn('Gagal memuat custom ukuran dari localStorage', e)
+    }
+  }
+}
+
+function saveCustomUkuranToStorage() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      localStorage.setItem('cnc_custom_ukuran_options', JSON.stringify(customUkuranList.value))
+    } catch (e) {
+      console.warn('Gagal menyimpan custom ukuran ke localStorage', e)
+    }
+  }
+}
+
+function handleClickOutside(e: MouseEvent) {
+  if (ukuranContainerRef.value && !ukuranContainerRef.value.contains(e.target as Node)) {
+    isUkuranDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  loadCustomUkuran()
+  if (typeof document !== 'undefined') {
+    document.addEventListener('click', handleClickOutside)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('click', handleClickOutside)
   }
 })
 
