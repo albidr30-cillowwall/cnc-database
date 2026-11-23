@@ -214,6 +214,31 @@
               />
             </div>
 
+            <!-- Preset Pilihan Cepat Dimensi -->
+            <div class="sm:col-span-2 flex items-center gap-1.5 pt-1">
+              <span class="text-[10px] text-slate-400 font-semibold">Pilihan Cepat Ukuran:</span>
+              <button 
+                type="button"
+                @click="newPlateForm.panjang_mm = 9000; newPlateForm.lebar_mm = 2000"
+                class="px-2.5 py-1 rounded-lg text-[10px] font-mono font-medium transition cursor-pointer border"
+                :class="newPlateForm.panjang_mm === 9000 && newPlateForm.lebar_mm === 2000 
+                  ? 'bg-blue-600 text-white border-blue-600' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white border-slate-200 dark:border-slate-700'"
+              >
+                9000 x 2000
+              </button>
+              <button 
+                type="button"
+                @click="newPlateForm.panjang_mm = 6000; newPlateForm.lebar_mm = 1500"
+                class="px-2.5 py-1 rounded-lg text-[10px] font-mono font-medium transition cursor-pointer border"
+                :class="newPlateForm.panjang_mm === 6000 && newPlateForm.lebar_mm === 1500 
+                  ? 'bg-blue-600 text-white border-blue-600' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white border-slate-200 dark:border-slate-700'"
+              >
+                6000 x 1500
+              </button>
+            </div>
+
             <!-- 3. Panjang (mm) -->
             <div>
               <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1">Panjang (mm) *</label>

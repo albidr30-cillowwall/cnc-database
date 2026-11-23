@@ -392,24 +392,136 @@
             </div>
           </div>
 
-          <!-- 5. Dimension of Material -->
-          <div>
+          <!-- 5. Dimension of Material (Editable Dropdown + Preset + Tambah Opsi) -->
+          <div class="relative" ref="dimContainerRef">
             <label class="block text-slate-700 dark:text-slate-300 font-bold mb-1.5 flex items-center justify-between">
               <span class="flex items-center gap-1.5">
                 <i class="fa-solid fa-ruler-combined text-emerald-500"></i>
                 <span>Dimension of Material *</span>
               </span>
-              <span class="text-[10px] text-slate-400 font-normal">Wajib</span>
+              <span class="text-[10px] text-slate-400 font-normal">Wajib (Pilih / Edit Manual)</span>
             </label>
-            <input 
-              v-model="form.dimension_material" 
-              type="text" 
-              required
-              :disabled="isLocked"
-              placeholder="contoh: 6000 x 1500 x 12 mm, 9000 x 2000 x 4 mm..." 
-              :class="isLocked ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
-              class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
-            />
+
+            <div class="relative">
+              <input 
+                v-model="form.dimension_material" 
+                type="text" 
+                required
+                :disabled="isLocked"
+                list="estimation-dim-datalist"
+                placeholder="Pilih dropdown atau ketik (contoh: 9000 x 2000)..." 
+                @focus="!isLocked && (isDimDropdownOpen = true)"
+                @keydown.down.prevent="!isLocked && (isDimDropdownOpen = true)"
+                :class="isLocked ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80 text-slate-600 dark:text-slate-400' : 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200'"
+                class="w-full border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 pr-10 font-mono font-bold focus:ring-2 focus:ring-violet-500 outline-none"
+              />
+              <!-- Tombol toggle dropdown icon panah -->
+              <button 
+                v-if="!isLocked"
+                type="button"
+                @click.stop="isDimDropdownOpen = !isDimDropdownOpen"
+                tabindex="-1"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition cursor-pointer"
+                title="Buka pilihan ukuran"
+              >
+                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="{ 'rotate-180': isDimDropdownOpen }"></i>
+              </button>
+            </div>
+
+            <!-- Native Datalist untuk fallback autocomplete bawaan -->
+            <datalist id="estimation-dim-datalist">
+              <option v-for="item in availableDimList" :key="item" :value="item" />
+            </datalist>
+
+            <!-- Floating Dropdown Menu -->
+            <div 
+              v-if="isDimDropdownOpen && !isLocked"
+              class="absolute z-30 left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden py-1.5 text-xs animate-in fade-in"
+            >
+              <div class="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                <span>Daftar Pilihan Ukuran Standar</span>
+                <span class="text-[9px] text-emerald-500">Klik untuk memilih</span>
+              </div>
+
+              <!-- List Options -->
+              <div class="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div 
+                  v-for="item in availableDimList" 
+                  :key="item"
+                  @click="selectDim(item)"
+                  class="px-3.5 py-2.5 flex items-center justify-between hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer transition group"
+                  :class="form.dimension_material === item ? 'bg-emerald-50/70 dark:bg-emerald-950/50 font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-200'"
+                >
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-ruler text-slate-400 group-hover:text-emerald-500 text-xs"></i>
+                    <span class="font-mono text-xs">{{ item }}</span>
+                    <span v-if="defaultDimList.includes(item)" class="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded font-normal">Standar</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <i v-if="form.dimension_material === item" class="fa-solid fa-check text-emerald-600 dark:text-emerald-400 text-xs"></i>
+                    <!-- Hapus jika custom item -->
+                    <button 
+                      v-if="!defaultDimList.includes(item)" 
+                      type="button"
+                      @click.stop="removeCustomDim(item)"
+                      class="text-slate-400 hover:text-rose-500 p-1 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                      title="Hapus dari daftar pilihan"
+                    >
+                      <i class="fa-solid fa-trash-can text-[11px]"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tambah input ke opsi jika belum ada di list -->
+              <div class="p-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 space-y-2">
+                <div v-if="canAddCurrentDim">
+                  <button 
+                    type="button"
+                    @click.stop="addCurrentDimToOptions"
+                    class="w-full py-2 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-center gap-1.5 transition text-[11px] border border-emerald-200 dark:border-emerald-800 cursor-pointer"
+                  >
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Tambahkan "{{ form.dimension_material.trim() }}" ke Dropdown</span>
+                  </button>
+                </div>
+
+                <!-- Input cepat tambah ukuran baru ke dropdown -->
+                <div class="flex items-center gap-1.5">
+                  <input 
+                    v-model="newCustomDimInput"
+                    type="text"
+                    placeholder="Tambah ukuran lain (cth: 3000 x 1200)..."
+                    @keydown.enter.prevent="addCustomDim"
+                    class="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500"
+                  />
+                  <button 
+                    type="button"
+                    @click.stop="addCustomDim"
+                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs transition shrink-0 cursor-pointer"
+                  >
+                    + Tambah
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tombol Quick Select (Pilihan Cepat 1-Klik) -->
+            <div v-if="!isLocked" class="flex flex-wrap items-center gap-1.5 mt-2">
+              <span class="text-[10px] text-slate-400 font-semibold">Pilihan Cepat:</span>
+              <button 
+                v-for="item in availableDimList" 
+                :key="'dim-badge-' + item"
+                type="button"
+                @click="selectDim(item)"
+                class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-medium transition cursor-pointer"
+                :class="form.dimension_material === item 
+                  ? 'bg-emerald-600 text-white shadow-xs' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'"
+              >
+                {{ item }}
+              </button>
+            </div>
           </div>
 
           <!-- 6. Product Number -->
@@ -661,7 +773,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCncStore, type Plate } from '~/composables/useCncStore'
 import { useSecurity } from '~/composables/useSecurity'
@@ -727,6 +839,86 @@ function syncSpecDropdownChoice(val: string) {
     form.spec_material = 'Aluminium 5083'
   } else {
     specDropdownChoice.value = 'Lainnya'
+  }
+}
+
+// Dropdown Dimension of Material (Editable Combobox + Preset + Tambah Opsi)
+const dimContainerRef = ref<HTMLElement | null>(null)
+const isDimDropdownOpen = ref(false)
+const defaultDimList = ['9000 x 2000', '6000 x 1500']
+const customDimList = ref<string[]>([])
+const newCustomDimInput = ref('')
+
+const availableDimList = computed(() => {
+  const merged = [...defaultDimList, ...customDimList.value]
+  return Array.from(new Set(merged.map(s => s.trim()))).filter(Boolean)
+})
+
+const canAddCurrentDim = computed(() => {
+  const val = form.dimension_material?.trim() || ''
+  return val.length > 0 && !availableDimList.value.includes(val)
+})
+
+function selectDim(val: string) {
+  form.dimension_material = val
+  isDimDropdownOpen.value = false
+}
+
+function addCustomDim() {
+  const val = newCustomDimInput.value.trim()
+  if (!val) return
+  if (!availableDimList.value.includes(val)) {
+    customDimList.value.push(val)
+    saveCustomDimToStorage()
+  }
+  form.dimension_material = val
+  newCustomDimInput.value = ''
+  isDimDropdownOpen.value = false
+}
+
+function addCurrentDimToOptions() {
+  const val = form.dimension_material?.trim() || ''
+  if (!val) return
+  if (!availableDimList.value.includes(val)) {
+    customDimList.value.push(val)
+    saveCustomDimToStorage()
+  }
+}
+
+function removeCustomDim(item: string) {
+  customDimList.value = customDimList.value.filter(s => s !== item)
+  saveCustomDimToStorage()
+}
+
+function loadCustomDim() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const saved = localStorage.getItem('cnc_custom_ukuran_options')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          customDimList.value = parsed
+        }
+      }
+    } catch (e) {
+      console.warn('Gagal memuat custom ukuran dari localStorage', e)
+    }
+  }
+}
+
+function saveCustomDimToStorage() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      localStorage.setItem('cnc_custom_ukuran_options', JSON.stringify(customDimList.value))
+    } catch (e) {
+      console.warn('Gagal menyimpan custom ukuran ke localStorage', e)
+    }
+  }
+}
+
+function handleClickOutsideDim(e: MouseEvent) {
+  if (dimContainerRef.value && !dimContainerRef.value.contains(e.target as Node)) {
+    isDimDropdownOpen.value = false
   }
 }
 
@@ -1001,6 +1193,10 @@ async function handleDeleteEst(item: any) {
 
 onMounted(() => {
   store.initStore()
+  loadCustomDim()
+  if (typeof document !== 'undefined') {
+    document.addEventListener('click', handleClickOutsideDim)
+  }
 
   // Jika ada query param ?order_id=...
   if (route.query.order_id) {
@@ -1014,6 +1210,12 @@ onMounted(() => {
     selectedOrderId.value = eligibleOrders.value[0].id
   } else {
     activeMode.value = 'manual'
+  }
+})
+
+onBeforeUnmount(() => {
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('click', handleClickOutsideDim)
   }
 })
 </script>
