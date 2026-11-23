@@ -1625,7 +1625,134 @@ export function useCncStore() {
     return { success: true }
   }
 
-  // EXPORT CSV / EXCEL SESUAI TEMPLATE
+  // EXPORT EXCEL (.XLSX) SESUAI TEMPLATE
+  async function exportHistoryExcel(customList?: Order[]): Promise<boolean> {
+    const list = customList && customList.length > 0 ? customList : orders.value
+    if (!list || list.length === 0) return false
+
+    // Load XLSX library (from bundled package or CDN window.XLSX fallback)
+    let XLSXLib: any = null
+    try {
+      XLSXLib = await import('xlsx')
+    } catch {
+      // ignore
+    }
+
+    if (!XLSXLib || !XLSXLib.utils) {
+      if (typeof window !== 'undefined' && (window as any).XLSX) {
+        XLSXLib = (window as any).XLSX
+      } else if (typeof document !== 'undefined') {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement('script')
+            script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
+            script.onload = () => resolve()
+            script.onerror = () => reject(new Error('Gagal memuat library Excel'))
+            document.head.appendChild(script)
+          })
+          XLSXLib = (window as any).XLSX
+        } catch (e) {
+          console.error('Error loading SheetJS from CDN:', e)
+        }
+      }
+    }
+
+    if (!XLSXLib || !XLSXLib.utils) {
+      console.warn('XLSX library not available, fallback to CSV')
+      return exportHistoryCsv(list)
+    }
+
+    const headers = [
+      'NO',
+      'NO. ORDER',
+      'PEMESAN',
+      'DEPARTEMEN',
+      'PROJECT NAME',
+      'NO. KAPAL',
+      'SPEC. OF MATERIAL',
+      'HEAT NUMBER',
+      'PRODUCT NUMBER',
+      'MESIN CNC',
+      'DIMENSI',
+      'PENGAMBIL',
+      'WAKTU SELESAI',
+      'STATUS'
+    ]
+
+    const formatWaktu = (t?: string | null) => {
+      if (!t) return '-'
+      try {
+        const d = new Date(t)
+        if (isNaN(d.getTime())) return '-'
+        const day = String(d.getDate()).padStart(2, '0')
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const year = d.getFullYear()
+        const hours = String(d.getHours()).padStart(2, '0')
+        const mins = String(d.getMinutes()).padStart(2, '0')
+        return `${day}/${month}/${year} ${hours}:${mins}`
+      } catch {
+        return '-'
+      }
+    }
+
+    const rows = list.map((o, idx) => {
+      const projName = o.nama_proyek || o.estimation?.project_name || '-'
+      const noKapal = o.nama_proyek_kapal || o.estimation?.block_item || '-'
+      const specMat = o.estimation?.spec_material || o.estimation?.grade || o.material || '-'
+      const heatNum = o.estimation?.heat_number || '-'
+      const prodNum = o.estimation?.product_number || o.ukuran_part || '-'
+      const mesinCnc = o.target_cnc?.replace(/^Gr(oup|up)\s*/i, '') || o.target_cnc || '-'
+      const dimensi = o.estimation?.dimension_material || o.ukuran_part || (o.ketebalan ? `${o.ketebalan} mm` : '-')
+      const pengambil = o.pengambil_akhir ? `${o.pengambil_akhir}${o.departemen_pengambil ? ' (' + o.departemen_pengambil + ')' : ''}` : '-'
+      const waktuSelesai = formatWaktu(o.waktu_selesai || o.waktu_diambil)
+
+      return [
+        idx + 1,
+        o.no_order,
+        o.nama_pemesan,
+        o.departemen_pemesan,
+        projName,
+        noKapal,
+        specMat,
+        heatNum,
+        prodNum,
+        mesinCnc,
+        dimensi,
+        pengambil,
+        waktuSelesai,
+        o.status
+      ]
+    })
+
+    const ws = XLSXLib.utils.aoa_to_sheet([headers, ...rows])
+
+    // Set column widths in Excel
+    ws['!cols'] = [
+      { wch: 6 },  // NO
+      { wch: 16 }, // NO. ORDER
+      { wch: 16 }, // PEMESAN
+      { wch: 14 }, // DEPARTEMEN
+      { wch: 25 }, // PROJECT NAME
+      { wch: 12 }, // NO. KAPAL
+      { wch: 20 }, // SPEC. OF MATERIAL
+      { wch: 16 }, // HEAT NUMBER
+      { wch: 16 }, // PRODUCT NUMBER
+      { wch: 14 }, // MESIN CNC
+      { wch: 20 }, // DIMENSI
+      { wch: 18 }, // PENGAMBIL
+      { wch: 18 }, // WAKTU SELESAI
+      { wch: 16 }  // STATUS
+    ]
+
+    const wb = XLSXLib.utils.book_new()
+    XLSXLib.utils.book_append_sheet(wb, ws, 'Riwayat Pemotongan')
+
+    const dateStr = new Date().toISOString().split('T')[0]
+    XLSXLib.writeFile(wb, `Rekap_History_Pemotongan_CNC_${dateStr}.xlsx`)
+    return true
+  }
+
+  // EXPORT CSV SESUAI TEMPLATE
   function exportHistoryCsv(customList?: Order[]): boolean {
     const list = customList && customList.length > 0 ? customList : orders.value
     if (!list || list.length === 0) return false
@@ -1747,6 +1874,7 @@ export function useCncStore() {
     updateUserRole,
     deleteUser,
     resetDataToZero,
-    exportHistoryCsv
+    exportHistoryCsv,
+    exportHistoryExcel
   }
 }

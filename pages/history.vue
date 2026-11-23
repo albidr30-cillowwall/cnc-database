@@ -13,11 +13,12 @@
 
       <div class="flex items-center gap-2 no-print shrink-0">
         <button 
-          @click="handleExportCsv" 
-          class="text-xs font-bold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-xs transition flex items-center gap-1.5"
+          @click="handleExportExcel" 
+          :disabled="isExporting"
+          class="text-xs font-bold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
         >
-          <i class="fa-solid fa-file-csv text-emerald-500"></i>
-          <span>Export CSV</span>
+          <i class="fa-solid" :class="isExporting ? 'fa-spinner fa-spin text-emerald-600' : 'fa-file-excel text-emerald-600'"></i>
+          <span>{{ isExporting ? 'Mengekspor...' : 'Export Excel (.xlsx)' }}</span>
         </button>
         <button 
           @click="handlePrint" 
@@ -305,13 +306,23 @@ function formatWaktuSelesai(o: any): string {
 const printDateTime = computed(() => new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }))
 const printDateOnly = computed(() => new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }))
 
-function handleExportCsv() {
-  const ok = store.exportHistoryCsv(filteredOrders.value)
-  if (ok) {
-    const today = new Date().toISOString().split('T')[0]
-    toast.value = `File Rekap_History_Pemotongan_CNC_${today}.csv (${filteredOrders.value.length} baris data) berhasil diunduh!`
-  } else {
-    toast.value = 'Tidak ada data order yang cocok untuk diekspor.'
+const isExporting = ref(false)
+
+async function handleExportExcel() {
+  if (isExporting.value) return
+  isExporting.value = true
+  try {
+    const ok = await store.exportHistoryExcel(filteredOrders.value)
+    if (ok) {
+      const today = new Date().toISOString().split('T')[0]
+      toast.value = `File Rekap_History_Pemotongan_CNC_${today}.xlsx (${filteredOrders.value.length} baris data) berhasil diunduh!`
+    } else {
+      toast.value = 'Tidak ada data order yang cocok untuk diekspor.'
+    }
+  } catch (err: any) {
+    toast.value = 'Gagal mengekspor file Excel: ' + (err?.message || err)
+  } finally {
+    isExporting.value = false
   }
 }
 
